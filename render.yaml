@@ -1,0 +1,38 @@
+# Render Blueprint for the hosted preview. Fictional seed data only — never load real records here.
+# Deploys the `preview` branch; every push to it redeploys.
+databases:
+  - name: madressa-preview-db
+    region: frankfurt
+    plan: free # free Postgres expires after a trial period on Render; switch to a paid plan to keep it
+    postgresMajorVersion: "16"
+    databaseName: school_preview
+    user: school_app
+    ipAllowList: [] # reachable only from Render services, not the internet
+
+services:
+  - type: web
+    name: madressa-preview
+    runtime: node
+    region: frankfurt
+    plan: free # sleeps when idle; first visit after a break takes ~1 minute
+    branch: preview
+    buildCommand: npm ci && npm run build
+    startCommand: npm run db:migrate && npm run db:seed && npx next start
+    healthCheckPath: /admin/login
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        fromDatabase: { name: madressa-preview-db, property: connectionString }
+      - key: DATA_ENCRYPTION_KEY
+        generateValue: true
+      - key: SEED_ADMIN_PASSWORD
+        sync: false # you type this in Render when creating the blueprint
+      - key: TRUST_PROXY
+        value: "1" # Render's proxy sets X-Forwarded-For
+      - key: STORAGE_DRIVER
+        value: local # uploads are lost on each deploy until real storage is added
+      - key: EMAIL_DRIVER
+        value: log
+      - key: SMS_DRIVER
+        value: log

@@ -98,3 +98,14 @@ describe('admin access levels (§3)', () => {
     expect(adminCan({ ...none, canEdit: true, canDelete: true, feesAccess: true, marketing: true, sendSms: true }, 'super')).toBe(false);
   });
 });
+
+describe('encryption key format', async () => {
+  const { parseKey } = await import('@/server/crypto');
+  it('accepts 32 bytes as hex or base64 and nothing else', () => {
+    expect(parseKey('ab'.repeat(32))).toHaveLength(32);
+    expect(parseKey(Buffer.alloc(32, 7).toString('base64'))).toHaveLength(32);
+    expect(() => parseKey('ab'.repeat(16))).toThrow();
+    expect(() => parseKey(Buffer.alloc(16).toString('base64'))).toThrow();
+    expect(() => parseKey('')).toThrow();
+  });
+});
