@@ -7,6 +7,8 @@ const config = [
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
     rules: {
+      // Leading underscore marks a value dropped on purpose (e.g. removing id before copying a row).
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true }],
       // Design tokens only: raw hex colours belong in src/styles/tokens.css.
       'no-restricted-syntax': ['error', ...['Literal', 'TemplateElement[value.raw', 'JSXText'].map((n) => ({
         selector: n.startsWith('TemplateElement') ? `${n}=/#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]/]` : `${n}[value=/#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]/]`,

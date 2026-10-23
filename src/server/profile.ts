@@ -29,3 +29,10 @@ export async function saveProfile(db: Db, actor: AuditActor, raw: unknown, logoF
   return { ok: true };
 }
 
+
+/** Typed-name confirmation for destructive actions: case, spacing and curly quotes don't matter. */
+export const normaliseName = (s: string) => s.normalize('NFKC').replace(/[’‘]/g, "'").replace(/\s+/g, ' ').trim().toLocaleLowerCase('en-GB');
+export async function confirmsSchoolName(db: DbOrTx, typed: string) {
+  const p = await getProfile(db);
+  return !!p && normaliseName(typed) === normaliseName(p.name);
+}

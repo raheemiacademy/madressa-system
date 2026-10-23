@@ -36,5 +36,41 @@ if (!cur) {
     { academicYearId: y!.id, title: 'Winter break', startsOn: '2026-12-21', endsOn: '2027-01-01', description: 'Classes restart on Monday 4 January.' }
   ]);
 }
+
+// People: obviously fictional names, example.org emails and Ofcom drama-range mobiles (07700 900xxx).
+const [anyStudent] = await db.select({ id: schema.student.id }).from(schema.student).limit(1);
+const [year] = await db.select().from(academicYear).where(eq(academicYear.title, '2026/27'));
+if (!anyStudent && year) {
+  const groups = await db.insert(schema.yearGroup).values([
+    { label: 'Infants', minAge: 4, maxAge: 6, sortOrder: 1 }, { label: 'Juniors', minAge: 7, maxAge: 10, sortOrder: 2 }, { label: 'Seniors', minAge: 11, maxAge: 16, sortOrder: 3 }
+  ]).returning();
+  const teachers = await db.insert(schema.teacher).values([
+    { name: 'Sample Teacher One', gender: 'Female', email: 'teacher1@example.org', mobile: '07700 900101' },
+    { name: 'Sample Teacher Two', gender: 'Male', email: 'teacher2@example.org', mobile: '07700 900102' },
+    { name: 'Sample Teacher Three', gender: 'Female', email: 'teacher3@example.org', status: 'Volunteer' }
+  ]).returning();
+  for (const t of teachers) for (const d of [1, 2, 3, 4]) await db.insert(schema.teacherHours).values({ teacherId: t.id, weekday: d, startTime: '17:00', endTime: '19:30' });
+  const classes = await db.insert(schema.schoolClass).values([
+    { academicYearId: year.id, name: 'Test Class A', yearGroupId: groups[0]!.id, mainTeacherId: teachers[0]!.id, capacity: 8, startsOn: year.startsOn, endsOn: year.endsOn },
+    { academicYearId: year.id, name: 'Test Class B', yearGroupId: groups[1]!.id, mainTeacherId: teachers[1]!.id, capacity: 6, startsOn: year.startsOn, endsOn: year.endsOn },
+    { academicYearId: year.id, name: 'Test Class C', yearGroupId: groups[2]!.id, capacity: 10, startsOn: year.startsOn, endsOn: year.endsOn }
+  ]).returning();
+  for (const c of classes) {
+    if (c.mainTeacherId) await db.insert(schema.classTeacher).values({ classId: c.id, teacherId: c.mainTeacherId, canRegister: true, canHomework: true });
+    await db.insert(schema.timetableSlot).values({ classId: c.id, weekday: 1, startTime: '17:00', durationMinutes: 120, teacherId: c.mainTeacherId, takesRegister: true });
+  }
+  for (let i = 1; i <= 21; i++) {
+    const n = String(i).padStart(3, '0');
+    const waiting = i > 18;
+    const cls = classes[(i - 1) % 3]!;
+    const [s] = await db.insert(schema.student).values({
+      firstName: 'Test', surname: `Student ${n}`, gender: i % 2 ? 'Female' : 'Male', dob: `${2010 + (i % 12)}-0${1 + (i % 9)}-1${i % 9}`,
+      status: waiting ? 'Waiting List' : 'Current', startDate: waiting ? null : year.startsOn
+    }).returning();
+    const [p] = await db.insert(schema.contact).values({ name: `Sample Parent ${n}`, email: `parent${n}@example.org`, mobile: `07700 900${n}` }).returning();
+    await db.insert(schema.studentContact).values({ studentId: s!.id, contactId: p!.id, type: 'Parent', relation: i % 2 ? 'Mother' : 'Father', isPrimary: true });
+    if (!waiting) await db.insert(schema.classAssignment).values({ studentId: s!.id, classId: (i === 8 || i === 9 ? classes[1]! : cls).id, fromDate: year.startsOn });
+  }
+}
 await client.end();
 console.log('Seeded fictional sample data: admin@example.org (super) and clerk@example.org (can edit)');

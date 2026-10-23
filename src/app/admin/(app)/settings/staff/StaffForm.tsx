@@ -1,9 +1,10 @@
 'use client';
 
 import { useActionState } from 'react';
-import { Check, FormMessage, TextField } from '@/components/Fields';
+import { Check, FormErrors, FormMessage, TextField } from '@/components/Fields';
 import { SaveBar } from '@/components/SaveBar';
 import { ACCESS_LEVELS } from '@/lib/access-levels';
+import { CustomFieldInputs, type CF } from '@/components/CustomFieldInputs';
 import type { FormState } from '@/lib/validate';
 import { saveStaffAction } from './actions';
 
@@ -14,7 +15,7 @@ export type StaffValues = {
   allowLogin: boolean; hasPassword: boolean;
 };
 
-export function StaffForm({ staff: s, ranks }: { staff?: StaffValues; ranks: string[] }) {
+export function StaffForm({ staff: s, ranks, fields = [], answers = {} }: { staff?: StaffValues; ranks: string[]; fields?: CF[]; answers?: Record<number, unknown> }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveStaffAction.bind(null, s?.id), undefined);
   const e = (n: string) => state?.errors?.[n];
   return (
@@ -41,6 +42,7 @@ export function StaffForm({ staff: s, ranks }: { staff?: StaffValues; ranks: str
           {ACCESS_LEVELS.map(([k, l]) => <Check key={k} name={k} label={l} defaultChecked={s?.[k]} error={e(k)} />)}
         </div>
       </fieldset>
+      {fields.length > 0 && <FormErrors.Provider value={state?.errors}><fieldset className="ra-fieldset"><legend>More details</legend><CustomFieldInputs fields={fields} values={answers} /></fieldset></FormErrors.Provider>}
       <SaveBar pending={pending} state={state} label={s ? 'Save changes' : 'Add staff member'} />
     </form>
   );

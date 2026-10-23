@@ -44,3 +44,26 @@ export async function storeUpload(db: DbOrTx, file: File, kind: UploadKind, purp
   const [row] = await db.insert(fileObject).values({ storageKey: key, filename: file.name.slice(0, 200) || 'upload', mime, size: buf.length, purpose, createdBy }).returning();
   return { ok: true as const, file: row! };
 }
+
+const MIME: Record<string, string> = {
+  pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp',
+  doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xls: 'application/vnd.ms-excel', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ppt: 'application/vnd.ms-powerpoint', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  txt: 'text/plain', csv: 'text/csv', mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav', mp4: 'video/mp4', mov: 'video/quicktime'
+};
+// Never stored whatever the settings say: they can run script when opened from our origin.
+const BLOCKED = new Set(['html', 'htm', 'svg', 'xhtml', 'xml', 'js', 'mjs', 'exe', 'bat', 'cmd', 'com', 'msi', 'scr', 'vbs', 'ps1', 'sh', 'jar']);
+
+/** Documents and media attached to records, limited to the school's allowed extensions (§4 File storage). Served only as downloads. */
+export async function storeAttachment(db: DbOrTx, file: File, allowed: string[], purpose: string, createdBy: number | null) {
+  const ext = (file.name.split('.').pop() ?? '').toLowerCase();
+  if (!ext || BLOCKED.has(ext) || !allowed.includes(ext)) return { ok: false as const, error: `Files ending .${ext || '?'} aren’t allowed. Allowed: ${allowed.join(', ')}.` };
+  if (file.size > 10 * 1024 * 1024) return { ok: false as const, error: 'Use a file under 10 MB.' };
+  const buf = Buffer.from(await file.arrayBuffer());
+  const key = `${purpose}/${randomUUID()}`;
+  await mkdir(path.dirname(pathFor(key)), { recursive: true });
+  await writeFile(pathFor(key), buf);
+  const [row] = await db.insert(fileObject).values({ storageKey: key, filename: file.name.replace(/[\/\r\n"]/g, '_').slice(0, 200), mime: MIME[ext] ?? 'application/octet-stream', size: buf.length, purpose, createdBy }).returning();
+  return { ok: true as const, file: row! };
+}

@@ -11,7 +11,7 @@ const actorOf = (a: { identityId: number; name: string; staff: { id: number } })
 
 export async function saveStaffAction(id: number | undefined, _prev: FormState, fd: FormData): Promise<FormState> {
   const admin = await requireAdmin('super');
-  const res = await saveStaff(db, actorOf(admin), formObject(fd), id);
+  const res = await saveStaff(db, actorOf(admin), formObject(fd), id, fd);
   if (!res.ok) return { errors: res.errors, message: 'Check the highlighted fields.' };
   revalidatePath('/admin/settings/staff');
   redirect('/admin/settings/staff');

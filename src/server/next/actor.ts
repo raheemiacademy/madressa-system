@@ -29,6 +29,9 @@ export async function requireAdmin(perm: AdminPerm = 'view'): Promise<AdminActor
   return a;
 }
 
+/** The audit actor for server actions. */
+export const actorOf = (a: AdminActor) => ({ identityId: a.identityId, name: a.name });
+
 export async function requestMeta() {
   const h = await headers();
   // Forwarded headers are client-controlled unless a proxy we run sets them.

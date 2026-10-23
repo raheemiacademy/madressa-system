@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 
 // Captures the main screens at the three checked widths in both themes into screenshots/ for review against design-reference.
 const WIDTHS = [390, 860, 1440];
-const PAGES = [['dashboard', '/admin'], ['settings-profile', '/admin/settings/profile'], ['holidays', '/admin/settings/holidays'], ['staff', '/admin/settings/staff'], ['tab-parent-portal', '/admin/settings/parentPortal']];
+const PAGES = [['dashboard', '/admin'], ['settings-profile', '/admin/settings/profile'], ['holidays', '/admin/settings/holidays'], ['staff', '/admin/settings/staff'], ['tab-parent-portal', '/admin/settings/parentPortal'],
+  ['students', '/admin/students'], ['student', '/admin/students/2'], ['classes', '/admin/classes'], ['class', '/admin/classes/1'], ['teachers', '/admin/teachers'], ['contacts', '/admin/contacts'], ['apply', '/apply']];
 
 test('visual capture', async ({ page }) => {
   test.setTimeout(180_000);

@@ -84,9 +84,9 @@ test('“/” focuses search, and a sticky note can be added to a page', async (
   await signIn(page);
   await page.keyboard.press('/');
   await expect(page.getByRole('searchbox', { name: /Search students/ })).toBeFocused();
-  await page.keyboard.type('Test Student');
+  await page.keyboard.type('Nobody Called This');
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('status')).toHaveText('No students, contacts or teachers match “Test Student”.');
+  await expect(page.getByRole('status')).toHaveText('No students, contacts or teachers match “Nobody Called This”.');
   await page.goto('/admin');
   await page.getByRole('button', { name: 'Add a sticky note' }).click();
   await page.getByRole('textbox', { name: 'Note' }).fill('Order more register books');

@@ -1,15 +1,15 @@
 'use client';
 
 import { useActionState, useEffect, useRef, useTransition } from 'react';
-import { Check, FormMessage, TextArea, TextField } from '@/components/Fields';
+import { Check, Checks, FormErrors, FormMessage, TextArea, TextField } from '@/components/Fields';
 import { Icon } from '@/components/Icon';
 import { SaveBar } from '@/components/SaveBar';
 import type { FormState } from '@/lib/validate';
 import { deleteHolidayAction, saveHolidayAction } from './actions';
 
-type H = { id: number; title: string; description: string | null; startsOn: string; endsOn: string; showTeacher: boolean; showParent: boolean; showStudent: boolean; studentsAttend: boolean; teachersAttend: boolean };
+type H = { id: number; title: string; description: string | null; startsOn: string; endsOn: string; showTeacher: boolean; showParent: boolean; showStudent: boolean; studentsAttend: boolean; teachersAttend: boolean; allClasses: boolean };
 
-export function HolidayForm({ yearId, yearTitle, holiday: h }: { yearId: number; yearTitle: string; holiday?: H }) {
+export function HolidayForm({ yearId, yearTitle, holiday: h, classes, chosen }: { yearId: number; yearTitle: string; holiday?: H; classes: { value: string; label: string }[]; chosen: string[] }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveHolidayAction.bind(null, h?.id), undefined);
   const form = useRef<HTMLFormElement>(null);
   useEffect(() => { if (state?.ok && !h) form.current?.reset(); }, [state, h]);
@@ -38,6 +38,12 @@ export function HolidayForm({ yearId, yearTitle, holiday: h }: { yearId: number;
           <Check name="teachersAttend" label="Teachers attend" defaultChecked={h?.teachersAttend} />
         </div>
       </fieldset>
+      <FormErrors.Provider value={state?.errors}>
+        <fieldset className="ra-fieldset"><legend>Applies to</legend>
+          <Check name="allClasses" label="All classes" defaultChecked={h?.allClasses ?? true} />
+          {classes.length > 0 && <Checks name="classIds" legend="Or only these classes" options={classes} checked={chosen} />}
+        </fieldset>
+      </FormErrors.Provider>
       <SaveBar pending={pending} state={state} label={h ? 'Save changes' : 'Add holiday'} />
     </form>
   );

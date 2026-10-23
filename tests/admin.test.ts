@@ -99,7 +99,7 @@ describe('academic years', () => {
     const old = await saveYear(db, actor, year('2025/26', '2025-09-01', '2026-07-31'));
     if (!cur.ok || !old.ok) throw new Error('setup');
     expect((await deleteYear(db, actor, cur.id)).ok).toBe(false);
-    await saveHoliday(db, actor, { academicYearId: old.id, title: 'Half term', startsOn: '2025-10-27', endsOn: '2025-10-31', description: '' });
+    await saveHoliday(db, actor, { academicYearId: old.id, title: 'Half term', startsOn: '2025-10-27', endsOn: '2025-10-31', description: '', allClasses: 'on' });
     expect(await deleteYear(db, actor, old.id)).toMatchObject({ ok: false, error: expect.stringMatching(/1 holiday\b/) });
   });
 });
@@ -109,7 +109,7 @@ describe('holidays', () => {
     const { actor } = await makeStaff({ isSuper: true });
     const y = await saveYear(db, actor, { title: '2026/27', startsOn: '2026-09-01', endsOn: '2027-07-31' });
     if (!y.ok) throw new Error('setup');
-    const base = { academicYearId: y.id, title: 'Eid', description: '' };
+    const base = { academicYearId: y.id, title: 'Eid', description: '', allClasses: 'on' };
     expect(await saveHoliday(db, actor, { ...base, startsOn: '2027-08-01', endsOn: '2027-08-03' })).toMatchObject({ ok: false });
     expect(await saveHoliday(db, actor, { ...base, startsOn: '2027-03-20', endsOn: '2027-03-19' })).toMatchObject({ ok: false, errors: { endsOn: expect.any(String) } });
     expect(await saveHoliday(db, actor, { ...base, startsOn: '2027-03-20', endsOn: '2027-03-22', showParent: 'on' })).toMatchObject({ ok: true });

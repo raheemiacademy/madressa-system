@@ -59,6 +59,7 @@
     --ra-side-bg: #0E1129;
     --ra-shadow-pop: 0 8px 24px rgb(0 0 0 / 0.45);
     --ra-surface: var(--color-bg);
+    --ra-tint: color-mix(in srgb, var(--ra-lav) 10%, var(--color-panel));
   }
 }
 :root[data-theme="dark"] {
@@ -75,6 +76,7 @@
   --ra-side-bg: #0E1129;
   --ra-shadow-pop: 0 8px 24px rgb(0 0 0 / 0.45);
   --ra-surface: var(--color-bg);
+  --ra-tint: color-mix(in srgb, var(--ra-lav) 10%, var(--color-panel));
 }
 
 @media (pointer: coarse) { :root { --ra-ctl: 44px; } }
