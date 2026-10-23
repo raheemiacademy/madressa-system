@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Admin fees</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+.app{font-family:'Inter',system-ui,sans-serif;color:#1F2340;font-variant-numeric:tabular-nums}
+.app *{box-sizing:border-box}
+.scroll{overscroll-behavior:contain}
+.tap{touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:transform 120ms cubic-bezier(0.23,1,0.32,1),background-color 120ms ease,color 120ms ease}
+.tap:active{transform:scale(0.97)}
+a{color:inherit;text-decoration:none}
+.tab{color:#5E6380}
+.tab[aria-current="page"]{color:#3D5BC0}
+@media (hover:hover) and (pointer:fine){.row:hover{background:#F1F2FA}}
+@media (prefers-reduced-motion:reduce){.tap:active{transform:none}}
+</style>
+</helmet>
+<div class="app" style="width: 390px; height: 844px; display: flex; flex-direction: column; background: #F5F6FB; overflow: hidden; position: relative">
+  <header style="padding: calc(env(safe-area-inset-top, 0px) + 18px) 20px 8px; display: flex; align-items: center; justify-content: space-between">
+    <h1 style="margin: 0; font-family: 'Fraunces', Georgia, serif; font-weight: 400; font-size: 28px">Fees</h1>
+    <span style="font-size: 13px; color: #5E6380; border: 1px solid #E3E5F0; background: #fff; border-radius: 999px; padding: 6px 12px">2026/27</span>
+  </header>
+
+  <main class="scroll" style="flex: 1; overflow-y: auto; padding: 6px 20px 96px; display: flex; flex-direction: column; gap: 14px">
+    <section style="border-radius: 22px; padding: 18px 20px; color: #fff; background: radial-gradient(80% 120% at 100% 0%, rgba(90,185,234,.4), transparent 60%), #1C2147">
+      <div style="font-size: 13px; color: #B9BEDB">Outstanding</div>
+      <div style="font-family: 'Fraunces', Georgia, serif; font-size: 36px; line-height: 1.15">£8,420</div>
+      <div style="height: 8px; border-radius: 999px; background: rgba(255,255,255,.14); margin: 14px 0 8px; overflow: hidden"><div style="width: 88.6%; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #5AB9EA, #84CEEB)"></div></div>
+      <div style="display: flex; justify-content: space-between; font-size: 13px; color: #E6E8F5"><span>£65,470 received</span><span>88.6% of £73,890</span></div>
+    </section>
+
+    <div role="tablist" aria-label="Fees view" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; background: #E9EBF5; border-radius: 14px">
+      <button role="tab" class="tap" aria-selected="{{payOn}}" onClick="{{showPay}}" style="{{payStyle}}">Recent payments</button>
+      <button role="tab" class="tap" aria-selected="{{dueOn}}" onClick="{{showDue}}" style="{{dueStyle}}">Overdue · 46</button>
+    </div>
+
+    <ul style="list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; overflow: hidden">
+      <sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+        <li style="border-bottom: 1px solid #EEF0F6">
+          <a href="AdminFees.dc.html" class="row tap" style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 12px 16px; min-height: 64px; align-items: center">
+            <span style="font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.name}}</span>
+            <span style="font-size: 15px; font-weight: 600; text-align: right">{{r.amount}}</span>
+            <span style="font-size: 13px; color: #5E6380">{{r.meta}}</span>
+            <span style="{{r.chip}}">{{r.status}}</span>
+          </a>
+        </li>
+      </sc-for>
+    </ul>
+    <sc-if value="{{dueOn}}" hint-placeholder-val="{{false}}">
+      <button class="tap" style="min-height: 48px; border-radius: 14px; border: 1px solid #E3E5F0; background: #fff; font: 600 15px Inter, system-ui, sans-serif; color: #3D5BC0; cursor: pointer">Send reminders to all 46</button>
+    </sc-if>
+  </main>
+
+  <div style="position: absolute; left: 20px; right: 20px; bottom: calc(env(safe-area-inset-bottom, 0px) + 86px)">
+    <button class="tap" style="width: 100%; min-height: 52px; border-radius: 16px; border: 0; background: #3D5BC0; color: #fff; font: 600 16px Inter, system-ui, sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 24px rgba(28,33,71,.25); cursor: pointer">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Record a payment</button>
+  </div>
+
+  <nav aria-label="Main" style="display: flex; background: #fff; border-top: 1px solid #E3E5F0; padding: 6px 6px calc(env(safe-area-inset-bottom, 0px) + 10px)">
+    <a href="Main.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10 12 4l9 6"/><path d="M5 10v10h14V10"/></svg>Home</a>
+    <a href="AdminStudents.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M17 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/></svg>Students</a>
+    <a href="AdminFees.dc.html" class="tab tap" aria-current="page" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 6a4 4 0 0 0-7 2.6V19H7m11 0H10M7 12h7"/></svg>Fees</a>
+    <a href="Main.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Messages</a>
+    <a href="Main.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>More</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { view: 'pay' }; }
+  renderVals() {
+    var self = this;
+    var C = { Cleared: '#2F7D32', Processing: '#5AB9EA', Pending: '#5680E9', Bounced: '#C62828', Overdue: '#C62828' };
+    var pay = [
+      ['Yusuf Siddiqui', '£45', 'Direct debit · 22 Oct', 'Processing'],
+      ['Amina Hussain', '£45', 'Card · 22 Oct', 'Cleared'],
+      ['Zayd Chowdhury', '£20', 'Bank transfer · 21 Oct', 'Pending'],
+      ['Hana Patel', '£90', 'Cash · 21 Oct', 'Cleared'],
+      ['Maryam Akhtar', '£45', 'Direct debit · 20 Oct', 'Bounced'],
+      ['Safiya Begum', '£135', 'Bank transfer · 19 Oct', 'Cleared']
+    ];
+    var due = [
+      ['Musa Rahman', '£135', 'Fees · due 1 Oct', 'Overdue'],
+      ['Layla Mirza', '£90', 'Fees · due 1 Oct', 'Overdue'],
+      ['Adam Yousaf', '£45', 'Fees · due 8 Oct', 'Overdue'],
+      ['Zayd Chowdhury', '£20', 'Contribution · due 15 Oct', 'Overdue'],
+      ['Ibrahim Khan', '£50', 'Admission · due 18 Oct', 'Overdue']
+    ];
+    var src = this.state.view === 'pay' ? pay : due;
+    var seg = function (on) { return 'min-height: 44px; border: 0; border-radius: 10px; font: 600 14px Inter, system-ui, sans-serif; cursor: pointer; ' + (on ? 'background: #fff; color: #1F2340; box-shadow: 0 1px 3px rgba(28,33,71,.12)' : 'background: transparent; color: #5E6380'); };
+    return {
+      rows: src.map(function (r) { return { name: r[0], amount: r[1], meta: r[2], status: r[3], chip: 'justify-self: end; font-size: 12px; padding: 3px 10px; border-radius: 999px; color: #1F2340; background: color-mix(in srgb, ' + C[r[3]] + ' 16%, transparent)' }; }),
+      payOn: this.state.view === 'pay' ? 'true' : 'false', dueOn: this.state.view === 'due',
+      payStyle: seg(this.state.view === 'pay'), dueStyle: seg(this.state.view === 'due'),
+      showPay: function () { self.setState({ view: 'pay' }); }, showDue: function () { self.setState({ view: 'due' }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Set homework</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+.app{font-family:'Inter',system-ui,sans-serif;color:#1F2340}
+.app *{box-sizing:border-box}
+.scroll{overscroll-behavior:contain}
+.tap{touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:transform 120ms cubic-bezier(0.23,1,0.32,1),background-color 120ms ease}
+.tap:active{transform:scale(0.97)}
+a{color:inherit;text-decoration:none}
+.tab{color:#5E6380}
+.tab[aria-current="page"]{color:#3D5BC0}
+.field{display:flex;flex-direction:column;gap:6px}
+.field>span{font-size:14px;font-weight:500}
+.inp{font:400 16px Inter,system-ui,sans-serif;color:#1F2340;background:#fff;border:1px solid #D9DCEA;border-radius:12px;min-height:48px;padding:0 14px;width:100%}
+textarea.inp{padding:12px 14px;min-height:110px;resize:vertical;line-height:1.5}
+.inp:focus-visible{outline:2px solid #5680E9;outline-offset:1px;border-color:#5680E9}
+.sw{appearance:none;-webkit-appearance:none;width:52px;height:32px;border-radius:999px;background:#D9DCEA;position:relative;cursor:pointer;flex:none;transition:background-color 160ms ease;margin:0}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform 160ms cubic-bezier(0.23,1,0.32,1)}
+.sw:checked{background:#3D5BC0}
+.sw:checked::after{transform:translateX(20px)}
+.sw:focus-visible{outline:2px solid #5680E9;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.tap:active{transform:none}.sw::after{transition:none}}
+</style>
+</helmet>
+<div class="app" style="width: 390px; height: 844px; display: flex; flex-direction: column; background: #F5F6FB; overflow: hidden">
+  <header style="padding: calc(env(safe-area-inset-top, 0px) + 18px) 20px 8px">
+    <h1 style="margin: 0; font-family: 'Fraunces', Georgia, serif; font-weight: 400; font-size: 28px">Set homework</h1>
+  </header>
+
+  <main class="scroll" style="flex: 1; overflow-y: auto; padding: 6px 20px 20px; display: flex; flex-direction: column; gap: 16px">
+    <label class="field"><span>Class</span>
+      <select class="inp" name="class"><option>Maktab 3B · 25 students</option><option>Maktab 3B · selected students</option></select>
+    </label>
+    <label class="field"><span>Title</span>
+      <input class="inp" name="title" type="text" enterkeyhint="next" autocomplete="off" value="Surah Al-Mulk, ayat 11–20">
+    </label>
+    <label class="field"><span>Instructions</span>
+      <textarea class="inp" name="instructions">Read each ayah three times with tajweed, then record yourself reciting all ten.</textarea>
+    </label>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <label class="field"><span>Due date</span><input class="inp" name="due" type="date" value="2026-10-29"></label>
+      <label class="field"><span>Due time</span><input class="inp" name="time" type="time" value="17:00"></label>
+    </div>
+    <div style="background: #fff; border: 1px solid #E3E5F0; border-radius: 18px">
+      <label style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; min-height: 60px; border-bottom: 1px solid #EEF0F6"><span style="flex: 1"><span style="display: block; font-size: 15px">Parents can upload files</span><span style="display: block; font-size: 13px; color: #5E6380">Photos, audio or PDFs</span></span><input class="sw" type="checkbox" role="switch" checked></label>
+      <label style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; min-height: 60px; border-bottom: 1px solid #EEF0F6"><span style="flex: 1; font-size: 15px">Notify parents now</span><input class="sw" type="checkbox" role="switch" checked></label>
+      <label style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; min-height: 60px"><span style="flex: 1; font-size: 15px">Lock after the deadline</span><input class="sw" type="checkbox" role="switch"></label>
+    </div>
+    <button class="tap" onClick="{{send}}" style="{{btnStyle}}">{{btnLabel}}</button>
+
+    <section aria-labelledby="h-recent" style="margin-top: 4px">
+      <h2 id="h-recent" style="margin: 0 2px 10px; font-size: 16px; font-weight: 600">Recent</h2>
+      <div style="background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; justify-content: space-between; gap: 12px"><span style="font-size: 15px; font-weight: 600">Surah Al-Mulk, ayat 1–10</span><span style="font-size: 13px; color: #5E6380; white-space: nowrap">Due today</span></div>
+        <div style="height: 6px; border-radius: 999px; background: #E9EBF5; overflow: hidden"><div style="width: 72%; height: 100%; background: linear-gradient(90deg, #5AB9EA, #5680E9); border-radius: 999px"></div></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; color: #5E6380"><span>18 of 25 handed in</span><a href="TeacherHomework.dc.html" style="color: #3D5BC0; font-weight: 500">Remind 7 parents</a></div>
+      </div>
+    </section>
+  </main>
+
+  <nav aria-label="Main" style="display: flex; background: #fff; border-top: 1px solid #E3E5F0; padding: 6px 6px calc(env(safe-area-inset-bottom, 0px) + 10px)">
+    <a href="TeacherToday.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>Today</a>
+    <a href="TeacherRegister.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 12 3 3 5-6"/></svg>Register</a>
+    <a href="TeacherHomework.dc.html" class="tab tap" aria-current="page" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2z"/><path d="M8 7h8"/></svg>Homework</a>
+    <a href="TeacherToday.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Messages</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { sent: false }; }
+  renderVals() {
+    var self = this, sent = this.state.sent;
+    return {
+      btnLabel: sent ? 'Homework set · 25 families notified' : 'Set homework',
+      btnStyle: 'min-height: 52px; border-radius: 16px; border: 0; font: 600 16px Inter, system-ui, sans-serif; cursor: pointer; ' + (sent ? 'background: rgba(47,125,50,.14); color: #1F5E22' : 'background: #3D5BC0; color: #fff'),
+      send: function () { self.setState({ sent: true }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

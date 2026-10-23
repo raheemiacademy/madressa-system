@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Teacher today</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+.app{font-family:'Inter',system-ui,sans-serif;color:#1F2340;font-variant-numeric:tabular-nums}
+.app *{box-sizing:border-box}
+.scroll{overscroll-behavior:contain}
+.tap{touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:transform 120ms cubic-bezier(0.23,1,0.32,1),background-color 120ms ease,color 120ms ease}
+.tap:active{transform:scale(0.97)}
+a{color:inherit;text-decoration:none}
+.tab{color:#5E6380}
+.tab[aria-current="page"]{color:#3D5BC0}
+@media (hover:hover) and (pointer:fine){.row:hover{background:#F1F2FA}}
+@media (prefers-reduced-motion:reduce){.tap:active{transform:none}}
+</style>
+</helmet>
+<div class="app" style="width: 390px; height: 844px; display: flex; flex-direction: column; background: #F5F6FB; overflow: hidden">
+  <header style="padding: calc(env(safe-area-inset-top, 0px) + 18px) 20px 10px; display: flex; align-items: center; gap: 12px">
+    <span style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #5680E9, #8860D0); color: #fff; font-size: 14px; font-weight: 600; display: grid; place-items: center; flex: none">MA</span>
+    <div style="flex: 1; min-width: 0">
+      <div style="font-size: 13px; color: #5E6380">Thursday 22 October</div>
+      <div style="font-size: 17px; font-weight: 600">Ustadha Maryam Ali</div>
+    </div>
+  </header>
+
+  <main class="scroll" style="flex: 1; overflow-y: auto; padding: 6px 20px 20px; display: flex; flex-direction: column; gap: 14px">
+    <section style="{{signCard}}">
+      <div style="flex: 1">
+        <div style="font-size: 13px; color: {{signMuted}}">{{signLabel}}</div>
+        <div style="font-family: 'Fraunces', Georgia, serif; font-size: 26px; line-height: 1.2">{{signTime}}</div>
+      </div>
+      <button class="tap" onClick="{{toggleSign}}" style="{{signBtn}}">{{signAction}}</button>
+    </section>
+
+    <section aria-labelledby="h-classes">
+      <h2 id="h-classes" style="margin: 4px 2px 10px; font-size: 16px; font-weight: 600">Your classes today</h2>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <a href="TeacherRegister.dc.html" class="tap" style="display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 14px; background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; padding: 14px 16px">
+          <span style="font-size: 14px; font-weight: 600; line-height: 1.3">17:00<br><span style="font-weight: 400; color: #5E6380">19:00</span></span>
+          <span style="min-width: 0; display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 16px; font-weight: 600">Maktab 3B</span>
+            <span style="font-size: 13px; color: #5E6380">Room 4 · Quran &amp; Tajweed · 25 students</span>
+            <span style="display: flex; gap: 8px; align-items: center"><span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; background: rgba(198,40,40,.12)">Register not taken</span><span style="font-size: 14px; font-weight: 600; color: #3D5BC0">Take register</span></span>
+          </span>
+        </a>
+        <div style="display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 14px; background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; padding: 14px 16px">
+          <span style="font-size: 14px; font-weight: 600; line-height: 1.3">19:15<br><span style="font-weight: 400; color: #5E6380">20:00</span></span>
+          <span style="min-width: 0; display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 16px; font-weight: 600">Maktab 3B · Seerah</span>
+            <span style="font-size: 13px; color: #5E6380">Room 4 · no register for this session</span>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <section style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <a href="TeacherHomework.dc.html" class="tap" style="background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 13px; color: #5E6380">Homework handed in</span>
+        <span style="font-family: 'Fraunces', Georgia, serif; font-size: 26px">18 <span style="font-family: Inter, sans-serif; font-size: 15px; color: #5E6380">of 25</span></span>
+        <span style="font-size: 12px; color: #5E6380">Surah Al-Mulk · due today</span>
+      </a>
+      <a href="TeacherToday.dc.html" class="tap" style="background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 13px; color: #5E6380">Parent notes</span>
+        <span style="font-family: 'Fraunces', Georgia, serif; font-size: 26px">2</span>
+        <span style="font-size: 12px; color: #5E6380">1 absence, 1 late today</span>
+      </a>
+    </section>
+
+    <a href="TeacherToday.dc.html" class="row tap" style="display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; padding: 14px 16px; min-height: 60px">
+      <span style="width: 36px; height: 36px; border-radius: 10px; background: rgba(136,96,208,.18); display: grid; place-items: center; flex: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1F2340" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.5 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg></span>
+      <span style="flex: 1; font-size: 15px">Award merits to Maktab 3B</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5E6380" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+    </a>
+  </main>
+
+  <nav aria-label="Main" style="display: flex; background: #fff; border-top: 1px solid #E3E5F0; padding: 6px 6px calc(env(safe-area-inset-bottom, 0px) + 10px)">
+    <a href="TeacherToday.dc.html" class="tab tap" aria-current="page" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>Today</a>
+    <a href="TeacherRegister.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 12 3 3 5-6"/></svg>Register</a>
+    <a href="TeacherHomework.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2z"/><path d="M8 7h8"/></svg>Homework</a>
+    <a href="TeacherToday.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Messages</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { signedIn: true }; }
+  renderVals() {
+    var self = this, on = this.state.signedIn;
+    return {
+      signLabel: on ? 'Signed in at' : 'Signed out at',
+      signTime: on ? '16:45' : '20:05',
+      signAction: on ? 'Sign out' : 'Sign in',
+      signMuted: on ? '#B9BEDB' : '#5E6380',
+      signCard: 'display: flex; align-items: center; gap: 12px; border-radius: 22px; padding: 18px 20px; ' + (on ? 'color: #fff; background: radial-gradient(80% 120% at 100% 0%, rgba(90,185,234,.4), transparent 60%), #1C2147' : 'color: #1F2340; background: #fff; border: 1px solid #E3E5F0'),
+      signBtn: 'min-height: 48px; padding: 0 20px; border-radius: 14px; border: 0; font: 600 15px Inter, system-ui, sans-serif; cursor: pointer; ' + (on ? 'background: #84CEEB; color: #1C2147' : 'background: #3D5BC0; color: #fff'),
+      toggleSign: function () { self.setState({ signedIn: !on }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

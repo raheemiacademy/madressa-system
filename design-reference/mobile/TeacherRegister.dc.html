@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Take register</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+.app{font-family:'Inter',system-ui,sans-serif;color:#1F2340;font-variant-numeric:tabular-nums}
+.app *{box-sizing:border-box}
+.scroll{overscroll-behavior:contain}
+.tap{touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:transform 120ms cubic-bezier(0.23,1,0.32,1),background-color 120ms ease,color 120ms ease}
+.tap:active{transform:scale(0.95)}
+.tap:focus-visible{outline:2px solid #5680E9;outline-offset:2px}
+a{color:inherit;text-decoration:none}
+.tab{color:#5E6380}
+.tab[aria-current="page"]{color:#3D5BC0}
+@media (prefers-reduced-motion:reduce){.tap:active{transform:none}}
+</style>
+</helmet>
+<div class="app" style="width: 390px; height: 844px; display: flex; flex-direction: column; background: #F5F6FB; overflow: hidden">
+  <header style="padding: calc(env(safe-area-inset-top, 0px) + 14px) 12px 8px; display: flex; align-items: center; gap: 4px; background: #F5F6FB">
+    <a href="TeacherToday.dc.html" class="tap" aria-label="Back to today" style="width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1F2340" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>
+    </a>
+    <div style="flex: 1; min-width: 0">
+      <h1 style="margin: 0; font-size: 18px; font-weight: 600">Maktab 3B register</h1>
+      <div style="font-size: 13px; color: #5E6380">Thu 22 Oct · 17:00 session</div>
+    </div>
+    <button class="tap" onClick="{{allPresent}}" style="min-height: 40px; padding: 0 12px; border-radius: 12px; border: 1px solid #E3E5F0; background: #fff; font: 500 13px Inter, system-ui, sans-serif; color: #3D5BC0; cursor: pointer; margin-right: 8px">All present</button>
+  </header>
+
+  <div role="status" aria-live="polite" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 4px 20px 10px">
+    <div style="background: rgba(90,185,234,.18); border-radius: 14px; padding: 8px 12px"><div style="font-size: 12px; color: #3B4060">Present</div><div style="font-size: 20px; font-weight: 600">{{nP}}</div></div>
+    <div style="background: rgba(132,206,235,.32); border-radius: 14px; padding: 8px 12px"><div style="font-size: 12px; color: #3B4060">Late</div><div style="font-size: 20px; font-weight: 600">{{nL}}</div></div>
+    <div style="background: rgba(136,96,208,.18); border-radius: 14px; padding: 8px 12px"><div style="font-size: 12px; color: #3B4060">Absent</div><div style="font-size: 20px; font-weight: 600">{{nA}}</div></div>
+  </div>
+
+  <main class="scroll" style="flex: 1; overflow-y: auto; padding: 0 20px 16px">
+    <ul style="list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; overflow: hidden">
+      <sc-for list="{{students}}" as="s" hint-placeholder-count="10">
+        <li style="display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 16px; border-bottom: 1px solid #EEF0F6; min-height: 64px">
+          <span style="flex: 1; min-width: 0">
+            <span style="display: block; font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{s.name}}</span>
+            <sc-if value="{{s.note}}" hint-placeholder-val="{{false}}"><span style="display: block; font-size: 12px; color: #6B46B8">{{s.note}}</span></sc-if>
+          </span>
+          <span role="radiogroup" aria-label="{{s.name}}" style="display: flex; gap: 4px; flex: none">
+            <button class="tap" role="radio" aria-checked="{{s.pOn}}" aria-label="Present" onClick="{{s.setP}}" style="{{s.pStyle}}">P</button>
+            <button class="tap" role="radio" aria-checked="{{s.lOn}}" aria-label="Late" onClick="{{s.setL}}" style="{{s.lStyle}}">L</button>
+            <button class="tap" role="radio" aria-checked="{{s.aOn}}" aria-label="Absent" onClick="{{s.setA}}" style="{{s.aStyle}}">A</button>
+          </span>
+        </li>
+      </sc-for>
+    </ul>
+  </main>
+
+  <div style="padding: 10px 20px calc(env(safe-area-inset-bottom, 0px) + 14px); background: #fff; border-top: 1px solid #E3E5F0">
+    <button class="tap" onClick="{{save}}" style="{{saveStyle}}">{{saveLabel}}</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { marks: { 'Inaya Saleem': 'A' }, saved: false };
+  }
+  renderVals() {
+    var self = this;
+    var names = ['Maryam Akhtar', 'Ayaan Malik', 'Daniyal Hussain', 'Eesa Rahim', 'Fatimah Zahra Iqbal', 'Hamza Javed', 'Inaya Saleem', 'Mikail Raza', 'Ruqayyah Ahmed', 'Sumaya Haider', 'Yahya Bashir', 'Zara Qadir'];
+    var notes = { 'Inaya Saleem': 'Parent: absent today (dentist)', 'Hamza Javed': 'Parent: running 15 min late' };
+    var count = { P: 0, L: 0, A: 0 };
+    var btn = function (on, k) {
+      var on_bg = k === 'P' ? '#5AB9EA' : k === 'L' ? '#84CEEB' : '#8860D0';
+      var on_fg = k === 'A' ? '#fff' : '#1C2147';
+      return 'width: 44px; height: 44px; border-radius: 12px; font: 600 15px Inter, system-ui, sans-serif; cursor: pointer; ' + (on ? 'background: ' + on_bg + '; color: ' + on_fg + '; border: 0' : 'background: #fff; color: #5E6380; border: 1px solid #E3E5F0');
+    };
+    var set = function (n, k) { return function () { var m = Object.assign({}, self.state.marks); m[n] = k; self.setState({ marks: m, saved: false }); }; };
+    var students = names.map(function (n) {
+      var k = self.state.marks[n] || 'P';
+      count[k]++;
+      return {
+        name: n, note: notes[n] || '',
+        pOn: k === 'P' ? 'true' : 'false', lOn: k === 'L' ? 'true' : 'false', aOn: k === 'A' ? 'true' : 'false',
+        pStyle: btn(k === 'P', 'P'), lStyle: btn(k === 'L', 'L'), aStyle: btn(k === 'A', 'A'),
+        setP: set(n, 'P'), setL: set(n, 'L'), setA: set(n, 'A')
+      };
+    });
+    var saved = this.state.saved;
+    return {
+      students: students, nP: count.P, nL: count.L, nA: count.A,
+      saveLabel: saved ? 'Register saved · parents of absent students notified' : 'Save register',
+      saveStyle: 'width: 100%; min-height: 52px; border-radius: 16px; border: 0; font: 600 16px Inter, system-ui, sans-serif; cursor: pointer; ' + (saved ? 'background: rgba(47,125,50,.14); color: #1F5E22' : 'background: #3D5BC0; color: #fff'),
+      save: function () { self.setState({ saved: true }); },
+      allPresent: function () { self.setState({ marks: {}, saved: false }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

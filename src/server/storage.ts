@@ -1,0 +1,46 @@
+import { randomUUID } from 'node:crypto';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import type { DbOrTx } from '@/db';
+import { fileObject } from '@/db/schema';
+
+// shortcut: local-disk driver only; the S3 driver from DECISIONS.md lands with Phase 9 deployment work.
+const root = () => path.resolve(process.env.STORAGE_LOCAL_DIR ?? './storage');
+const pathFor = (key: string) => {
+  const p = path.join(root(), key);
+  if (!p.startsWith(root() + path.sep)) throw new Error('Bad storage key');
+  return p;
+};
+
+export const readStored = (key: string) => readFile(pathFor(key));
+export const removeStored = (key: string) => rm(pathFor(key), { force: true });
+
+/** Detects the real type from the file's first bytes — the browser-supplied type is not trusted. */
+export function sniffMime(b: Buffer): string | null {
+  if (b.length >= 8 && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return 'image/png';
+  if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
+  if (b.length >= 12 && b.toString('latin1', 0, 4) === 'RIFF' && b.toString('latin1', 8, 12) === 'WEBP') return 'image/webp';
+  if (b.length >= 12 && b.toString('latin1', 4, 8) === 'ftyp') return 'video/mp4';
+  if (b.length >= 4 && b.readUInt32BE(0) === 0x1a45dfa3) return 'video/webm';
+  return null;
+}
+
+export const UPLOAD_RULES = {
+  image: { mimes: ['image/png', 'image/jpeg', 'image/webp'], maxBytes: 5 * 1024 * 1024, label: 'a PNG, JPEG or WebP image up to 5 MB' },
+  video: { mimes: ['video/mp4', 'video/webm'], maxBytes: 20 * 1024 * 1024, label: 'an MP4 or WebM video up to 20 MB' }
+} as const;
+
+export type UploadKind = keyof typeof UPLOAD_RULES;
+
+export async function storeUpload(db: DbOrTx, file: File, kind: UploadKind, purpose: string, createdBy: number | null) {
+  const rule = UPLOAD_RULES[kind];
+  if (file.size > rule.maxBytes) return { ok: false as const, error: `Upload ${rule.label}.` };
+  const buf = Buffer.from(await file.arrayBuffer());
+  const mime = sniffMime(buf);
+  if (!mime || !(rule.mimes as readonly string[]).includes(mime)) return { ok: false as const, error: `Upload ${rule.label}.` };
+  const key = `${purpose}/${randomUUID()}`;
+  await mkdir(path.dirname(pathFor(key)), { recursive: true });
+  await writeFile(pathFor(key), buf);
+  const [row] = await db.insert(fileObject).values({ storageKey: key, filename: file.name.slice(0, 200) || 'upload', mime, size: buf.length, purpose, createdBy }).returning();
+  return { ok: true as const, file: row! };
+}

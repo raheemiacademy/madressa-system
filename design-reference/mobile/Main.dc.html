@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Admin home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+.app{font-family:'Inter',system-ui,sans-serif;color:#1F2340}
+.app *{box-sizing:border-box}
+.scroll{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.tap{touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:transform 120ms cubic-bezier(0.23,1,0.32,1),background-color 120ms ease}
+.tap:active{transform:scale(0.97)}
+a{color:inherit;text-decoration:none}
+.tab{color:#5E6380}
+.tab[aria-current="page"]{color:#3D5BC0}
+@media (hover:hover) and (pointer:fine){.row:hover{background:#F1F2FA}}
+@media (prefers-reduced-motion:reduce){.tap:active{transform:none}}
+</style>
+</helmet>
+<div class="app" style="width: 390px; height: 844px; display: flex; flex-direction: column; background: #F5F6FB; overflow: hidden">
+  <header style="padding: calc(env(safe-area-inset-top, 0px) + 18px) 20px 10px; display: flex; align-items: center; gap: 12px">
+    <div style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #5680E9, #8860D0); display: grid; place-items: center; flex: none">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10 12 4l9 6"/><path d="M5 10v9h14v-9"/><path d="M10 19v-5h4v5"/></svg>
+    </div>
+    <div style="flex: 1; min-width: 0">
+      <div style="font-size: 13px; color: #5E6380">Academy admin</div>
+      <div style="font-size: 17px; font-weight: 600">Thursday 22 October</div>
+    </div>
+    <a href="AdminStudents.dc.html" class="tap" aria-label="Search" style="width: 44px; height: 44px; border-radius: 14px; background: #fff; border: 1px solid #E3E5F0; display: grid; place-items: center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F2340" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    </a>
+    <a href="Main.dc.html" class="tap" aria-label="Notifications, 4 new" style="width: 44px; height: 44px; border-radius: 14px; background: #fff; border: 1px solid #E3E5F0; display: grid; place-items: center; position: relative">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F2340" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      <span style="position: absolute; top: -5px; right: -5px; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: #8860D0; color: #fff; font-size: 12px; font-weight: 600; display: grid; place-items: center; border: 2px solid #F5F6FB">4</span>
+    </a>
+  </header>
+
+  <main class="scroll" style="flex: 1; overflow-y: auto; padding: 6px 20px 20px; display: flex; flex-direction: column; gap: 14px">
+    <section style="border-radius: 22px; padding: 20px; color: #fff; background: radial-gradient(80% 120% at 100% 0%, rgba(90,185,234,.45), transparent 60%), radial-gradient(70% 120% at 0% 100%, rgba(136,96,208,.5), transparent 60%), #1C2147">
+      <h1 style="margin: 0 0 6px; font-family: 'Fraunces', Georgia, serif; font-weight: 400; font-size: 26px; line-height: 1.2">Good evening</h1>
+      <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #E6E8F5">Attendance is <b style="color: #84CEEB; font-weight: 600">93.2%</b> today. <b style="color: #84CEEB; font-weight: 600">46</b> invoices are overdue, with <b style="color: #84CEEB; font-weight: 600">£8,420</b> outstanding.</p>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 16px">
+        <a href="Main.dc.html" class="tap" style="min-height: 44px; border-radius: 12px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; font-weight: 500">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#84CEEB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>Registers</a>
+        <a href="AdminFees.dc.html" class="tap" style="min-height: 44px; border-radius: 12px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; font-weight: 500">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#84CEEB" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Record payment</a>
+      </div>
+    </section>
+
+    <section aria-label="Needs attention" style="background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; overflow: hidden">
+      <a href="Main.dc.html" class="row tap" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; min-height: 60px; border-bottom: 1px solid #EEF0F6">
+        <span style="width: 36px; height: 36px; border-radius: 10px; background: rgba(90,185,234,.2); display: grid; place-items: center; flex: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1F2340" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/></svg></span>
+        <span style="flex: 1; font-size: 15px; line-height: 1.35"><b style="font-weight: 600">4</b> parents reported an absence today</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5E6380" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+      </a>
+      <a href="Main.dc.html" class="row tap" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; min-height: 60px">
+        <span style="width: 36px; height: 36px; border-radius: 10px; background: rgba(136,96,208,.2); display: grid; place-items: center; flex: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1F2340" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span>
+        <span style="flex: 1; font-size: 15px; line-height: 1.35"><b style="font-weight: 600">3</b> holiday requests to decide</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5E6380" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+      </a>
+    </section>
+
+    <section aria-label="Today at a glance" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <a href="AdminStudents.dc.html" class="tap" style="background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 13px; color: #5E6380">Current students</span>
+        <span style="font-family: 'Fraunces', Georgia, serif; font-size: 28px; line-height: 1.1">214</span>
+        <span style="font-size: 12px; color: #2F7D32; font-weight: 500">+6 this week</span>
+      </a>
+      <a href="Main.dc.html" class="tap" style="background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 13px; color: #5E6380">Attendance</span>
+        <span style="font-family: 'Fraunces', Georgia, serif; font-size: 28px; line-height: 1.1">93.2%</span>
+        <span style="font-size: 12px; color: #2F7D32; font-weight: 500">+2.2 pts on last week</span>
+      </a>
+      <a href="AdminFees.dc.html" class="tap" style="background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 13px; color: #5E6380">Fees outstanding</span>
+        <span style="font-family: 'Fraunces', Georgia, serif; font-size: 28px; line-height: 1.1">£8,420</span>
+        <span style="font-size: 12px; color: #5E6380">46 invoices overdue</span>
+      </a>
+      <a href="Main.dc.html" class="tap" style="background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 13px; color: #5E6380">Teachers in</span>
+        <span style="font-family: 'Fraunces', Georgia, serif; font-size: 28px; line-height: 1.1">9 <span style="font-family: 'Inter', sans-serif; font-size: 15px; color: #5E6380">of 12</span></span>
+        <span style="font-size: 12px; color: #5E6380">3 not signed in yet</span>
+      </a>
+    </section>
+
+    <section aria-labelledby="h-msg" style="background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; padding: 6px 0">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px 4px">
+        <h2 id="h-msg" style="margin: 0; font-size: 16px; font-weight: 600">Unread messages</h2>
+        <a href="Main.dc.html" class="tap" style="font-size: 14px; font-weight: 500; color: #3D5BC0; min-height: 44px; display: grid; place-items: center; padding: 0 4px">See all</a>
+      </div>
+      <a href="Main.dc.html" class="row tap" style="display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; padding: 10px 16px; align-items: center">
+        <span style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #5AB9EA, #5680E9); color: #fff; font-size: 13px; font-weight: 600; display: grid; place-items: center">FS</span>
+        <span style="min-width: 0"><span style="display: block; font-weight: 600; font-size: 15px">Fatima Siddiqui</span><span style="display: block; font-size: 13px; color: #5E6380; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Yusuf away Thursday — dentist appointment</span></span>
+        <span style="font-size: 12px; color: #5E6380">17:42</span>
+      </a>
+      <a href="Main.dc.html" class="row tap" style="display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; padding: 10px 16px; align-items: center">
+        <span style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #5680E9, #8860D0); color: #fff; font-size: 13px; font-weight: 600; display: grid; place-items: center">BK</span>
+        <span style="min-width: 0"><span style="display: block; font-weight: 600; font-size: 15px">Ustadh Bilal Karim</span><span style="display: block; font-size: 13px; color: #5E6380; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Hifz register wasn’t saving on the tablet</span></span>
+        <span style="font-size: 12px; color: #5E6380">16:58</span>
+      </a>
+    </section>
+
+    <a href="AdminDrill.dc.html" class="tap" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 18px; border: 1px solid rgba(198,40,40,.25); background: rgba(198,40,40,.06); min-height: 60px">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B42318" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c2 3 5 5 5 9a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3 1-5 1-7.5z"/></svg>
+      <span style="flex: 1; font-size: 15px; font-weight: 500; color: #B42318">Fire drill</span>
+      <span style="font-size: 13px; color: #5E6380">Hold to start</span>
+    </a>
+  </main>
+
+  <nav aria-label="Main" style="display: flex; background: #fff; border-top: 1px solid #E3E5F0; padding: 6px 6px calc(env(safe-area-inset-bottom, 0px) + 10px)">
+    <a href="Main.dc.html" class="tab tap" aria-current="page" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10 12 4l9 6"/><path d="M5 10v10h14V10"/></svg>Home</a>
+    <a href="AdminStudents.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M17 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/></svg>Students</a>
+    <a href="AdminFees.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 6a4 4 0 0 0-7 2.6V19H7m11 0H10M7 12h7"/></svg>Fees</a>
+    <a href="Main.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Messages</a>
+    <a href="Main.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>More</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

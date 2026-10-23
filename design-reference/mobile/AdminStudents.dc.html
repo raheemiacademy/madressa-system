@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Admin students</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+.app{font-family:'Inter',system-ui,sans-serif;color:#1F2340}
+.app *{box-sizing:border-box}
+.scroll{overscroll-behavior:contain}
+.tap{touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:transform 120ms cubic-bezier(0.23,1,0.32,1),background-color 120ms ease,color 120ms ease}
+.tap:active{transform:scale(0.97)}
+a{color:inherit;text-decoration:none}
+.tab{color:#5E6380}
+.tab[aria-current="page"]{color:#3D5BC0}
+.chips{scroll-snap-type:x proximity;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{scroll-snap-align:start}
+input{font-size:16px}
+input:focus-visible{outline:2px solid #5680E9;outline-offset:1px}
+@media (hover:hover) and (pointer:fine){.row:hover{background:#F1F2FA}}
+@media (prefers-reduced-motion:reduce){.tap:active{transform:none}}
+</style>
+</helmet>
+<div class="app" style="width: 390px; height: 844px; display: flex; flex-direction: column; background: #F5F6FB; overflow: hidden">
+  <header style="padding: calc(env(safe-area-inset-top, 0px) + 18px) 20px 8px; display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <h1 style="margin: 0; font-family: 'Fraunces', Georgia, serif; font-weight: 400; font-size: 28px">Students</h1>
+      <button class="tap" aria-label="Add student" style="width: 44px; height: 44px; border-radius: 14px; border: 0; background: #3D5BC0; display: grid; place-items: center; cursor: pointer">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </div>
+    <label style="position: relative; display: block">
+      <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search students</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5E6380" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="position: absolute; left: 14px; top: 15px"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" name="q" enterkeyhint="search" autocomplete="off" autocapitalize="words" placeholder="Name, ID or class…" value="{{query}}" onInput="{{onQuery}}" style="width: 100%; min-height: 48px; border-radius: 14px; border: 1px solid #E3E5F0; background: #fff; padding: 0 14px 0 42px; font-family: inherit; color: #1F2340">
+    </label>
+    <div class="chips" role="group" aria-label="Filter by status" style="display: flex; gap: 8px; overflow-x: auto; margin: 0 -20px; padding: 0 20px 2px">
+      <sc-for list="{{filters}}" as="f" hint-placeholder-count="4">
+        <button class="chip tap" aria-pressed="{{f.pressed}}" onClick="{{f.pick}}" style="{{f.style}}">{{f.label}}<span style="font-weight: 600">{{f.count}}</span></button>
+      </sc-for>
+    </div>
+  </header>
+
+  <main class="scroll" style="flex: 1; overflow-y: auto; padding: 6px 20px 20px">
+    <div style="font-size: 13px; color: #5E6380; padding: 4px 2px 8px">{{summary}}</div>
+    <ul style="list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; overflow: hidden">
+      <sc-for list="{{rows}}" as="s" hint-placeholder-count="8">
+        <li style="border-bottom: 1px solid #EEF0F6">
+          <a href="AdminStudents.dc.html" class="row tap" style="display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 16px; min-height: 64px">
+            <span style="{{s.avatar}}">{{s.initials}}</span>
+            <span style="min-width: 0"><span style="display: block; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{s.name}}</span><span style="display: block; font-size: 13px; color: #5E6380">{{s.meta}}</span></span>
+            <span style="{{s.chip}}">{{s.status}}</span>
+          </a>
+        </li>
+      </sc-for>
+    </ul>
+    <sc-if value="{{empty}}" hint-placeholder-val="{{false}}">
+      <p style="text-align: center; color: #5E6380; font-size: 14px; padding: 24px 8px; margin: 0">No students match. Try a different name or status.</p>
+    </sc-if>
+  </main>
+
+  <nav aria-label="Main" style="display: flex; background: #fff; border-top: 1px solid #E3E5F0; padding: 6px 6px calc(env(safe-area-inset-bottom, 0px) + 10px)">
+    <a href="Main.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10 12 4l9 6"/><path d="M5 10v10h14V10"/></svg>Home</a>
+    <a href="AdminStudents.dc.html" class="tab tap" aria-current="page" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M17 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/></svg>Students</a>
+    <a href="AdminFees.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 6a4 4 0 0 0-7 2.6V19H7m11 0H10M7 12h7"/></svg>Fees</a>
+    <a href="Main.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Messages</a>
+    <a href="Main.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>More</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { status: 'All', query: '' }; }
+  renderVals() {
+    var people = [
+      ['Yusuf Siddiqui', 'S-1042', 'Maktab 2B', 'Current'],
+      ['Amina Hussain', 'S-1043', 'Maktab 1A', 'Current'],
+      ['Zayd Chowdhury', 'S-1051', 'Maktab 3A', 'Current'],
+      ['Hana Patel', 'S-1058', 'Hifz A', 'Current'],
+      ['Ibrahim Khan', 'S-1063', 'Maktab 1B', 'Accepted'],
+      ['Maryam Akhtar', 'S-1067', 'Maktab 3B', 'Current'],
+      ['Adam Yousaf', 'S-1080', 'Alimiyyah', 'On hold'],
+      ['Harun Aziz', 'S-1090', 'No class yet', 'Waiting list'],
+      ['Noor Fatima', 'S-1091', 'No class yet', 'Waiting list'],
+      ['Safiya Begum', 'S-1074', 'Alimiyyah', 'Current']
+    ];
+    var colours = { 'Current': '#2F7D32', 'Accepted': '#5AB9EA', 'On hold': '#8860D0', 'Waiting list': '#5680E9' };
+    var grads = ['#5AB9EA,#5680E9', '#5680E9,#8860D0', '#84CEEB,#5AB9EA', '#8860D0,#5680E9'];
+    var self = this;
+    var q = this.state.query.trim().toLowerCase();
+    var statuses = ['All', 'Current', 'Waiting list', 'Accepted', 'On hold'];
+    var filters = statuses.map(function (st) {
+      var n = st === 'All' ? people.length : people.filter(function (p) { return p[3] === st; }).length;
+      var on = self.state.status === st;
+      return {
+        label: st, count: n, pressed: on ? 'true' : 'false',
+        pick: function () { self.setState({ status: st }); },
+        style: 'flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 999px; font: 500 14px Inter, system-ui, sans-serif; cursor: pointer; white-space: nowrap; ' + (on ? 'background: #3D5BC0; color: #fff; border: 1px solid #3D5BC0' : 'background: #fff; color: #1F2340; border: 1px solid #E3E5F0')
+      };
+    });
+    var rows = people.filter(function (p) {
+      return (self.state.status === 'All' || p[3] === self.state.status) && (!q || (p[0] + ' ' + p[1] + ' ' + p[2]).toLowerCase().indexOf(q) > -1);
+    }).map(function (p, i) {
+      var parts = p[0].split(' ');
+      var c = colours[p[3]] || '#C1C8E4';
+      return {
+        name: p[0], meta: p[1] + ' · ' + p[2], status: p[3],
+        initials: (parts[0][0] + parts[parts.length - 1][0]).toUpperCase(),
+        avatar: 'width: 40px; height: 40px; border-radius: 50%; color: #fff; font-size: 13px; font-weight: 600; display: grid; place-items: center; background: linear-gradient(135deg,' + grads[i % 4] + ')',
+        chip: 'font-size: 12px; padding: 4px 10px; border-radius: 999px; white-space: nowrap; color: #1F2340; background: color-mix(in srgb, ' + c + ' 16%, transparent)'
+      };
+    });
+    return {
+      filters: filters, rows: rows, query: this.state.query, empty: rows.length === 0,
+      summary: rows.length + (rows.length === 1 ? ' student' : ' students') + (this.state.status === 'All' ? '' : ' · ' + this.state.status),
+      onQuery: function (e) { self.setState({ query: e.target.value }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

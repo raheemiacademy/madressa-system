@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Parent home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+.app{font-family:'Inter',system-ui,sans-serif;color:#1F2340;font-variant-numeric:tabular-nums}
+.app *{box-sizing:border-box}
+.scroll{overscroll-behavior:contain}
+.tap{touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:transform 120ms cubic-bezier(0.23,1,0.32,1),background-color 120ms ease,color 120ms ease}
+.tap:active{transform:scale(0.97)}
+.tap:focus-visible{outline:2px solid #5680E9;outline-offset:2px}
+a{color:inherit;text-decoration:none}
+.tab{color:#5E6380}
+.tab[aria-current="page"]{color:#3D5BC0}
+@media (hover:hover) and (pointer:fine){.row:hover{background:#F1F2FA}}
+@media (prefers-reduced-motion:reduce){.tap:active{transform:none}}
+</style>
+</helmet>
+<div class="app" style="width: 390px; height: 844px; display: flex; flex-direction: column; background: #F5F6FB; overflow: hidden">
+  <header style="padding: calc(env(safe-area-inset-top, 0px) + 18px) 20px 10px; display: flex; align-items: center; gap: 12px">
+    <div style="flex: 1">
+      <div style="font-size: 13px; color: #5E6380">Thursday 22 October</div>
+      <h1 style="margin: 0; font-family: 'Fraunces', Georgia, serif; font-weight: 400; font-size: 26px">Hello, Fatima</h1>
+    </div>
+    <a href="ParentHome.dc.html" class="tap" aria-label="Messages, 1 unread" style="width: 44px; height: 44px; border-radius: 14px; background: #fff; border: 1px solid #E3E5F0; display: grid; place-items: center; position: relative">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F2340" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+      <span style="position: absolute; top: -5px; right: -5px; min-width: 20px; height: 20px; border-radius: 10px; background: #8860D0; color: #fff; font-size: 12px; font-weight: 600; display: grid; place-items: center; border: 2px solid #F5F6FB">1</span>
+    </a>
+  </header>
+
+  <main class="scroll" style="flex: 1; overflow-y: auto; padding: 4px 20px 20px; display: flex; flex-direction: column; gap: 14px">
+    <div role="tablist" aria-label="Choose child" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+      <sc-for list="{{kids}}" as="k" hint-placeholder-count="2">
+        <button role="tab" class="tap" aria-selected="{{k.sel}}" onClick="{{k.pick}}" style="{{k.style}}">
+          <span style="{{k.avatar}}">{{k.initial}}</span>
+          <span style="text-align: left; min-width: 0"><span style="display: block; font-size: 15px; font-weight: 600">{{k.name}}</span><span style="display: block; font-size: 12px; opacity: .8">{{k.cls}}</span></span>
+        </button>
+      </sc-for>
+    </div>
+
+    <section style="border-radius: 22px; padding: 18px 20px; color: #fff; background: radial-gradient(80% 120% at 100% 0%, rgba(90,185,234,.42), transparent 60%), radial-gradient(70% 120% at 0% 100%, rgba(136,96,208,.45), transparent 60%), #1C2147; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px">
+        <div><div style="font-size: 13px; color: #B9BEDB">Next class</div><div style="font-size: 17px; font-weight: 600; margin-top: 2px">{{next}}</div></div>
+        <span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; background: rgba(132,206,235,.2); color: #84CEEB; white-space: nowrap">{{teacher}}</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+        <div><div style="font-family: 'Fraunces', Georgia, serif; font-size: 24px">{{att}}</div><div style="font-size: 12px; color: #B9BEDB">attendance</div></div>
+        <div><div style="font-family: 'Fraunces', Georgia, serif; font-size: 24px">{{hw}}</div><div style="font-size: 12px; color: #B9BEDB">homework due</div></div>
+        <div><div style="font-family: 'Fraunces', Georgia, serif; font-size: 24px">{{merits}}</div><div style="font-size: 12px; color: #B9BEDB">merits</div></div>
+      </div>
+    </section>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <a href="ParentAbsence.dc.html" class="tap" style="background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; padding: 14px 16px; min-height: 88px; display: flex; flex-direction: column; justify-content: space-between">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3D5BC0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <span style="font-size: 15px; font-weight: 500">Report absent or late</span>
+      </a>
+      <a href="ParentHome.dc.html" class="tap" style="background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; padding: 14px 16px; min-height: 88px; display: flex; flex-direction: column; justify-content: space-between">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3D5BC0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+        <span style="font-size: 15px; font-weight: 500">Request a holiday</span>
+      </a>
+    </div>
+
+    <a href="ParentFees.dc.html" class="row tap" style="display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; padding: 14px 16px; min-height: 68px">
+      <span style="width: 40px; height: 40px; border-radius: 12px; background: rgba(136,96,208,.16); display: grid; place-items: center; flex: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F2340" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 6a4 4 0 0 0-7 2.6V19H7m11 0H10M7 12h7"/></svg></span>
+      <span style="flex: 1"><span style="display: block; font-size: 15px; font-weight: 600">£45 due on 1 November</span><span style="display: block; font-size: 13px; color: #5E6380">November fees · both children</span></span>
+      <span style="font-size: 14px; font-weight: 600; color: #3D5BC0">Pay</span>
+    </a>
+
+    <section aria-labelledby="h-notices" style="background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px">
+      <h2 id="h-notices" style="margin: 0; font-size: 16px; font-weight: 600">From the school</h2>
+      <div style="display: flex; gap: 12px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #5AB9EA; margin-top: 7px; flex: none"></span><span style="font-size: 14px; line-height: 1.5">Half-term: no classes 26–30 October. Classes restart Monday 2 November.</span></div>
+      <div style="display: flex; gap: 12px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #8860D0; margin-top: 7px; flex: none"></span><span style="font-size: 14px; line-height: 1.5">Museum trip on 14 November — please opt in and give consent by 7 November.</span></div>
+    </section>
+  </main>
+
+  <nav aria-label="Main" style="display: flex; background: #fff; border-top: 1px solid #E3E5F0; padding: 6px 6px calc(env(safe-area-inset-bottom, 0px) + 10px)">
+    <a href="ParentHome.dc.html" class="tab tap" aria-current="page" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10 12 4l9 6"/><path d="M5 10v10h14V10"/></svg>Home</a>
+    <a href="ParentAbsence.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 12 3 3 5-6"/></svg>Attendance</a>
+    <a href="ParentFees.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 6a4 4 0 0 0-7 2.6V19H7m11 0H10M7 12h7"/></svg>Fees</a>
+    <a href="ParentHomework.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2z"/><path d="M8 7h8"/></svg>Homework</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { kid: 0 }; }
+  renderVals() {
+    var self = this;
+    var data = [
+      { name: 'Yusuf', cls: 'Maktab 2B', next: 'Today, 17:00 · Room 2', teacher: 'Ustadha Khadija', att: '94.0%', hw: '1', merits: '12', grad: '#5AB9EA,#5680E9' },
+      { name: 'Amina', cls: 'Maktab 1A', next: 'Today, 17:00 · Room 1', teacher: 'Ustadha Hafsa', att: '96.8%', hw: '0', merits: '9', grad: '#5680E9,#8860D0' }
+    ];
+    var cur = data[this.state.kid];
+    return {
+      kids: data.map(function (k, i) {
+        var on = self.state.kid === i;
+        return {
+          name: k.name, cls: k.cls, initial: k.name[0], sel: on ? 'true' : 'false',
+          pick: function () { self.setState({ kid: i }); },
+          style: 'display: flex; align-items: center; gap: 10px; min-height: 60px; padding: 8px 12px; border-radius: 16px; cursor: pointer; font-family: inherit; ' + (on ? 'background: #fff; border: 2px solid #3D5BC0; color: #1F2340' : 'background: #fff; border: 1px solid #E3E5F0; color: #5E6380'),
+          avatar: 'width: 36px; height: 36px; border-radius: 50%; color: #fff; font-weight: 600; font-size: 14px; display: grid; place-items: center; flex: none; background: linear-gradient(135deg,' + k.grad + ')'
+        };
+      }),
+      next: cur.next, teacher: cur.teacher, att: cur.att, hw: cur.hw, merits: cur.merits
+    };
+  }
+}
+</script>
+</body>
+</html>

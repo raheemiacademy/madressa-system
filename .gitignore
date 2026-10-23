@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+coverage/
+playwright-report/
+test-results/
+.env
+.env.local
+.env.*.local
+.pg-local-secret
+storage/
+backups/
+*.log
+next-env.d.ts
+tsconfig.tsbuildinfo
+screenshots/

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Report absence</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+.app{font-family:'Inter',system-ui,sans-serif;color:#1F2340}
+.app *{box-sizing:border-box}
+.scroll{overscroll-behavior:contain}
+.tap{touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:transform 120ms cubic-bezier(0.23,1,0.32,1),background-color 120ms ease,color 120ms ease}
+.tap:active{transform:scale(0.97)}
+.tap:focus-visible{outline:2px solid #5680E9;outline-offset:2px}
+a{color:inherit;text-decoration:none}
+.tab{color:#5E6380}
+.tab[aria-current="page"]{color:#3D5BC0}
+.inp{font:400 16px Inter,system-ui,sans-serif;color:#1F2340;background:#fff;border:1px solid #D9DCEA;border-radius:12px;min-height:48px;padding:0 14px;width:100%}
+textarea.inp{padding:12px 14px;min-height:96px;resize:vertical;line-height:1.5}
+.inp:focus-visible{outline:2px solid #5680E9;outline-offset:1px;border-color:#5680E9}
+@media (prefers-reduced-motion:reduce){.tap:active{transform:none}}
+</style>
+</helmet>
+<div class="app" style="width: 390px; height: 844px; display: flex; flex-direction: column; background: #F5F6FB; overflow: hidden">
+  <header style="padding: calc(env(safe-area-inset-top, 0px) + 14px) 12px 8px; display: flex; align-items: center; gap: 4px">
+    <a href="ParentHome.dc.html" class="tap" aria-label="Back to home" style="width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1F2340" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>
+    </a>
+    <h1 style="margin: 0; font-size: 18px; font-weight: 600">Let the school know</h1>
+  </header>
+
+  <sc-if value="{{editing}}" hint-placeholder-val="{{true}}">
+    <main class="scroll" style="flex: 1; overflow-y: auto; padding: 6px 20px 20px; display: flex; flex-direction: column; gap: 18px">
+      <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
+        <legend style="font-size: 14px; font-weight: 500; margin-bottom: 8px; padding: 0">Who</legend>
+        <sc-for list="{{kids}}" as="k" hint-placeholder-count="2">
+          <button class="tap" role="radio" aria-checked="{{k.on}}" onClick="{{k.pick}}" style="{{k.style}}">
+            <span style="{{k.dot}}"></span>
+            <span style="flex: 1; text-align: left"><span style="display: block; font-size: 15px; font-weight: 600">{{k.name}}</span><span style="display: block; font-size: 13px; color: #5E6380">{{k.cls}}</span></span>
+          </button>
+        </sc-for>
+      </fieldset>
+
+      <fieldset style="border: 0; margin: 0; padding: 0">
+        <legend style="font-size: 14px; font-weight: 500; margin-bottom: 8px; padding: 0">Today they will be</legend>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; background: #E9EBF5; border-radius: 14px">
+          <button class="tap" role="radio" aria-checked="{{absOn}}" onClick="{{setAbs}}" style="{{absStyle}}">Absent</button>
+          <button class="tap" role="radio" aria-checked="{{lateOn}}" onClick="{{setLate}}" style="{{lateStyle}}">Late</button>
+        </div>
+      </fieldset>
+
+      <sc-if value="{{isLate}}" hint-placeholder-val="{{false}}">
+        <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 14px; font-weight: 500">Expected arrival</span><input class="inp" type="time" name="arrival" value="17:20"></label>
+      </sc-if>
+
+      <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 14px; font-weight: 500">Reason <span style="font-weight: 400; color: #5E6380">(optional)</span></span>
+        <textarea class="inp" name="reason" enterkeyhint="send" placeholder="For example, a dentist appointment…"></textarea>
+      </label>
+
+      <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #5E6380">This goes straight to the class teacher and the office. The office decides whether it counts as authorised.</p>
+    </main>
+    <div style="padding: 10px 20px calc(env(safe-area-inset-bottom, 0px) + 14px); background: #fff; border-top: 1px solid #E3E5F0">
+      <button class="tap" onClick="{{send}}" style="width: 100%; min-height: 52px; border-radius: 16px; border: 0; background: #3D5BC0; color: #fff; font: 600 16px Inter, system-ui, sans-serif; cursor: pointer">{{sendLabel}}</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{sent}}" hint-placeholder-val="{{false}}">
+    <main role="status" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 0 32px; text-align: center">
+      <span style="width: 72px; height: 72px; border-radius: 50%; background: rgba(90,185,234,.2); display: grid; place-items: center">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#3D5BC0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+      </span>
+      <h2 style="margin: 0; font-family: 'Fraunces', Georgia, serif; font-weight: 400; font-size: 26px">Sent</h2>
+      <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #5E6380">{{doneText}}</p>
+      <a href="ParentHome.dc.html" class="tap" style="min-height: 48px; padding: 0 22px; border-radius: 14px; border: 1px solid #E3E5F0; background: #fff; display: grid; place-items: center; font-weight: 600; font-size: 15px">Back to home</a>
+    </main>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { kid: 0, kind: 'absent', sent: false }; }
+  renderVals() {
+    var self = this;
+    var kids = [{ name: 'Yusuf', cls: 'Maktab 2B · Ustadha Khadija Noor' }, { name: 'Amina', cls: 'Maktab 1A · Ustadha Hafsa Malik' }];
+    var seg = function (on) { return 'min-height: 44px; border: 0; border-radius: 10px; font: 600 15px Inter, system-ui, sans-serif; cursor: pointer; ' + (on ? 'background: #fff; color: #1F2340; box-shadow: 0 1px 3px rgba(28,33,71,.12)' : 'background: transparent; color: #5E6380'); };
+    var k = kids[this.state.kid], late = this.state.kind === 'late';
+    return {
+      editing: !this.state.sent, sent: this.state.sent, isLate: late,
+      kids: kids.map(function (c, i) {
+        var on = self.state.kid === i;
+        return {
+          name: c.name, cls: c.cls, on: on ? 'true' : 'false', pick: function () { self.setState({ kid: i }); },
+          style: 'display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 14px; border-radius: 16px; background: #fff; cursor: pointer; font-family: inherit; color: #1F2340; ' + (on ? 'border: 2px solid #3D5BC0' : 'border: 1px solid #E3E5F0'),
+          dot: 'width: 22px; height: 22px; border-radius: 50%; flex: none; box-sizing: border-box; ' + (on ? 'border: 7px solid #3D5BC0' : 'border: 2px solid #B4B8CC')
+        };
+      }),
+      absOn: late ? 'false' : 'true', lateOn: late ? 'true' : 'false', absStyle: seg(!late), lateStyle: seg(late),
+      setAbs: function () { self.setState({ kind: 'absent' }); }, setLate: function () { self.setState({ kind: 'late' }); },
+      sendLabel: late ? 'Tell school ' + k.name + ' will be late' : 'Tell school ' + k.name + ' is absent',
+      doneText: k.cls.split(' · ')[1] + ' will see this on today’s register. You’ll get a message if the office needs anything else.',
+      send: function () { self.setState({ sent: true }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

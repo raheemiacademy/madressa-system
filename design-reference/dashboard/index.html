@@ -1,0 +1,1175 @@
+<style>
+#dash-root { --dash-gutter: 0; }
+.ra {
+  /* Brand palette (as supplied) */
+  --ra-indigo: #5680E9; --ra-sky: #84CEEB; --ra-blue: #5AB9EA; --ra-lav: #C1C8E4; --ra-violet: #8860D0;
+  /* Derived roles */
+  --ra-ink: #1C2147;
+  --ra-on-ink: #FFFFFF;
+  --ra-on-ink-muted: #B9BEDB;
+  --ra-accent-text: color-mix(in srgb, var(--ra-indigo) 72%, var(--color-fg));
+  --ra-primary: color-mix(in srgb, var(--ra-indigo) 78%, #000);
+  --ra-primary-hover: color-mix(in srgb, var(--ra-indigo) 66%, #000);
+  --ra-surface: color-mix(in srgb, var(--ra-lav) 9%, var(--color-bg));
+  --ra-tint: color-mix(in srgb, var(--ra-lav) 18%, var(--color-panel));
+  --ra-hairline: color-mix(in srgb, var(--color-border-line) 60%, transparent);
+  --ra-r-lg: 16px; --ra-r: 10px; --ra-r-sm: 8px;
+  --ra-ctl: 40px;
+  --ra-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  font-family: var(--font-anthropic-sans); color: var(--color-fg);
+  container-type: inline-size; font-variant-numeric: tabular-nums;
+  -webkit-tap-highlight-color: transparent;
+}
+.ra *, .ra *::before, .ra *::after { box-sizing: border-box; }
+.ra [hidden] { display: none !important; }
+.ra button, .ra select, .ra input, .ra textarea { touch-action: manipulation; }
+.ra :is(button, select, input, textarea, [tabindex]):focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-panel), 0 0 0 4px var(--ra-indigo); }
+
+/* Shell */
+.ra-shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 880px; }
+.ra-side {
+  background:
+    radial-gradient(140% 50% at 0% 100%, color-mix(in srgb, var(--ra-violet) 38%, transparent), transparent 70%),
+    var(--ra-ink);
+  color: var(--ra-on-ink); padding: 20px 12px; display: flex; flex-direction: column; gap: 18px;
+}
+.ra-brand { display: flex; align-items: center; gap: 12px; padding: 4px 10px 8px; }
+.ra-brand-mark { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--ra-indigo), var(--ra-violet)); display: grid; place-items: center; flex: none; }
+.ra-brand-name { font-family: var(--font-anthropic-serif); font-size: 1.125rem; line-height: 1.15; }
+.ra-brand-sub { font-size: 12px; color: var(--ra-on-ink-muted); }
+.ra-nav-group { display: flex; flex-direction: column; gap: 2px; }
+.ra-nav-label { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ra-on-ink-muted); padding: 0 12px 6px; }
+.ra-nav-btn {
+  all: unset; cursor: pointer; display: flex; align-items: center; gap: 12px; min-height: var(--ra-ctl); padding: 0 12px;
+  border-radius: var(--ra-r); font-size: 14px; color: var(--ra-on-ink-muted); position: relative;
+  transition: background-color .15s ease, color .15s ease;
+}
+.ra-nav-btn svg { width: 18px; height: 18px; flex: none; }
+.ra-nav-btn span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ra-nav-btn:focus-visible { box-shadow: 0 0 0 2px var(--ra-sky); }
+.ra-nav-btn[aria-current="page"] { background: color-mix(in srgb, var(--ra-sky) 14%, transparent); color: var(--ra-on-ink); font-weight: 500; }
+.ra-nav-btn[aria-current="page"] svg { color: var(--ra-sky); }
+.ra-nav-btn[aria-current="page"]::before { content: ""; position: absolute; left: -12px; top: 10px; bottom: 10px; width: 3px; border-radius: 0 3px 3px 0; background: var(--ra-sky); }
+@media (hover: hover) { .ra-nav-btn:hover { color: var(--ra-on-ink); background: rgba(255,255,255,.06); } }
+.ra-side-foot { margin-top: auto; border-radius: 12px; padding: 14px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); display: flex; flex-direction: column; gap: 10px; }
+.ra-side-foot p { margin: 0; font-size: 12px; line-height: 1.5; color: var(--ra-on-ink-muted); }
+.ra-side-foot strong { display: block; color: var(--ra-on-ink); font-weight: 500; font-size: 14px; margin-bottom: 2px; }
+.ra-drill { all: unset; cursor: pointer; min-height: 36px; padding: 0 12px; border-radius: var(--ra-r-sm); font-size: 13px; font-weight: 500; color: var(--ra-ink); background: var(--ra-sky); text-align: center; display: grid; place-items: center; transition: background-color .15s ease; }
+@media (hover: hover) { .ra-drill:hover { background: #a3dbf1; } }
+
+.ra-main { min-width: 0; background: var(--ra-surface); }
+.ra-top {
+  display: flex; align-items: center; gap: 10px; padding: 12px 28px; border-bottom: 1px solid var(--color-border-line);
+  background: var(--color-panel); flex-wrap: wrap;
+}
+.ra-top-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.ra-crumb { display: flex; flex-direction: column; min-width: 0; margin-right: auto; }
+.ra-crumb small { font-size: 12px; color: var(--color-fg-muted); }
+.ra-crumb strong { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); }
+.ra-search { position: relative; flex: 0 1 320px; min-width: 150px; }
+.ra-search svg { position: absolute; left: 12px; top: 50%; translate: 0 -50%; width: 16px; height: 16px; color: var(--color-fg-muted); pointer-events: none; }
+.ra-search kbd { position: absolute; right: 8px; top: 50%; translate: 0 -50%; font: 500 12px/1 var(--font-anthropic-sans); color: var(--color-fg-muted); border: 1px solid var(--color-border-line); border-radius: 5px; padding: 3px 6px; pointer-events: none; }
+.ra-input, .ra-select {
+  font: inherit; font-size: 14px; color: var(--color-fg); background: var(--color-bg);
+  border: 1px solid var(--color-border-line); border-radius: var(--ra-r); min-height: var(--ra-ctl); padding: 0 12px; width: 100%;
+  transition: border-color .15s ease;
+}
+.ra-search .ra-input { padding-left: 36px; padding-right: 34px; }
+.ra-input:focus-visible, .ra-select:focus-visible { border-color: var(--ra-indigo); }
+.ra-select { width: auto; padding-right: 28px; }
+.ra-icon-btn {
+  all: unset; cursor: pointer; width: var(--ra-ctl); height: var(--ra-ctl); border-radius: var(--ra-r); display: grid; place-items: center; flex: none;
+  color: var(--color-fg-muted); position: relative; border: 1px solid var(--color-border-line); background: var(--color-bg);
+  transition: color .15s ease, border-color .15s ease;
+}
+@media (hover: hover) { .ra-icon-btn:hover { color: var(--ra-accent-text); border-color: color-mix(in srgb, var(--ra-indigo) 45%, var(--color-border-line)); } }
+.ra-icon-btn svg { width: 18px; height: 18px; }
+.ra-badge {
+  position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px;
+  background: var(--ra-violet); color: #fff; font-size: 12px; display: grid; place-items: center; font-weight: 600; border: 2px solid var(--color-panel);
+}
+.ra-avatar { width: var(--ra-ctl); height: var(--ra-ctl); border-radius: 50%; background: linear-gradient(135deg, var(--ra-indigo), var(--ra-violet)); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 600; flex: none; }
+
+/* Pages */
+.ra-page { padding: 24px 28px 48px; display: flex; flex-direction: column; gap: 20px; }
+.ra-page[hidden] { display: none; }
+.ra-hero {
+  border-radius: var(--ra-r-lg); padding: 24px 26px; color: var(--ra-on-ink);
+  background:
+    radial-gradient(70% 140% at 100% 0%, color-mix(in srgb, var(--ra-blue) 40%, transparent), transparent 62%),
+    radial-gradient(60% 130% at 0% 100%, color-mix(in srgb, var(--ra-violet) 45%, transparent), transparent 62%),
+    var(--ra-ink);
+}
+.ra-hero-date { font-size: 13px; color: var(--ra-on-ink-muted); margin-bottom: 6px; }
+.ra-hero h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: 1.75rem; line-height: 1.2; margin: 0 0 8px; text-wrap: balance; }
+.ra-hero p { margin: 0; max-width: 64ch; line-height: 1.55; color: #E6E8F5; text-wrap: pretty; }
+.ra-hero b { font-weight: 600; color: var(--ra-sky); }
+.ra-quick { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+.ra-quick button { all: unset; cursor: pointer; min-height: var(--ra-ctl); padding: 0 14px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); border-radius: 999px; font-size: 13px; font-weight: 500; display: inline-flex; gap: 8px; align-items: center; transition: background-color .15s ease; }
+@media (hover: hover) { .ra-quick button:hover { background: rgba(255,255,255,.16); } }
+.ra-quick button:focus-visible { box-shadow: 0 0 0 2px var(--ra-sky); }
+.ra-quick svg { width: 16px; height: 16px; color: var(--ra-sky); }
+
+.ra-banners { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: 12px; }
+.ra-banner { display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--c) 35%, var(--color-border-line)); background: color-mix(in srgb, var(--c) 10%, var(--color-panel)); }
+.ra-banner-ic { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 22%, transparent); color: var(--color-fg); flex: none; }
+.ra-banner-ic svg { width: 16px; height: 16px; }
+.ra-banner-txt { flex: 1; min-width: 0; font-size: 14px; line-height: 1.4; }
+.ra-banner-txt b { font-weight: 600; }
+.ra-link { all: unset; cursor: pointer; color: var(--ra-accent-text); font-size: 13px; font-weight: 500; white-space: nowrap; min-height: 32px; padding: 0 8px; border-radius: var(--ra-r-sm); display: inline-grid; place-items: center; flex: none; transition: background-color .15s ease; }
+@media (hover: hover) { .ra-link:hover { background: color-mix(in srgb, var(--ra-indigo) 10%, transparent); } }
+
+.ra-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11.5rem), 1fr)); gap: 12px; }
+.ra-kpi { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.ra-kpi-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--color-fg-muted); }
+.ra-kpi-ic { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 20%, transparent); color: var(--color-fg); flex: none; }
+.ra-kpi-ic svg { width: 16px; height: 16px; }
+.ra-kpi-val { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); line-height: 1.1; letter-spacing: -.01em; }
+.ra-kpi-sub { font-size: 12px; color: var(--color-fg-muted); min-height: 1.3em; line-height: 1.4; }
+.ra-up { color: var(--color-ok); font-weight: 500; }
+.ra-down { color: var(--color-bad); font-weight: 500; }
+
+.ra-grid { display: grid; gap: 16px; grid-template-columns: repeat(12, minmax(0, 1fr)); }
+.ra-c4 { grid-column: span 4; } .ra-c5 { grid-column: span 5; } .ra-c6 { grid-column: span 6; } .ra-c7 { grid-column: span 7; } .ra-c8 { grid-column: span 8; } .ra-c12 { grid-column: span 12; }
+.ra-card { container-type: inline-size; background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--ra-r-lg); padding: 18px 20px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.ra-card-h { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.ra-card-h > div { min-width: 0; }
+.ra-card-h h2, .ra-card-h h3 { margin: 0; font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); text-wrap: balance; }
+.ra-note { font-size: 12px; color: var(--color-fg-muted); margin-top: 3px; line-height: 1.4; }
+.ra-legend { display: flex; gap: 14px; font-size: 12px; color: var(--color-fg-muted); flex-wrap: wrap; align-items: center; }
+.ra-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.ra-chart { position: relative; width: 100%; }
+.ra-chart svg { display: block; overflow: visible; }
+.ra-chart text { fill: var(--color-fg-muted); font-size: 12px; font-family: var(--font-anthropic-sans); }
+.ra-chart .ra-strong { fill: var(--color-fg); font-weight: 500; }
+.ra-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: 12px; white-space: nowrap; z-index: 2; opacity: 0; transition: opacity .12s ease; }
+.ra-tip .t { color: var(--cds-text-secondary); margin-bottom: 2px; }
+.ra-tip .l { display: flex; align-items: center; gap: 6px; }
+.ra-tip .s { width: 8px; height: 8px; border-radius: 2px; }
+.ra-failed { display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--color-fg-muted); font-size: 12px; min-height: inherit; height: 100%; }
+.ra-failed::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
+
+.ra-table-wrap { overflow: auto; max-height: 420px; margin: 0 -6px; }
+.ra-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ra-table th { text-align: left; font-weight: 500; font-size: 12px; color: var(--color-fg-muted); padding: 8px 6px; border-bottom: 1px solid var(--color-border-line); position: sticky; top: 0; background: var(--color-panel); z-index: 1; white-space: nowrap; }
+.ra-table td { padding: 10px 6px; border-bottom: 1px solid var(--ra-hairline); white-space: nowrap; }
+.ra-table tr:last-child td { border-bottom: 0; }
+@media (hover: hover) { .ra-table tbody tr:hover td { background: color-mix(in srgb, var(--ra-lav) 14%, transparent); } }
+.ra-table .num { text-align: right; }
+.ra-table td.wrap { white-space: normal; min-width: 11ch; max-width: 26ch; overflow-wrap: anywhere; line-height: 1.35; }
+@container (max-width: 480px) { .ra-table .opt { display: none; } .ra-msg-top .ra-chip { display: none; } }
+.ra-empty { font-size: 13px; color: var(--color-fg-muted); padding: 18px 4px; text-align: center; }
+.ra-chart .ra-empty { display: flex; align-items: center; justify-content: center; min-height: inherit; }
+.ra-banner[hidden] { display: none; }
+.ra-table td:empty::before { content: "—"; color: var(--color-fg-muted); }
+.ra-muted { color: var(--color-fg-muted); }
+.ra-chip { max-width: 100%; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; line-height: 1.3; background: color-mix(in srgb, var(--c, var(--ra-lav)) 15%, transparent); white-space: nowrap; }
+.ra-chip span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.ra-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--c, var(--ra-lav)); flex: none; }
+.ra-acts { display: inline-flex; gap: 2px; }
+.ra-acts button { all: unset; cursor: pointer; width: 32px; height: 32px; border-radius: var(--ra-r-sm); display: grid; place-items: center; color: var(--color-fg-muted); transition: background-color .15s ease, color .15s ease; }
+@media (hover: hover) { .ra-acts button:hover { background: color-mix(in srgb, var(--ra-indigo) 12%, transparent); color: var(--ra-accent-text); } }
+.ra-acts svg { width: 16px; height: 16px; }
+
+.ra-btn { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; min-height: var(--ra-ctl); padding: 0 14px; border-radius: var(--ra-r); font-size: 13px; font-weight: 500; border: 1px solid var(--color-border-line); background: var(--color-panel); color: var(--color-fg); white-space: nowrap; transition: background-color .15s ease, border-color .15s ease, color .15s ease; }
+@media (hover: hover) { .ra-btn:hover { border-color: color-mix(in srgb, var(--ra-indigo) 50%, var(--color-border-line)); color: var(--ra-accent-text); } }
+.ra-btn.primary { background: var(--ra-primary); border-color: transparent; color: #fff; }
+@media (hover: hover) { .ra-btn.primary:hover { background: var(--ra-primary-hover); color: #fff; } }
+.ra-btn svg { width: 16px; height: 16px; }
+.ra-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ra-toolbar .grow { flex: 1 1 220px; }
+.ra-page-h { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.ra-page-h h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: 1.75rem; line-height: 1.2; margin: 0; }
+.ra-page-h p { margin: 4px 0 0; color: var(--color-fg-muted); font-size: 14px; }
+.ra-more { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.ra-more .ra-btn { min-height: 34px; padding: 0 12px; background: transparent; }
+.ra-more-l { font-size: 12px; color: var(--color-fg-muted); margin-right: 4px; }
+.ra-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.ra-filter { all: unset; cursor: pointer; min-height: 32px; padding: 0 12px; border-radius: 999px; font-size: 13px; border: 1px solid var(--color-border-line); background: var(--color-panel); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; transition: background-color .15s ease, color .15s ease, border-color .15s ease; }
+.ra-filter[aria-pressed="true"] { background: var(--ra-primary); color: #fff; border-color: transparent; }
+.ra-filter b { font-weight: 600; }
+
+.ra-msg-list { display: flex; flex-direction: column; }
+.ra-msg { all: unset; cursor: pointer; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; padding: 12px 8px; border-bottom: 1px solid var(--ra-hairline); border-radius: var(--ra-r); transition: background-color .15s ease; }
+.ra-msg:last-child { border-bottom: 0; }
+@media (hover: hover) { .ra-msg:hover { background: color-mix(in srgb, var(--ra-lav) 16%, transparent); } }
+.ra-msg[aria-current="true"] { background: color-mix(in srgb, var(--ra-lav) 24%, transparent); }
+.ra-msg-top { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.ra-msg-from { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 0 1 auto; }
+.ra-msg-top .ra-chip { flex: 0 3 auto; min-width: 0; }
+.ra-msg-subj { font-size: 14px; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ra-msg-prev { font-size: 13px; color: var(--color-fg-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ra-msg-side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; font-size: 12px; color: var(--color-fg-muted); white-space: nowrap; }
+.ra-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ra-violet); }
+.ra-msg[data-unread="false"] .ra-dot { visibility: hidden; }
+.ra-msg[data-unread="false"] .ra-msg-from { font-weight: 400; }
+.ra-thread { display: flex; flex-direction: column; gap: 14px; }
+.ra-bubble { background: var(--ra-tint); border-radius: 4px 14px 14px 14px; padding: 14px 16px; line-height: 1.6; overflow-wrap: anywhere; }
+.ra-reply { display: flex; flex-direction: column; gap: 10px; }
+.ra-reply label { font-size: 12px; color: var(--color-fg-muted); }
+.ra-reply textarea { font: inherit; font-size: 14px; min-height: 96px; resize: vertical; padding: 10px 12px; border-radius: var(--ra-r); border: 1px solid var(--color-border-line); background: var(--color-bg); color: var(--color-fg); }
+
+.ra-class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); gap: 12px; }
+.ra-class { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.ra-class-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.ra-class h3 { margin: 0; font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ra-class h3 i { width: 10px; height: 10px; border-radius: 3px; background: var(--c); flex: none; }
+.ra-class-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--color-fg-muted); gap: 12px; }
+.ra-class-row span:last-child { color: var(--color-fg); text-align: right; }
+.ra-bar { height: 6px; border-radius: 999px; background: color-mix(in srgb, var(--ra-lav) 35%, transparent); overflow: hidden; }
+.ra-bar.over > i { background: var(--color-warn); }
+.ra-warn { color: var(--color-warn); font-weight: 500; }
+.ra-bar > i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--ra-blue), var(--ra-indigo)); }
+
+.ra-reg td.m { text-align: center; padding: 6px 2px; }
+.ra-reg th.m { text-align: center; padding: 8px 2px; line-height: 1.25; }
+.ra-mk { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 7px; font-size: 12px; font-weight: 600; color: var(--color-fg); }
+.ra-mk-P { background: color-mix(in srgb, var(--ra-blue) 24%, transparent); }
+.ra-mk-L { background: color-mix(in srgb, var(--ra-sky) 50%, transparent); }
+.ra-mk-A { background: color-mix(in srgb, var(--ra-lav) 65%, transparent); }
+.ra-mk-N { background: color-mix(in srgb, var(--ra-violet) 30%, transparent); }
+.ra-mk-U { background: color-mix(in srgb, var(--color-bad) 18%, transparent); color: var(--color-bad); }
+.ra-legend .ra-mk { width: 20px; height: 20px; font-size: 12px; margin-right: 4px; }
+
+.ra-wire { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; }
+.ra-wblock { background: var(--color-panel); border: 1.5px dashed color-mix(in srgb, var(--ra-indigo) 35%, var(--color-border-line)); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-height: 140px; min-width: 0; }
+.ra-wblock h3 { margin: 0; font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); display: flex; align-items: center; gap: 8px; }
+.ra-wblock h3 i { width: 10px; height: 10px; border-radius: 3px; background: var(--c); flex: none; }
+.ra-wblock p { margin: 0; font-size: 13px; color: var(--color-fg-muted); line-height: 1.5; }
+.ra-wline { height: 10px; border-radius: 6px; background: color-mix(in srgb, var(--ra-lav) 32%, transparent); }
+.ra-wtags { display: flex; gap: 6px; flex-wrap: wrap; }
+.ra-wtags span { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: color-mix(in srgb, var(--c) 16%, transparent); }
+.ra-wcells { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.ra-wcells span { height: 26px; border-radius: 6px; background: color-mix(in srgb, var(--c) 16%, transparent); }
+.ra-spec { font-size: 13px; color: var(--color-fg-muted); background: var(--ra-tint); border-radius: var(--ra-r); padding: 10px 14px; }
+
+[data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+[data-dash-source-state=empty] { color: transparent; }
+
+@media (pointer: coarse) { .ra { --ra-ctl: 44px; } .ra-acts button { width: 44px; height: 44px; } .ra-filter { min-height: 40px; } }
+@container (max-width: 1100px) {
+  .ra-c4, .ra-c5, .ra-c7 { grid-column: span 6; }
+  .ra-c8 { grid-column: span 12; }
+}
+@container (max-width: 860px) {
+  .ra-shell { grid-template-columns: minmax(0, 1fr); }
+  .ra-side { flex-direction: row; overflow-x: auto; padding: 8px 12px; gap: 6px; align-items: center; overscroll-behavior-x: contain; scrollbar-width: none; }
+  .ra-brand { padding: 0 8px 0 0; }
+  .ra-brand-name, .ra-brand-sub, .ra-nav-label, .ra-side-foot { display: none; }
+  .ra-nav-group { flex-direction: row; }
+  .ra-nav-btn { white-space: nowrap; }
+  .ra-nav-btn[aria-current="page"]::before { left: 12px; right: 12px; top: auto; bottom: 2px; width: auto; height: 2px; border-radius: 2px; }
+  .ra-c4, .ra-c5, .ra-c6, .ra-c7, .ra-c8 { grid-column: span 12; }
+  .ra-wblock { grid-column: span 12 !important; }
+  .ra-page, .ra-top { padding-left: 16px; padding-right: 16px; }
+  .ra-search { flex-basis: 100%; order: 5; }
+  .ra-search kbd { display: none; }
+}
+/* Motion — press feedback (tens/day: subtle), first-view stagger, banner entrance, hold-to-confirm */
+.ra :is(.ra-btn, .ra-quick button, .ra-filter, .ra-link, .ra-icon-btn, .ra-acts button) {
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, transform 160ms var(--ra-ease-out);
+}
+.ra :is(.ra-btn, .ra-quick button, .ra-filter, .ra-link, .ra-icon-btn, .ra-acts button):active { transform: scale(0.97); }
+.ra-anim { animation: ra-rise 280ms var(--ra-ease-out) both; animation-delay: calc(min(var(--i, 0), 8) * 40ms); }
+@keyframes ra-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes ra-fade { from { opacity: 0; } to { opacity: 1; } }
+.ra-banner { transition: opacity 220ms var(--ra-ease-out), transform 220ms var(--ra-ease-out); }
+@starting-style { .ra-banner { opacity: 0; transform: translateY(-4px); } }
+.ra-drill { position: relative; overflow: hidden; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.ra-drill-fill { position: absolute; inset: 0; display: grid; place-items: center; background: var(--ra-violet); color: #fff; clip-path: inset(0 100% 0 0); transition: clip-path 200ms var(--ra-ease-out); pointer-events: none; }
+.ra-drill.holding .ra-drill-fill { clip-path: inset(0 0 0 0); transition: clip-path 2s linear; }
+.ra-drill.done .ra-drill-fill { clip-path: inset(0 0 0 0); transition: none; }
+.ra-drill-hint { font-size: 12px; color: var(--ra-on-ink-muted); text-align: center; margin: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .ra :is(.ra-btn, .ra-quick button, .ra-filter, .ra-link, .ra-icon-btn, .ra-acts button):active { transform: none; }
+  .ra-anim { animation: ra-fade 200ms ease both; animation-delay: 0ms; }
+  .ra-banner { transition: opacity 200ms ease; }
+  @starting-style { .ra-banner { transform: none; } }
+}
+</style>
+
+<div class="ra" id="ra-app">
+<div class="ra-shell">
+  <aside class="ra-side" aria-label="Main menu">
+    <div class="ra-brand">
+      <div class="ra-brand-mark"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10 12 4l9 6"/><path d="M5 10v9h14v-9"/><path d="M10 19v-5h4v5"/></svg></div>
+      <div><div class="ra-brand-name">Academy</div><div class="ra-brand-sub">School admin</div></div>
+    </div>
+    <nav id="ra-nav" style="display:contents"></nav>
+    <div class="ra-side-foot"><p><strong>Fire drill</strong>Get an instant list of who is on site, for every class.</p><button class="ra-drill" id="ra-drill" aria-describedby="ra-drill-hint"><span class="ra-drill-label">Hold to start drill</span><span class="ra-drill-fill" aria-hidden="true">Keep holding…</span></button><p class="ra-drill-hint" id="ra-drill-hint">Press and hold for 2 seconds</p></div>
+  </aside>
+
+  <div class="ra-main">
+    <header class="ra-top">
+      <div class="ra-crumb"><small id="ra-crumb-group">Overview</small><strong id="ra-crumb-title">Dashboard</strong></div>
+      <div class="ra-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input class="ra-input" id="ra-global-search" name="q" type="search" autocomplete="off" spellcheck="false" placeholder="Search students, contacts, teachers…" aria-label="Search students, contacts and teachers"><kbd aria-hidden="true">/</kbd></div>
+      <div class="ra-top-actions">
+      <select class="ra-select" name="year" aria-label="Academic year"><option>2026/27</option><option>2025/26</option><option>2024/25</option></select>
+      <button class="ra-icon-btn" aria-label="Notifications" data-go="register"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="ra-badge" data-source="overview" data-where="metric=parent_absence_notes" data-field="value">—</span></button>
+      <button class="ra-icon-btn" aria-label="Messages" data-go="messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span class="ra-badge" data-source="overview" data-where="metric=unread_messages" data-field="value">—</span></button>
+      <button class="ra-icon-btn" aria-label="Help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
+      <div class="ra-avatar" role="img" aria-label="Signed in as admin">AD</div>
+      </div>
+    </header>
+
+    <!-- DASHBOARD -->
+    <section class="ra-page" id="dashboard" data-group="Overview" data-title="Dashboard">
+      <div class="ra-hero ra-anim">
+        <div class="ra-hero-date" id="ra-today"></div>
+        <h1 id="ra-greet">Good evening</h1>
+        <p>Attendance today is <b data-source="overview" data-where="metric=attendance_today" data-field="value" data-fmt="pct1">—</b>
+          (<span data-source="kpi_change" data-where="metric=attendance_today" data-field="change" data-fmt="pts">—</span> on last week).
+          <b data-source="overview" data-where="metric=overdue_invoices" data-field="value">—</b> <span data-plural="overdue_invoices" data-one="invoice is" data-other="invoices are">invoices are</span> overdue, with
+          <b data-source="overview" data-where="metric=fees_outstanding" data-field="value" data-fmt="gbp">—</b> outstanding. Sending reminders is the job for today.</p>
+        <div class="ra-quick">
+          <button data-go="students"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add student</button>
+          <button data-go="fees"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Record payment</button>
+          <button data-go="register"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>Take register</button>
+          <button data-go="messages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1.5-4.5A8 8 0 1 1 9 19z"/></svg>New message</button>
+        </div>
+      </div>
+
+      <div class="ra-banners">
+        <div class="ra-banner" style="--c: var(--ra-blue)" data-hide-zero="parent_absence_notes">
+          <div class="ra-banner-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/></svg></div>
+          <div class="ra-banner-txt"><b data-source="overview" data-where="metric=parent_absence_notes" data-field="value">—</b> <span data-plural="parent_absence_notes" data-one="parent notification" data-other="parent notifications">parent notifications</span> of absent students today</div>
+          <button class="ra-link" data-go="register">Review</button>
+        </div>
+        <div class="ra-banner" style="--c: var(--ra-violet)" data-hide-zero="holiday_requests">
+          <div class="ra-banner-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></div>
+          <div class="ra-banner-txt"><b data-source="overview" data-where="metric=holiday_requests" data-field="value">—</b> <span data-plural="holiday_requests" data-one="holiday request is" data-other="holiday requests are">holiday requests are</span> waiting for a decision</div>
+          <button class="ra-link" data-go="register">Respond</button>
+        </div>
+      </div>
+
+      <div class="ra-kpis" id="dash-kpis">
+        <div class="ra-kpi ra-anim" style="--c: var(--ra-indigo)">
+          <div class="ra-kpi-top">Current students<span class="ra-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M17 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/></svg></span></div>
+          <div class="ra-kpi-val" data-source="overview" data-where="metric=current_students" data-field="value">—</div>
+          <div class="ra-kpi-sub"><span data-source="kpi_change" data-where="metric=current_students" data-field="change" data-fmt="signed" data-good="up">—</span> since last week · <span data-source="overview" data-where="metric=waiting_list" data-field="value">—</span> waiting</div>
+        </div>
+        <div class="ra-kpi ra-anim" style="--c: var(--ra-blue)">
+          <div class="ra-kpi-top">Attendance today<span class="ra-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg></span></div>
+          <div class="ra-kpi-val" data-source="overview" data-where="metric=attendance_today" data-field="value" data-fmt="pct1">—</div>
+          <div class="ra-kpi-sub"><span data-source="kpi_change" data-where="metric=attendance_today" data-field="change" data-fmt="pts" data-good="up">—</span> vs same day last week</div>
+        </div>
+        <div class="ra-kpi ra-anim" style="--c: var(--ra-violet)">
+          <div class="ra-kpi-top">Fees outstanding<span class="ra-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 6a4 4 0 0 0-7 2.6V12H7m3 0v4.5a2 2 0 0 1-1 1.7L7 19h11"/><path d="M7 12h7"/></svg></span></div>
+          <div class="ra-kpi-val" data-source="overview" data-where="metric=fees_outstanding" data-field="value" data-fmt="gbp">—</div>
+          <div class="ra-kpi-sub"><span data-source="kpi_change" data-where="metric=fees_outstanding" data-field="change" data-fmt="signedgbp" data-good="down">—</span> since last week</div>
+        </div>
+        <div class="ra-kpi ra-anim" style="--c: var(--ra-sky)">
+          <div class="ra-kpi-top">Parents on portal<span class="ra-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg></span></div>
+          <div class="ra-kpi-val" data-source="overview" data-where="metric=active_parents" data-field="value">—</div>
+          <div class="ra-kpi-sub">of <span data-source="overview" data-where="metric=total_contacts" data-field="value">—</span> parent contacts</div>
+        </div>
+        <div class="ra-kpi ra-anim" style="--c: var(--ra-lav)">
+          <div class="ra-kpi-top">Teachers signed in<span class="ra-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span></div>
+          <div class="ra-kpi-val" data-source="overview" data-where="metric=teachers_in" data-field="value">—</div>
+          <div class="ra-kpi-sub">of <span data-source="overview" data-where="metric=teachers_total" data-field="value">—</span> teaching today</div>
+        </div>
+      </div>
+
+      <div class="ra-grid">
+        <div class="ra-card ra-c8 ra-anim" id="card-attendance">
+          <div class="ra-card-h"><div><h2>Weekly attendance</h2><div class="ra-note">Share of register sessions marked present or late, this term</div></div></div>
+          <div class="ra-chart dash-skeleton" id="chart-attendance" data-source="attendance_weekly" style="min-height:230px"></div>
+        </div>
+        <div class="ra-card ra-c4 ra-anim" id="card-age">
+          <div class="ra-card-h"><div><h2>Students by age group</h2><div class="ra-note">Current students</div></div></div>
+          <div class="ra-legend"><span><i style="background:var(--ra-indigo)"></i>Boys</span><span><i style="background:var(--ra-violet)"></i>Girls</span></div>
+          <div class="ra-chart dash-skeleton" id="chart-age" data-source="age_groups" style="min-height:200px"></div>
+        </div>
+
+        <div class="ra-card ra-c7" id="card-messages">
+          <div class="ra-card-h"><div><h2>Unread messages</h2><div class="ra-note">From parents and teachers</div></div><button class="ra-link" data-go="messages">Open inbox</button></div>
+          <div class="ra-msg-list" id="dash-msgs" data-source="messages"></div>
+        </div>
+        <div class="ra-card ra-c5" id="card-teachers">
+          <div class="ra-card-h"><div><h2>Teacher sign-in</h2><div class="ra-note">Today, from kiosk and teacher portal</div></div><button class="ra-link" data-go="teacher-logs">All logs</button></div>
+          <div class="ra-table-wrap" style="max-height:330px">
+            <table class="ra-table" id="tbl-tlogs" data-source="teacher_logs" data-row-key="teacher">
+              <thead><tr><th data-field="teacher">Teacher</th><th data-field="signed_in">Signed in</th><th data-field="signed_out">Signed out</th><th data-field="logged_at" class="opt">Logged at</th></tr></thead><tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="ra-card ra-c7" id="card-payments">
+          <div class="ra-card-h"><div><h2>Recent payments</h2><div class="ra-note">Latest ten, all invoice types</div></div><button class="ra-link" data-go="fees">Fees dashboard</button></div>
+          <div class="ra-table-wrap">
+            <table class="ra-table" id="tbl-dpay" data-source="payments" data-row-key="payment">
+              <thead><tr><th data-field="payment">Payment</th><th data-field="date" class="opt">Date</th><th data-field="student">Student</th><th data-field="amount" class="num">Amount</th><th data-field="method" class="opt">Method</th><th data-field="status">Status</th></tr></thead><tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="ra-card ra-c5" id="card-feestype">
+          <div class="ra-card-h"><div><h2>Fees by type</h2><div class="ra-note">Received and still outstanding, this year</div></div></div>
+          <div class="ra-legend"><span><i style="background:var(--ra-blue)"></i>Received</span><span><i style="background:var(--ra-violet)"></i>Outstanding</span></div>
+          <div class="ra-chart dash-skeleton" id="chart-feestype" data-source="fees_by_type" style="min-height:200px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEES -->
+    <section class="ra-page" id="fees" data-group="Finance" data-title="Fees" hidden>
+      <div class="ra-page-h"><div><h1>Fees</h1><p>Invoices, payments and reminders for the year</p></div>
+        <div class="ra-toolbar"><button class="ra-btn primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add fees</button><button class="ra-btn">Generate invoices</button><button class="ra-btn">Monthly invoices</button><button class="ra-btn">Send reminders</button></div></div>
+      <div class="ra-kpis">
+        <div class="ra-kpi" style="--c: var(--ra-indigo)"><div class="ra-kpi-top">Invoiced</div><div class="ra-kpi-val" data-source="fees_totals" data-row="0" data-field="total" data-fmt="gbp">—</div><div class="ra-kpi-sub">All invoice types</div></div>
+        <div class="ra-kpi" style="--c: var(--ra-blue)"><div class="ra-kpi-top">Received</div><div class="ra-kpi-val" data-source="fees_totals" data-row="0" data-field="received" data-fmt="gbp">—</div><div class="ra-kpi-sub"><span data-source="fees_totals" data-row="0" data-field="collected" data-fmt="share">—</span> collected</div></div>
+        <div class="ra-kpi" style="--c: var(--ra-violet)"><div class="ra-kpi-top">Outstanding</div><div class="ra-kpi-val" data-source="fees_totals" data-row="0" data-field="outstanding" data-fmt="gbp">—</div><div class="ra-kpi-sub">Includes upcoming</div></div>
+        <div class="ra-kpi" style="--c: var(--color-bad)"><div class="ra-kpi-top">Overdue invoices</div><div class="ra-kpi-val" data-source="overview" data-where="metric=overdue_invoices" data-field="value">—</div><div class="ra-kpi-sub">Past their due date</div></div>
+      </div>
+      <div class="ra-more">
+        <span class="ra-more-l">More tools</span>
+        <button class="ra-btn">Import fees</button><button class="ra-btn">Full overview</button><button class="ra-btn">Modify invoices</button><button class="ra-btn">Sibling discounts</button><button class="ra-btn">Fees structure</button><button class="ra-btn">Direct debits</button><button class="ra-btn">Bank transfers</button><button class="ra-btn">Diagnose</button>
+      </div>
+      <div class="ra-grid">
+        <div class="ra-card ra-c7" id="card-feesmonthly">
+          <div class="ra-card-h"><div><h2>Invoiced vs received by month</h2><div class="ra-note">Last six months, all types</div></div></div>
+          <div class="ra-legend"><span><i style="background:var(--ra-lav)"></i>Invoiced</span><span><i style="background:var(--ra-indigo)"></i>Received</span></div>
+          <div class="ra-chart dash-skeleton" id="chart-feesmonthly" data-source="fees_monthly" style="min-height:240px"></div>
+        </div>
+        <div class="ra-card ra-c5" id="card-feestable">
+          <div class="ra-card-h"><div><h2>Totals by type</h2><div class="ra-note">This academic year</div></div></div>
+          <div class="ra-table-wrap">
+            <table class="ra-table" id="tbl-ftype" data-source="fees_by_type" data-row-key="type">
+              <thead><tr><th data-field="type">Type</th><th data-field="total" class="num">Total</th><th data-field="received" class="num">Received</th><th data-field="outstanding" class="num">Outstanding</th></tr></thead><tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="ra-card ra-c12" id="card-allpay">
+          <div class="ra-card-h"><div><h2>Payments</h2><div class="ra-note">Search by name, payment ID or method</div></div>
+            <div class="ra-filters" id="pay-filters"></div></div>
+          <input class="ra-input" id="pay-search" type="search" placeholder="Name, surname or #payment ID" aria-label="Search payments" style="max-width:340px">
+          <div class="ra-table-wrap">
+            <table class="ra-table" id="tbl-pay" data-source="payments" data-row-key="payment">
+              <thead><tr><th data-field="payment">Payment</th><th data-field="date">Date</th><th data-field="student">Student</th><th data-field="type">Type</th><th data-field="amount" class="num">Amount</th><th data-field="method">Method</th><th data-field="status">Status</th><th>Receipt</th></tr></thead><tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STUDENTS -->
+    <section class="ra-page" id="students" data-group="School" data-title="Students" hidden>
+      <div class="ra-page-h"><div><h1>Students</h1><p>Records, classes, contacts and status</p></div>
+        <div class="ra-toolbar"><button class="ra-btn primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add student</button><button class="ra-btn">Import</button><button class="ra-btn">Download</button><button class="ra-btn">Move classes</button></div></div>
+      <div class="ra-kpis">
+        <div class="ra-kpi" style="--c: var(--ra-indigo)"><div class="ra-kpi-top">Current</div><div class="ra-kpi-val" data-source="overview" data-where="metric=current_students" data-field="value">—</div><div class="ra-kpi-sub">Enrolled and attending</div></div>
+        <div class="ra-kpi" style="--c: var(--ra-blue)"><div class="ra-kpi-top">Waiting list</div><div class="ra-kpi-val" data-source="overview" data-where="metric=waiting_list" data-field="value">—</div><div class="ra-kpi-sub">From the application form</div></div>
+        <div class="ra-kpi" style="--c: var(--ra-sky)"><div class="ra-kpi-top">Parents on portal</div><div class="ra-kpi-val" data-source="overview" data-where="metric=active_parents" data-field="value">—</div><div class="ra-kpi-sub">Logged in this year</div></div>
+      </div>
+      <div class="ra-card" id="card-students">
+        <div class="ra-card-h"><div><h2>Manage students</h2><div class="ra-note">Sample of records — filter by status or search</div></div></div>
+        <div class="ra-toolbar"><input class="ra-input grow" id="stu-search" type="search" placeholder="Search name, ID or class" aria-label="Search students" style="max-width:340px"><div class="ra-filters" id="stu-filters" data-source="student_status"></div></div>
+        <div class="ra-table-wrap" style="max-height:520px">
+          <table class="ra-table" id="tbl-stu" data-source="students" data-row-key="id">
+            <thead><tr><th data-field="id">ID</th><th data-field="name">Name</th><th data-field="gender" class="opt">Gender</th><th data-field="class">Class</th><th data-field="age" class="num opt">Age</th><th data-field="status">Status</th><th>Actions</th></tr></thead><tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- REGISTER -->
+    <section class="ra-page" id="register" data-group="School" data-title="Register" hidden>
+      <div class="ra-page-h"><div><h1>Register</h1><p>Daily registers, absences and authorisations</p></div>
+        <div class="ra-toolbar"><button class="ra-btn primary">Mark students absent</button><button class="ra-btn">Mass authorise</button><button class="ra-btn">Absent calendar</button><button class="ra-btn">Download register</button></div></div>
+      <div class="ra-banners">
+        <div class="ra-banner" style="--c: var(--ra-blue)" data-hide-zero="parent_absence_notes"><div class="ra-banner-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/></svg></div><div class="ra-banner-txt"><b data-source="overview" data-where="metric=parent_absence_notes" data-field="value">—</b> “will be absent / late today” notices from parents</div><button class="ra-link">Open</button></div>
+        <div class="ra-banner" style="--c: var(--ra-violet)" data-hide-zero="holiday_requests"><div class="ra-banner-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg></div><div class="ra-banner-txt"><b data-source="overview" data-where="metric=holiday_requests" data-field="value">—</b> <span data-plural="holiday_requests" data-one="holiday request" data-other="holiday requests">holiday requests</span> to accept, decline or ask about</div><button class="ra-link">Open</button></div>
+      </div>
+      <div class="ra-grid">
+        <div class="ra-card ra-c5" id="card-regtoday">
+          <div class="ra-card-h"><div><h2>Today's registers</h2><div class="ra-note">Complete or still to be taken, with month-to-date attendance</div></div></div>
+          <div class="ra-table-wrap">
+            <table class="ra-table" id="tbl-regtoday" data-source="classes" data-row-key="class">
+              <thead><tr><th data-field="class">Class</th><th data-field="register_today">Register</th><th data-field="attendance" class="num">Attendance</th></tr></thead><tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="ra-card ra-c7" id="card-reggrid">
+          <div class="ra-card-h"><div><h2>Daily register · Maktab 3B · October</h2><div class="ra-note">View mode — click an absence to add a reason or authorise it</div></div></div>
+          <div class="ra-legend"><span><span class="ra-mk ra-mk-P" style="width:16px;height:16px;font-size:9px">P</span> Present</span><span><span class="ra-mk ra-mk-L" style="width:16px;height:16px;font-size:9px">L</span> Late</span><span><span class="ra-mk ra-mk-A" style="width:16px;height:16px;font-size:9px">A</span> Authorised</span><span><span class="ra-mk ra-mk-N" style="width:16px;height:16px;font-size:9px">N</span> Notified</span><span><span class="ra-mk ra-mk-U" style="width:16px;height:16px;font-size:9px">U</span> Unauthorised</span></div>
+          <div class="ra-table-wrap">
+            <table class="ra-table ra-reg" id="tbl-reg" data-source="register_month" data-row-key="student">
+              <thead><tr><th data-field="student">Student</th>
+                <th class="m" data-field="d05">Mon<br>5</th><th class="m" data-field="d06">Tue<br>6</th><th class="m" data-field="d07">Wed<br>7</th><th class="m" data-field="d08">Thu<br>8</th>
+                <th class="m" data-field="d12">Mon<br>12</th><th class="m" data-field="d13">Tue<br>13</th><th class="m" data-field="d14">Wed<br>14</th><th class="m" data-field="d15">Thu<br>15</th>
+                <th class="m" data-field="d19">Mon<br>19</th><th class="m" data-field="d20">Tue<br>20</th><th class="m" data-field="d21">Wed<br>21</th><th class="m" data-field="d22">Thu<br>22</th>
+                <th class="num" data-field="pct">%</th></tr></thead><tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="ra-card ra-c12" id="card-regtrend">
+          <div class="ra-card-h"><div><h2>Attendance trend</h2><div class="ra-note">Whole school, weekly, this term</div></div></div>
+          <div class="ra-chart dash-skeleton" id="chart-attendance2" data-source="attendance_weekly" style="min-height:230px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CLASSES -->
+    <section class="ra-page" id="classes" data-group="School" data-title="Classes" hidden>
+      <div class="ra-page-h"><div><h1>Classes</h1><p>Year groups, teachers, sizes and fees</p></div>
+        <div class="ra-toolbar"><select class="ra-select" id="cls-sort" aria-label="Order classes"><option value="name">Order by name</option><option value="size">Order by size</option><option value="att">Order by attendance</option></select><button class="ra-btn primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add class</button><button class="ra-btn">Timetable</button><button class="ra-btn">Class PDFs</button></div></div>
+      <div class="ra-class-grid" id="cls-grid" data-source="classes"></div>
+    </section>
+
+    <!-- MESSAGES -->
+    <section class="ra-page" id="messages" data-group="Communication" data-title="Messages" hidden>
+      <div class="ra-page-h"><div><h1>Messages</h1><p>Inbox for parents, teachers and admins</p></div>
+        <div class="ra-toolbar"><button class="ra-btn primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Compose</button><button class="ra-btn">Archived</button><button class="ra-btn">Teacher ↔ parent</button></div></div>
+      <div class="ra-grid">
+        <div class="ra-card ra-c5" id="card-inbox">
+          <div class="ra-filters" id="msg-filters"></div>
+          <div class="ra-msg-list" id="msg-list" data-source="messages"></div>
+        </div>
+        <div class="ra-card ra-c7" id="card-thread">
+          <div class="ra-card-h"><div><h2 id="msg-subj" data-source="messages" data-field="subject">—</h2><div class="ra-note"><span id="msg-from" data-source="messages" data-field="sender">—</span> · <span id="msg-role" data-source="messages" data-field="role">—</span></div></div>
+            <div class="ra-acts"><button aria-label="Archive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11h14V8M10 12h4"/></svg></button><button aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div></div>
+          <div class="ra-thread"><div class="ra-bubble" id="msg-body" data-source="messages" data-field="preview">—</div></div>
+          <div class="ra-reply"><label for="msg-reply">Reply</label><textarea id="msg-reply" name="reply" placeholder="Write a reply…"></textarea>
+            <div class="ra-toolbar"><button class="ra-btn primary">Reply</button><button class="ra-btn">Reply &amp; lock</button><button class="ra-btn">Attach file</button></div></div>
+        </div>
+      </div>
+    </section>
+
+    <div id="ra-wires"></div>
+  </div>
+</div>
+</div>
+
+<script>
+(() => {
+  const ICON = {
+    home: '<path d="M3 10 12 4l9 6"/><path d="M5 10v10h14V10"/>',
+    users: '<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M17 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/>',
+    grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+    teacher: '<circle cx="12" cy="7" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/>',
+    check: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 12 3 3 5-6"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    pound: '<path d="M17 6a4 4 0 0 0-7 2.6V19H7m11 0H10M7 12h7"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+    send: '<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>',
+    book: '<path d="M4 19V5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2z"/><path d="M8 7h8"/>',
+    exam: '<path d="M9 3h6l1 3H8z"/><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 12h6M9 16h4"/>',
+    event: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
+    alert: '<path d="M12 3 2 21h20z"/><path d="M12 10v4M12 18h.01"/>',
+    cog: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 1.2 14H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 7a1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 1.2V1a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H23a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+    eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    receipt: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>'
+  };
+  const svg = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`;
+
+  const cssVar = (name) => getComputedStyle(document.getElementById('ra-app')).getPropertyValue(name).trim();
+  const PAL = { indigo: cssVar('--ra-indigo'), sky: cssVar('--ra-sky'), blue: cssVar('--ra-blue'), lav: cssVar('--ra-lav'), violet: cssVar('--ra-violet'), ink: cssVar('--ra-ink') };
+
+  // Today line + greeting (clock, not data)
+  const now = new Date();
+  document.getElementById('ra-today').textContent = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }).format(now);
+  const hr = now.getHours();
+  document.getElementById('ra-greet').textContent = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+
+  const NAV = [
+    ['Overview', [['dashboard', 'Dashboard', 'home']]],
+    ['School', [['students', 'Students', 'users'], ['classes', 'Classes', 'grid'], ['teachers', 'Teachers', 'teacher'], ['register', 'Register', 'check'], ['teacher-logs', 'Teacher logs', 'clock']]],
+    ['Finance', [['fees', 'Fees', 'pound']]],
+    ['Communication', [['messages', 'Messages', 'mail'], ['newsletters', 'Newsletters & SMS', 'send']]],
+    ['Learning', [['homework', 'Homework', 'book'], ['exams', 'Exams & reports', 'exam'], ['events', 'Events & trips', 'event'], ['incidents', 'Incidents', 'alert']]],
+    ['System', [['settings', 'Settings', 'cog']]]
+  ];
+
+  // Wireframe layouts for the remaining modules (structure only)
+  const C = { i: 'var(--ra-indigo)', b: 'var(--ra-blue)', s: 'var(--ra-sky)', l: 'var(--ra-lav)', v: 'var(--ra-violet)' };
+  const WIRES = {
+    teachers: { g: 'School', t: 'Teachers', p: 'Staff records, working hours and portal access', a: ['Add teacher', 'Import', 'PDF', 'CSV'], b: [
+      { t: 'Teacher list', d: 'Name · work days · status, with Edit, Work hours, Profile, Portal and Delete on each row. Select several to delete at once.', s: 8, c: C.i, lines: 6 },
+      { t: 'Status filter', d: 'Show one status at a time.', s: 4, c: C.v, tags: ['Employed', 'Volunteer', 'Suspended', 'Resigned', 'Retired', 'Inactive'] },
+      { t: 'Working hours', d: 'Weekly grid per teacher — start and finish for each day; bulk change times for chosen days.', s: 12, c: C.b, cells: 14 },
+      { t: 'Teacher profile', d: 'Contact details, kiosk PIN, DBS number with issue and expiry, emergency contacts, medical info, bank details.', s: 6, c: C.s, lines: 4 },
+      { t: 'Class privileges', d: 'Per class: register, reports, messaging, merits, homework, incidents.', s: 6, c: C.l, tags: ['Register', 'EOTY reports', 'Messaging', 'Merits', 'Homework', 'Incidents'] } ] },
+    'teacher-logs': { g: 'School', t: 'Teacher logs', p: 'Staff sign-in and sign-out by week', a: ['Add logs', 'Import CSV', 'Print'], b: [
+      { t: 'Week picker', d: 'Previous / next week; weekly summary of each teacher’s logs.', s: 12, c: C.i, cells: 7 },
+      { t: 'Weekly logs', d: 'Absent flag, time in, time out per teacher per day — edit inline and update.', s: 8, c: C.b, lines: 6 },
+      { t: 'Pending logs', d: 'Logs waiting to be confirmed.', s: 4, c: C.v, lines: 3 },
+      { t: 'Absentees calendar', d: 'Monthly calendar of teacher absences.', s: 12, c: C.l, cells: 21 } ] },
+    newsletters: { g: 'Communication', t: 'Newsletters & SMS', p: 'Email newsletters and text messages to families and staff', a: ['New newsletter', 'Send SMS', 'Templates', 'SMS logs'], b: [
+      { t: 'Newsletters', d: 'Created · subject · target · last sent.', s: 7, c: C.i, lines: 5 },
+      { t: 'Audience', d: 'Who a newsletter or SMS goes to.', s: 5, c: C.v, tags: ['Parents', 'Teachers', 'Admins (test)', 'Student emails', 'Chosen classes', 'Waiting list'] },
+      { t: 'Templates', d: 'Modern, IBE New, Classic, Dark, Plain — plus SMS templates with variables.', s: 6, c: C.b, tags: ['Absence notify', 'Fees reminder', 'Homework', 'Incident', 'Late notify'] },
+      { t: 'Image & file manager', d: 'Upload images and attachments for newsletters.', s: 6, c: C.s, lines: 3 } ] },
+    homework: { g: 'Learning', t: 'Homework', p: 'Set, track and chase homework', a: ['Add homework', 'Templates', 'Incomplete report', 'Year report'], b: [
+      { t: 'Homework list', d: 'Homework · teacher/class · completed · files · status. Activate, lock or delete.', s: 8, c: C.i, lines: 6 },
+      { t: 'Filters', d: 'Class, date range, active or inactive.', s: 4, c: C.v, tags: ['Class', 'Date range', 'Active', 'Inactive'] },
+      { t: 'New homework', d: 'Class, teacher, students, title, deadline, lock after deadline, allow uploads, notify contacts, instructions.', s: 7, c: C.b, lines: 5 },
+      { t: 'File storage', d: 'Available, used and remaining space.', s: 5, c: C.s, lines: 2 } ] },
+    exams: { g: 'Learning', t: 'Exams & reports', p: 'Exams, progressive tests, grades and end-of-year reports', a: ['Add exam', 'Semesters', 'Grades', 'EOTY reports'], b: [
+      { t: 'Exams', d: 'Open · closed · locked. Official exams or progressive tests, filter by class or teacher.', s: 8, c: C.i, lines: 6 },
+      { t: 'Subjects', d: 'Shared with timetables and diaries.', s: 4, c: C.v, tags: ['Quran', 'Arabic', 'Fiqh', 'Seerah', 'Tajweed'] },
+      { t: 'Results entry', d: 'Marks per subject paper, per student.', s: 6, c: C.b, cells: 14 },
+      { t: 'End-of-year reports', d: 'Term dates, exam results, attendance and homework; teacher comments; generate PDFs.', s: 6, c: C.s, lines: 4 } ] },
+    events: { g: 'Learning', t: 'Events & trips', p: 'Events parents opt into, pay for and consent to', a: ['Add event'], b: [
+      { t: 'Upcoming events', d: 'Date · time · event · price · timeslots · auto-invoice.', s: 8, c: C.i, lines: 5 },
+      { t: 'Previous events', d: 'Past events and their opt-ins.', s: 4, c: C.l, lines: 4 },
+      { t: 'Event setup', d: 'Name, date, duration, opt-in and payment deadlines, terms, group students, timeslots.', s: 6, c: C.b, lines: 4 },
+      { t: 'Consent & pricing', d: 'Required or optional consent items and itemised prices; auto-invoice on opt-in.', s: 6, c: C.v, tags: ['Consent item', 'Itemised price', 'Auto-invoice'] } ] },
+    incidents: { g: 'Learning', t: 'Incidents', p: 'Incidents for students, teachers and staff', a: ['Add incident', 'Templates', 'H&S reports'], b: [
+      { t: 'Recent incidents', d: 'Counts for students, teachers and staff, then a list filterable by student or class.', s: 8, c: C.i, lines: 6 },
+      { t: 'Severity', d: 'Set from a template or by hand.', s: 4, c: C.v, tags: ['Low', 'Medium', 'High'] },
+      { t: 'New incident', d: 'Who, template, severity, date and time, title, report, action taken; show on portal; email or SMS contacts.', s: 12, c: C.b, lines: 4 } ] },
+    settings: { g: 'System', t: 'Settings', p: 'School profile, portals, fees, registers and messaging', a: ['Save changes'], b: [
+      { t: 'Sections', d: 'One tab per area.', s: 4, c: C.i, tags: ['School profile', 'Academic year', 'Fees', 'Register', 'Messaging', 'Mail/SMTP', 'Parent portal', 'Teacher portal', 'Payment gateways', 'Custom fields', 'Backups', 'Audits'] },
+      { t: 'Settings form', d: 'Grouped fields with helper text; toggles for portal sections; save bar pinned at the bottom.', s: 8, c: C.b, lines: 8 },
+      { t: 'Messaging routes', d: 'Allow or block each route.', s: 6, c: C.v, tags: ['Teachers → Admins', 'Teachers → Parents', 'Parents → Teachers', 'Students → Teachers'] },
+      { t: 'Automation status', d: 'Mailer, fees scheduler and mail queue health.', s: 6, c: C.s, lines: 3 } ] }
+  };
+
+  // Build nav
+  const nav = document.getElementById('ra-nav');
+  NAV.forEach(([label, items]) => {
+    const g = document.createElement('div'); g.className = 'ra-nav-group';
+    const l = document.createElement('div'); l.className = 'ra-nav-label'; l.textContent = label; g.appendChild(l);
+    items.forEach(([id, name, ic]) => {
+      const b = document.createElement('button'); b.className = 'ra-nav-btn'; b.dataset.page = id;
+      b.innerHTML = svg(ic); const s = document.createElement('span'); s.textContent = name; b.appendChild(s);
+      g.appendChild(b);
+    });
+    nav.appendChild(g);
+  });
+
+  // Build wireframe pages
+  const wires = document.getElementById('ra-wires');
+  Object.entries(WIRES).forEach(([id, w]) => {
+    const sec = document.createElement('section'); sec.className = 'ra-page'; sec.id = id; sec.hidden = true;
+    sec.dataset.group = w.g; sec.dataset.title = w.t;
+    const h = document.createElement('div'); h.className = 'ra-page-h';
+    const hl = document.createElement('div');
+    const h1 = document.createElement('h1'); h1.textContent = w.t; const p = document.createElement('p'); p.textContent = w.p;
+    hl.append(h1, p);
+    const tb = document.createElement('div'); tb.className = 'ra-toolbar';
+    w.a.forEach((a, i) => { const b = document.createElement('button'); b.className = 'ra-btn' + (i === 0 ? ' primary' : ''); b.textContent = a; tb.appendChild(b); });
+    h.append(hl, tb);
+    const spec = document.createElement('div'); spec.className = 'ra-spec';
+    spec.textContent = 'Layout blueprint — the blocks below show where each feature sits on this page, in the same colours and components as the Dashboard.';
+    const grid = document.createElement('div'); grid.className = 'ra-wire';
+    w.b.forEach((blk) => {
+      const d = document.createElement('div'); d.className = 'ra-wblock'; d.style.gridColumn = `span ${blk.s}`; d.style.setProperty('--c', blk.c);
+      const h3 = document.createElement('h3'); h3.append(document.createElement('i'), document.createTextNode(blk.t));
+      const dp = document.createElement('p'); dp.textContent = blk.d;
+      d.append(h3, dp);
+      if (blk.lines) for (let i = 0; i < blk.lines; i++) { const ln = document.createElement('div'); ln.className = 'ra-wline'; ln.style.width = (100 - ((i * 17) % 45)) + '%'; d.appendChild(ln); }
+      if (blk.tags) { const t = document.createElement('div'); t.className = 'ra-wtags'; blk.tags.forEach((x) => { const s = document.createElement('span'); s.textContent = x; t.appendChild(s); }); d.appendChild(t); }
+      if (blk.cells) { const t = document.createElement('div'); t.className = 'ra-wcells'; for (let i = 0; i < blk.cells; i++) t.appendChild(document.createElement('span')); d.appendChild(t); }
+      grid.appendChild(d);
+    });
+    sec.append(h, spec, grid);
+    wires.appendChild(sec);
+  });
+
+  // ---------- Calcs ----------
+  dash.calc('kpi_change', {
+    inputs: ['overview'], title: 'Change vs last week',
+    description: 'Each headline figure minus its value a week earlier.',
+    fn: (overview) => overview.filter((r) => r.prior !== null && r.prior !== undefined)
+      .map((r) => ({ metric: r.metric, change: Math.round((Number(r.value) - Number(r.prior)) * 10) / 10 }))
+  });
+  dash.calc('fees_totals', {
+    inputs: ['fees_by_type'], title: 'Fee totals, all types',
+    description: 'Invoiced, received and outstanding summed across invoice types, and the share received.',
+    fn: (fees_by_type) => {
+      const total = fees_by_type.reduce((s, r) => s + Number(r.total), 0);
+      const received = fees_by_type.reduce((s, r) => s + Number(r.received), 0);
+      const outstanding = fees_by_type.reduce((s, r) => s + Number(r.outstanding), 0);
+      return [{ total, received, outstanding, collected: total ? received / total : 0 }];
+    }
+  });
+  dash.calc('student_status', {
+    inputs: ['students'], title: 'Students by status',
+    description: 'Number of listed student records in each status.',
+    fn: (students) => {
+      const m = new Map(); students.forEach((s) => m.set(s.status, (m.get(s.status) || 0) + 1));
+      return [...m].map(([status, n]) => ({ status, n }));
+    }
+  });
+
+  // ---------- Formatting ----------
+  const f0 = d3.format(',');
+  const money = (v) => (Math.round(v * 100) % 100 === 0 ? d3.format(',')(Math.round(v)) : d3.format(',.2f')(v));
+  const FMT = {
+    int: (v) => f0(v),
+    gbp: (v) => '£' + money(v),
+    signedgbp: (v) => v === 0 ? 'No change' : (v > 0 ? '+' : '−') + '£' + money(Math.abs(v)),
+    signed: (v) => v === 0 ? 'No change' : (v > 0 ? '+' : '−') + f0(Math.abs(v)),
+    pct1: (v) => d3.format('.1f')(v) + '%',
+    pts: (v) => v === 0 ? 'No change' : (v > 0 ? '+' : '−') + d3.format('.1f')(Math.abs(v)) + ' pts',
+    share: (v) => d3.format('.1%')(v),
+    text: (v) => String(v)
+  };
+  const STATUS_C = {
+    Cleared: 'var(--color-ok)', Current: 'var(--color-ok)', Complete: 'var(--color-ok)', Paid: 'var(--color-ok)',
+    Pending: 'var(--ra-blue)', Processing: 'var(--ra-blue)', 'Waiting List': 'var(--ra-blue)', Accepted: 'var(--ra-sky)',
+    Bounced: 'var(--color-bad)', Failed: 'var(--color-bad)', Suspended: 'var(--color-bad)', Incomplete: 'var(--color-bad)', Expelled: 'var(--color-bad)',
+    'On Hold': 'var(--ra-violet)', 'Relocated/Left': 'var(--color-fg-muted)', Reversed: 'var(--ra-violet)'
+  };
+  const chip = (txt) => { const s = document.createElement('span'); s.className = 'ra-chip'; s.style.setProperty('--c', STATUS_C[txt] || 'var(--ra-lav)'); const t = document.createElement('span'); t.textContent = txt; s.title = txt; s.appendChild(t); return s; };
+  const seg = typeof Intl.Segmenter === 'function' ? new Intl.Segmenter('en', { granularity: 'grapheme' }) : null;
+  const firstGrapheme = (w) => seg ? (seg.segment(w)[Symbol.iterator]().next().value || {}).segment || '' : Array.from(w)[0] || '';
+  const initials = (n) => {
+    const words = String(n || '').replace(/^(Ustadh|Ustadha|Mr|Mrs|Ms|Dr)\.?\s+/i, '').split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(firstGrapheme(w)));
+    if (!words.length) return '·';
+    const pick = words.length > 1 ? [words[0], words[words.length - 1]] : [words[0]];
+    return pick.map(firstGrapheme).join('').toLocaleUpperCase();
+  };
+  const dayFmt = d3.utcFormat('%-d %b');
+  const timeFmt = (iso) => { const d = new Date(iso + ':00Z'); return d3.utcFormat(d.getUTCFullYear() === new Date().getFullYear() ? '%-d %b, %H:%M' : '%-d %b %Y')(d); };
+
+  const status = (id) => dash.data(id).status;
+  const rowsOf = (id) => (status(id) === 'ok' ? dash.data(id).data : []);
+  const matchWhere = (rows, where) => {
+    const conds = where.split('&').map((p) => p.split('=').map(decodeURIComponent));
+    return rows.find((r) => conds.every(([k, v]) => String(r[k]) === v));
+  };
+
+  // Fill single-value marks
+  function fillMarks() {
+    document.querySelectorAll('#ra-app [data-source][data-field]').forEach((el) => {
+      if (el.closest('table') || el.closest('[data-dyn]')) return;
+      if (!el.dataset.where && el.dataset.row === undefined) return;
+      const id = el.dataset.source; const st = status(id);
+      if (st !== 'ok') { el.textContent = '—'; el.classList.toggle('dash-skeleton', st === 'loading'); return; }
+      el.classList.remove('dash-skeleton');
+      const rows = dash.data(id).data;
+      const row = el.dataset.where ? matchWhere(rows, el.dataset.where) : rows[Number(el.dataset.row)];
+      const v = row ? row[el.dataset.field] : undefined;
+      if (v === undefined || v === null) { el.textContent = '—'; return; }
+      const num = typeof v === 'number' ? v : (v !== '' && !isNaN(Number(v)) ? Number(v) : null);
+      el.textContent = num === null ? String(v) : (FMT[el.dataset.fmt] || FMT.int)(num);
+      if (el.dataset.good) {
+        const good = el.dataset.good === 'up' ? v > 0 : v < 0;
+        el.classList.toggle('ra-up', v !== 0 && good); el.classList.toggle('ra-down', v !== 0 && !good);
+      }
+    });
+  }
+
+  function boxState(el, ids) {
+    const sts = ids.map(status);
+    if (sts.every((s) => s === 'ok')) { el.classList.remove('dash-skeleton'); return true; }
+    el.replaceChildren();
+    if (sts.some((s) => s === 'loading')) { el.classList.add('dash-skeleton'); return false; }
+    el.classList.remove('dash-skeleton');
+    const f = document.createElement('div'); f.className = 'ra-failed'; f.textContent = 'Failed to load'; el.appendChild(f);
+    return false;
+  }
+
+  function emptyIn(el, msg) { el.replaceChildren(); const d = document.createElement('div'); d.className = 'ra-empty'; d.textContent = msg; el.appendChild(d); }
+
+  // Generic table renderer: cols = [{f, fmt, cls, chip}]
+  function renderTable(tbl, id, cols, filter) {
+    const tb = tbl.querySelector('tbody'); tb.replaceChildren();
+    const wrap = tbl.parentElement; let em = wrap.nextElementSibling;
+    if (!em || !em.classList.contains('ra-empty')) { em = document.createElement('div'); em.className = 'ra-empty'; wrap.after(em); }
+    em.hidden = true;
+    if (status(id) !== 'ok') return;
+    let rows = dash.data(id).data; if (filter) rows = rows.filter(filter);
+    if (!rows.length) { em.hidden = false; em.textContent = filter ? 'Nothing matches these filters.' : (tbl.dataset.empty || 'Nothing here yet.'); }
+    rows.forEach((r) => {
+      const tr = document.createElement('tr');
+      cols.forEach((c) => {
+        const td = document.createElement('td'); if (c.cls) td.className = c.cls; if (c.title) td.title = String(r[c.f] ?? '');
+        if (c.render) c.render(td, r);
+        else {
+          const v = r[c.f];
+          if (v === null || v === undefined || v === '') { /* empty -> css dash */ }
+          else if (c.chip) td.appendChild(chip(String(v)));
+          else td.textContent = c.fmt ? c.fmt(v) : String(v);
+        }
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+  }
+
+  // Tooltip helper
+  function tooltip(box) {
+    let t = box.querySelector('.ra-tip');
+    if (!t) { t = document.createElement('div'); t.className = 'ra-tip'; box.appendChild(t); }
+    return {
+      show(title, lines, x, y) {
+        t.replaceChildren();
+        const h = document.createElement('div'); h.className = 't'; h.textContent = title; t.appendChild(h);
+        lines.forEach((l) => {
+          const d = document.createElement('div'); d.className = 'l';
+          if (l.c) { const s = document.createElement('span'); s.className = 's'; s.style.background = l.c; d.appendChild(s); }
+          d.appendChild(document.createTextNode(l.n ? `${l.n}  ${l.v}` : l.v)); t.appendChild(d);
+        });
+        t.style.opacity = 1;
+        const bw = box.clientWidth, tw = t.offsetWidth, th = t.offsetHeight;
+        t.style.left = Math.max(0, Math.min(bw - tw, x + 12)) + 'px';
+        t.style.top = Math.max(0, y - th - 10) + 'px';
+      },
+      hide() { t.style.opacity = 0; }
+    };
+  }
+  const textW = (svgSel, str, cls) => { const t = svgSel.append('text').attr('class', cls || null).text(str); const w = t.node().getComputedTextLength(); t.remove(); return w; };
+
+  // ---------- Charts ----------
+  function attendanceChart(el) {
+    if (!boxState(el, ['attendance_weekly'])) return;
+    el.replaceChildren();
+    const rows = dash.data('attendance_weekly').data.map((r) => ({ d: new Date(r.week + 'T00:00:00Z'), v: Number(r.rate) })).filter((r) => !isNaN(r.v));
+    if (!rows.length) return emptyIn(el, 'No registers taken yet this term.');
+    const W = el.clientWidth || 600, H = 230;
+    const s = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('height', H)
+      .attr('role', 'img').attr('aria-label', `Weekly attendance: ${rows.map((r) => dayFmt(r.d) + ' ' + FMT.pct1(r.v)).join(', ')}`);
+    const lo = Math.floor((d3.min(rows, (r) => r.v) - 2) / 2) * 2;
+    const y = d3.scaleLinear([lo, 100], [H - 26, 10]);
+    const yt = y.ticks(5);
+    const ml = d3.max(yt, (t) => textW(s, t + '%')) + 10;
+    const last = rows[rows.length - 1];
+    const mr = textW(s, FMT.pct1(last.v), 'ra-strong') + 14;
+    const ext = d3.extent(rows, (r) => r.d);
+    if (+ext[0] === +ext[1]) { ext[0] = d3.utcDay.offset(ext[0], -3); ext[1] = d3.utcDay.offset(ext[1], 3); }
+    const x = d3.scaleUtc(ext, [ml, W - mr]);
+    s.append('g').selectAll('line').data(yt).join('line').attr('x1', ml).attr('x2', W - mr).attr('y1', y).attr('y2', y).attr('stroke', 'var(--cds-chart-grid)');
+    s.append('g').selectAll('text').data(yt).join('text').attr('x', ml - 8).attr('y', (d) => y(d) + 4).attr('text-anchor', 'end').text((d) => d + '%');
+    const nx = Math.max(2, Math.min(rows.length, Math.floor((W - ml - mr) / 70)));
+    const step = Math.ceil(rows.length / nx);
+    s.append('g').selectAll('text').data(rows.filter((_, i) => i % step === 0)).join('text').attr('x', (d) => x(d.d)).attr('y', H - 6).attr('text-anchor', 'middle').text((d) => dayFmt(d.d));
+    const gid = 'ra-grad-' + el.id;
+    const grad = s.append('defs').append('linearGradient').attr('id', gid).attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 1);
+    [[0, .32], [.25, .2], [.5, .1], [.75, .04], [1, 0]].forEach(([o, a]) => grad.append('stop').attr('offset', o).attr('style', `stop-color:${PAL.blue};stop-opacity:${a}`));
+    s.append('path').datum(rows).attr('fill', `url(#${gid})`).attr('d', d3.area().x((d) => x(d.d)).y0(y(lo)).y1((d) => y(d.v)));
+    s.append('path').datum(rows).attr('fill', 'none').attr('stroke', PAL.indigo).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round').attr('d', d3.line().x((d) => x(d.d)).y((d) => y(d.v)));
+    s.append('circle').attr('cx', x(last.d)).attr('cy', y(last.v)).attr('r', 4).attr('fill', PAL.indigo);
+    s.append('text').attr('class', 'ra-strong').attr('x', x(last.d) + 8).attr('y', y(last.v) + 4).text(FMT.pct1(last.v));
+    const hov = s.append('circle').attr('r', 5).attr('fill', PAL.violet).attr('stroke', 'var(--color-panel)').attr('stroke-width', 2).style('opacity', 0);
+    const tt = tooltip(el);
+    s.append('rect').attr('x', ml).attr('y', 0).attr('width', W - ml - mr).attr('height', H).attr('fill', 'transparent')
+      .on('mousemove', (ev) => {
+        const [mx] = d3.pointer(ev); const t = x.invert(mx);
+        const r = rows.reduce((a, b) => (Math.abs(b.d - t) < Math.abs(a.d - t) ? b : a));
+        hov.attr('cx', x(r.d)).attr('cy', y(r.v)).style('opacity', 1);
+        const sc = el.clientWidth / W;
+        tt.show('Week of ' + dayFmt(r.d), [{ v: FMT.pct1(r.v) + ' attendance' }], x(r.d) * sc, y(r.v) * sc);
+      })
+      .on('mouseleave', () => { hov.style('opacity', 0); tt.hide(); });
+  }
+
+  function ageChart(el) {
+    if (!boxState(el, ['age_groups'])) return;
+    el.replaceChildren();
+    const rows = dash.data('age_groups').data.map((r) => ({ g: r.group, b: Number(r.boys) || 0, f: Number(r.girls) || 0 }));
+    if (!rows.length) return emptyIn(el, 'No current students yet.');
+    const W = el.clientWidth || 320, H = Math.max(160, rows.length * 36 + 12);
+    const s = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('height', H)
+      .attr('role', 'img').attr('aria-label', 'Students by age group: ' + rows.map((r) => `${r.g} ${r.b} boys, ${r.f} girls`).join('; '));
+    const ml = d3.max(rows, (r) => textW(s, r.g)) + 10;
+    const mr = d3.max(rows, (r) => textW(s, f0(r.b + r.f), 'ra-strong')) + 10;
+    const yb = d3.scaleBand(rows.map((r) => r.g), [6, H - 6]).padding(.35);
+    const x = d3.scaleLinear([0, Math.max(1, d3.max(rows, (r) => r.b + r.f))], [ml, W - mr]);
+    const tt = tooltip(el); const sc = () => el.clientWidth / W;
+    const g = s.append('g');
+    rows.forEach((r) => {
+      const yy = yb(r.g), bh = Math.min(22, yb.bandwidth());
+      const off = (yb.bandwidth() - bh) / 2;
+      s.append('text').attr('x', ml - 8).attr('y', yy + yb.bandwidth() / 2 + 4).attr('text-anchor', 'end').text(r.g);
+      const segs = [{ n: 'Boys', v: r.b, x0: 0, c: PAL.indigo }, { n: 'Girls', v: r.f, x0: r.b, c: PAL.violet }];
+      segs.forEach((sg) => {
+        g.append('rect').attr('x', x(sg.x0) + (sg.x0 ? 1 : 0)).attr('y', yy + off).attr('height', bh).attr('width', Math.max(0, x(sg.x0 + sg.v) - x(sg.x0) - (sg.x0 ? 1 : 0))).attr('rx', 4).attr('fill', sg.c)
+          .on('mousemove', (ev) => { const [mx, my] = d3.pointer(ev, el); tt.show('Age ' + r.g, [{ c: PAL.indigo, n: 'Boys', v: f0(r.b) }, { c: PAL.violet, n: 'Girls', v: f0(r.f) }], mx, my); })
+          .on('mouseleave', () => tt.hide());
+      });
+      s.append('text').attr('class', 'ra-strong').attr('x', x(r.b + r.f) + 6).attr('y', yy + yb.bandwidth() / 2 + 4).text(f0(r.b + r.f));
+    });
+  }
+
+  function feesTypeChart(el) {
+    if (!boxState(el, ['fees_by_type'])) return;
+    el.replaceChildren();
+    const rows = dash.data('fees_by_type').data.map((r) => ({ t: r.type, rec: Number(r.received) || 0, out: Number(r.outstanding) || 0 }));
+    if (!rows.length) return emptyIn(el, 'No invoices this year yet.');
+    const W = el.clientWidth || 320, H = Math.max(160, rows.length * 36 + 12);
+    const s = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('height', H)
+      .attr('role', 'img').attr('aria-label', 'Fees by type: ' + rows.map((r) => `${r.t} ${FMT.gbp(r.rec)} received, ${FMT.gbp(r.out)} outstanding`).join('; '));
+    const ml = d3.max(rows, (r) => textW(s, r.t)) + 10;
+    const lbl = (r) => r.out ? FMT.gbp(r.out) + ' due' : r.rec ? 'Paid' : 'No invoices';
+    const mr = d3.max(rows, (r) => textW(s, lbl(r))) + 10;
+    const yb = d3.scaleBand(rows.map((r) => r.t), [6, H - 6]).padding(.35);
+    const x = d3.scaleLinear([0, Math.max(1, d3.max(rows, (r) => r.rec + r.out))], [ml, W - mr]);
+    const tt = tooltip(el);
+    rows.forEach((r) => {
+      const yy = yb(r.t), bh = Math.min(22, yb.bandwidth()), off = (yb.bandwidth() - bh) / 2;
+      s.append('text').attr('x', ml - 8).attr('y', yy + yb.bandwidth() / 2 + 4).attr('text-anchor', 'end').text(r.t);
+      const show = (ev) => { const [mx, my] = d3.pointer(ev, el); tt.show(r.t, [{ c: PAL.blue, n: 'Received', v: FMT.gbp(r.rec) }, { c: PAL.violet, n: 'Outstanding', v: FMT.gbp(r.out) }], mx, my); };
+      if (r.rec + r.out) s.append('rect').attr('x', ml).attr('y', yy + off).attr('height', bh).attr('width', Math.max(2, x(r.rec + r.out) - ml)).attr('rx', 4).attr('fill', `color-mix(in srgb, ${PAL.lav} 30%, transparent)`);
+      if (r.rec) s.append('rect').attr('x', ml).attr('y', yy + off).attr('height', bh).attr('width', Math.max(0, x(r.rec) - ml)).attr('rx', 4).attr('fill', PAL.blue).on('mousemove', show).on('mouseleave', () => tt.hide());
+      if (r.out) s.append('rect').attr('x', x(r.rec) + 1).attr('y', yy + off).attr('height', bh).attr('width', Math.max(2, x(r.rec + r.out) - x(r.rec) - 1)).attr('rx', 4).attr('fill', PAL.violet).on('mousemove', show).on('mouseleave', () => tt.hide());
+      s.append('text').attr('class', r.out ? 'ra-strong' : null).attr('x', x(r.rec + r.out) + 6).attr('y', yy + yb.bandwidth() / 2 + 4).text(lbl(r));
+    });
+  }
+
+  function feesMonthlyChart(el) {
+    if (!boxState(el, ['fees_monthly'])) return;
+    el.replaceChildren();
+    const rows = dash.data('fees_monthly').data.map((r) => ({ m: new Date(r.month + '-01T00:00:00Z'), inv: Number(r.invoiced) || 0, rec: Number(r.received) || 0 }));
+    if (!rows.length) return emptyIn(el, 'No invoices in the last six months.');
+    const W = el.clientWidth || 600, H = 240;
+    const s = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('height', H)
+      .attr('role', 'img').attr('aria-label', 'Invoiced and received by month: ' + rows.map((r) => `${d3.utcFormat('%B')(r.m)} ${FMT.gbp(r.inv)} invoiced, ${FMT.gbp(r.rec)} received`).join('; '));
+    const y = d3.scaleLinear([0, Math.max(1, d3.max(rows, (r) => Math.max(r.inv, r.rec)))], [H - 26, 10]).nice();
+    const yt = y.ticks(4);
+    const comp = (v) => '£' + Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(v);
+    const ml = d3.max(yt, (t) => textW(s, comp(t))) + 10;
+    const mf = d3.utcFormat('%b');
+    const xb = d3.scaleBand(rows.map((r) => mf(r.m)), [ml, W - 4]).padding(.28);
+    const inner = d3.scaleBand(['inv', 'rec'], [0, xb.bandwidth()]).padding(.12);
+    s.append('g').selectAll('line').data(yt).join('line').attr('x1', ml).attr('x2', W - 4).attr('y1', y).attr('y2', y).attr('stroke', 'var(--cds-chart-grid)');
+    s.append('g').selectAll('text').data(yt).join('text').attr('x', ml - 8).attr('y', (d) => y(d) + 4).attr('text-anchor', 'end').text(comp);
+    const tt = tooltip(el);
+    rows.forEach((r) => {
+      const x0 = xb(mf(r.m)); const bw = Math.min(32, inner.bandwidth());
+      const show = (ev) => { const [mx, my] = d3.pointer(ev, el); tt.show(d3.utcFormat('%B %Y')(r.m), [{ c: PAL.lav, n: 'Invoiced', v: FMT.gbp(r.inv) }, { c: PAL.indigo, n: 'Received', v: FMT.gbp(r.rec) }], mx, my); };
+      [['inv', r.inv, PAL.lav], ['rec', r.rec, PAL.indigo]].forEach(([k, v, c]) => {
+        const bx = x0 + inner(k) + (inner.bandwidth() - bw) / 2;
+        s.append('rect').attr('x', bx).attr('y', y(v)).attr('width', bw).attr('height', Math.max(0, y(0) - y(v))).attr('rx', 4).attr('fill', c).on('mousemove', show).on('mouseleave', () => tt.hide());
+      });
+      s.append('text').attr('x', x0 + xb.bandwidth() / 2).attr('y', H - 6).attr('text-anchor', 'middle').text(mf(r.m));
+    });
+  }
+
+  // ---------- Messages ----------
+  let selectedMsg = null; let msgFilter = 'All';
+  function msgItem(m, onClick) {
+    const b = document.createElement('button'); b.className = 'ra-msg'; b.dataset.unread = String(!!m.unread);
+    const av = document.createElement('div'); av.className = 'ra-avatar'; av.textContent = initials(m.sender);
+    av.style.background = m.role === 'Teacher' ? `linear-gradient(135deg, ${PAL.indigo}, ${PAL.violet})` : m.role === 'Admin' ? `linear-gradient(135deg, ${PAL.violet}, ${PAL.ink})` : `linear-gradient(135deg, ${PAL.blue}, ${PAL.indigo})`;
+    const mid = document.createElement('div'); mid.style.minWidth = '0';
+    const top = document.createElement('div'); top.className = 'ra-msg-top';
+    const fr = document.createElement('span'); fr.className = 'ra-msg-from'; fr.textContent = m.sender;
+    top.append(fr, chip(m.role));
+    const sj = document.createElement('div'); sj.className = 'ra-msg-subj'; sj.textContent = m.subject;
+    sj.title = m.subject;
+    const pv = document.createElement('div'); pv.className = 'ra-msg-prev'; pv.textContent = m.preview; pv.title = m.preview;
+    fr.title = m.sender;
+    mid.append(top, sj, pv);
+    const side = document.createElement('div'); side.className = 'ra-msg-side';
+    const tm = document.createElement('span'); tm.textContent = timeFmt(m.received);
+    const dot = document.createElement('span'); dot.className = 'ra-dot';
+    side.append(tm, dot);
+    b.append(av, mid, side);
+    b.addEventListener('click', onClick);
+    return b;
+  }
+  function drawDashMsgs() {
+    const el = document.getElementById('dash-msgs');
+    if (!boxState(el, ['messages'])) return;
+    el.replaceChildren();
+    const unread = dash.data('messages').data.filter((m) => m.unread);
+    if (!unread.length) return emptyIn(el, 'You’re all caught up — no unread messages.');
+    unread.slice(0, 4).forEach((m) => el.appendChild(msgItem(m, () => { selectedMsg = m.id; go('messages'); })));
+  }
+  function drawInbox() {
+    const list = document.getElementById('msg-list');
+    const fwrap = document.getElementById('msg-filters');
+    fwrap.replaceChildren();
+    ['All', 'Parent', 'Teacher', 'Admin'].forEach((f) => {
+      const b = document.createElement('button'); b.className = 'ra-filter'; b.setAttribute('aria-pressed', String(f === msgFilter));
+      b.textContent = f === 'All' ? 'All' : f + 's';
+      b.addEventListener('click', () => { msgFilter = f; drawInbox(); });
+      fwrap.appendChild(b);
+    });
+    if (!boxState(list, ['messages'])) return;
+    list.replaceChildren();
+    const all = dash.data('messages').data;
+    const rows = all.filter((m) => msgFilter === 'All' || m.role === msgFilter);
+    if (!selectedMsg || !all.find((m) => m.id === selectedMsg)) selectedMsg = all[0] && all[0].id;
+    if (!rows.length) emptyIn(list, all.length ? 'No messages from this group.' : 'Your inbox is empty.');
+    rows.forEach((m) => { const it = msgItem(m, () => { selectedMsg = m.id; drawInbox(); }); if (m.id === selectedMsg) it.setAttribute('aria-current', 'true'); list.appendChild(it); });
+    const m = all.find((x) => x.id === selectedMsg);
+    const set = (id, field) => { const e = document.getElementById(id); if (m) { e.dataset.where = 'id=' + encodeURIComponent(m.id); e.textContent = m[field]; } };
+    set('msg-subj', 'subject'); set('msg-from', 'sender'); set('msg-role', 'role'); set('msg-body', 'preview');
+  }
+
+  // ---------- Students ----------
+  let stuFilter = 'All'; let stuQuery = '';
+  function drawStudents() {
+    const fw = document.getElementById('stu-filters'); fw.replaceChildren();
+    const counts = rowsOf('student_status');
+    const total = counts.reduce((s, r) => s + r.n, 0);
+    const mk = (label, val, n, where) => {
+      const b = document.createElement('button'); b.className = 'ra-filter'; b.setAttribute('aria-pressed', String(stuFilter === val));
+      b.appendChild(document.createTextNode(label + ' '));
+      const nb = document.createElement('b'); nb.textContent = f0(n);
+      if (where) { nb.dataset.source = 'student_status'; nb.dataset.where = where; nb.dataset.field = 'n'; }
+      b.appendChild(nb);
+      b.addEventListener('click', () => { stuFilter = val; drawStudents(); });
+      fw.appendChild(b);
+    };
+    if (counts.length) {
+      const b = document.createElement('button'); b.className = 'ra-filter'; b.setAttribute('aria-pressed', String(stuFilter === 'All')); b.textContent = 'All';
+      b.addEventListener('click', () => { stuFilter = 'All'; drawStudents(); }); fw.appendChild(b);
+      counts.forEach((r) => mk(r.status, r.status, r.n, 'status=' + encodeURIComponent(r.status)));
+    }
+    const q = stuQuery.toLowerCase();
+    renderTable(document.getElementById('tbl-stu'), 'students', [
+      { f: 'id', cls: 'ra-muted' }, { f: 'name', cls: 'wrap' }, { f: 'gender', cls: 'opt' }, { f: 'class', cls: 'wrap' }, { f: 'age', cls: 'num opt', fmt: f0 }, { f: 'status', chip: true },
+      { render: (td) => { const a = document.createElement('span'); a.className = 'ra-acts'; [['edit', 'Edit'], ['eye', 'Profile'], ['check', 'Register'], ['pound', 'Fees']].forEach(([ic, l]) => { const b = document.createElement('button'); b.setAttribute('aria-label', l); b.title = l; b.innerHTML = svg(ic); a.appendChild(b); }); td.appendChild(a); } }
+    ], (r) => (stuFilter === 'All' || r.status === stuFilter) && (!q || [r.id, r.name, r.class].join(' ').toLowerCase().includes(q)));
+  }
+
+  // ---------- Fees ----------
+  let payFilter = 'All'; let payQuery = '';
+  function drawFees() {
+    feesMonthlyChart(document.getElementById('chart-feesmonthly'));
+    renderTable(document.getElementById('tbl-ftype'), 'fees_by_type', [
+      { f: 'type' }, { f: 'total', cls: 'num', fmt: FMT.gbp }, { f: 'received', cls: 'num', fmt: FMT.gbp }, { f: 'outstanding', cls: 'num', fmt: FMT.gbp }
+    ]);
+    const fw = document.getElementById('pay-filters'); fw.replaceChildren();
+    ['All', 'Cleared', 'Pending', 'Processing', 'Bounced'].forEach((f) => {
+      const b = document.createElement('button'); b.className = 'ra-filter'; b.setAttribute('aria-pressed', String(f === payFilter)); b.textContent = f;
+      b.addEventListener('click', () => { payFilter = f; drawFees(); }); fw.appendChild(b);
+    });
+    const q = payQuery.toLowerCase().replace(/^#/, '');
+    renderTable(document.getElementById('tbl-pay'), 'payments', [
+      { f: 'payment', cls: 'ra-muted' }, { f: 'date', fmt: (v) => dayFmt(new Date(v + 'T00:00:00Z')) }, { f: 'student', cls: 'wrap' }, { f: 'type' },
+      { f: 'amount', cls: 'num', fmt: FMT.gbp }, { f: 'method' }, { f: 'status', chip: true },
+      { render: (td) => { const a = document.createElement('span'); a.className = 'ra-acts'; const b = document.createElement('button'); b.setAttribute('aria-label', 'Receipt'); b.title = 'Send receipt'; b.innerHTML = svg('receipt'); a.appendChild(b); td.appendChild(a); } }
+    ], (r) => (payFilter === 'All' || r.status === payFilter) && (!q || [r.payment, r.student, r.method].join(' ').toLowerCase().includes(q)));
+  }
+
+  // ---------- Classes ----------
+  const CLS_C = [PAL.indigo, PAL.blue, PAL.violet, PAL.sky, PAL.lav];
+  function drawClasses() {
+    const el = document.getElementById('cls-grid');
+    if (!boxState(el, ['classes'])) return;
+    el.replaceChildren();
+    if (!dash.data('classes').data.length) return emptyIn(el, 'No classes set up for this year yet.');
+    const sort = document.getElementById('cls-sort').value;
+    const rows = [...dash.data('classes').data].sort((a, b) => sort === 'size' ? b.students - a.students : sort === 'att' ? b.attendance - a.attendance : a.class.localeCompare(b.class));
+    rows.forEach((r, i) => {
+      const c = document.createElement('div'); c.className = 'ra-class'; c.style.setProperty('--c', CLS_C[i % CLS_C.length]);
+      const h = document.createElement('div'); h.className = 'ra-class-h';
+      const h3 = document.createElement('h3'); h3.append(document.createElement('i'), document.createTextNode(r.class)); h.append(h3, chip(r.register_today));
+      const row = (k, v) => { const d = document.createElement('div'); d.className = 'ra-class-row'; const a = document.createElement('span'); a.textContent = k; const b = document.createElement('span'); b.textContent = v; d.append(a, b); return d; };
+      const cap = Number(r.capacity) || 0, n = Number(r.students) || 0;
+      const bar = document.createElement('div'); bar.className = 'ra-bar' + (cap && n > cap ? ' over' : ''); const bi = document.createElement('i'); bi.style.width = (cap ? Math.min(100, (n / cap) * 100) : 0) + '%'; bar.appendChild(bi);
+      const teacher = row('Main teacher', r.teacher || 'Not assigned'); if (!r.teacher) teacher.lastChild.className = 'ra-warn';
+      const size = row('Students', cap ? `${f0(n)} of ${f0(cap)}` : `${f0(n)} · no capacity set`);
+      if (cap && n > cap) { size.lastChild.textContent += ` · ${f0(n - cap)} over`; size.lastChild.className = 'ra-warn'; }
+      c.append(h, row('Age group', r.age_group), teacher, size, bar,
+        row('Attendance this month', FMT.pct1(r.attendance)), row('Fee per year', FMT.gbp(r.fee_per_year)));
+      el.appendChild(c);
+    });
+  }
+
+  // ---------- Register ----------
+  function drawRegister() {
+    renderTable(document.getElementById('tbl-regtoday'), 'classes', [
+      { f: 'class', cls: 'wrap' }, { f: 'register_today', chip: true }, { f: 'attendance', cls: 'num', fmt: FMT.pct1 }
+    ]);
+    const days = ['d05', 'd06', 'd07', 'd08', 'd12', 'd13', 'd14', 'd15', 'd19', 'd20', 'd21', 'd22'];
+    renderTable(document.getElementById('tbl-reg'), 'register_month', [
+      { f: 'student', cls: 'wrap' },
+      ...days.map((d) => ({ f: d, cls: 'm', render: (td, r) => { const v = r[d]; if (!/^[PLANU]$/.test(v || '')) return; const s = document.createElement('span'); s.className = 'ra-mk ra-mk-' + v; s.textContent = v; td.appendChild(s); } })),
+      { f: 'pct', cls: 'num', fmt: FMT.pct1 }
+    ]);
+    attendanceChart(document.getElementById('chart-attendance2'));
+  }
+
+  // ---------- Dashboard ----------
+  function drawDashboard() {
+    attendanceChart(document.getElementById('chart-attendance'));
+    ageChart(document.getElementById('chart-age'));
+    feesTypeChart(document.getElementById('chart-feestype'));
+    drawDashMsgs();
+    renderTable(document.getElementById('tbl-tlogs'), 'teacher_logs', [
+      { f: 'teacher', cls: 'wrap' }, { f: 'signed_in' }, { f: 'signed_out' }, { f: 'logged_at', cls: 'ra-muted opt' }
+    ]);
+    renderTable(document.getElementById('tbl-dpay'), 'payments', [
+      { f: 'payment', cls: 'ra-muted' }, { f: 'date', cls: 'opt', fmt: (v) => dayFmt(new Date(v + 'T00:00:00Z')) }, { f: 'student', cls: 'wrap' },
+      { f: 'amount', cls: 'num', fmt: FMT.gbp }, { f: 'method', cls: 'opt' }, { f: 'status', chip: true }
+    ]);
+  }
+
+  // ---------- Navigation ----------
+  let current = 'dashboard';
+  const DRAW = { dashboard: drawDashboard, fees: drawFees, students: drawStudents, register: drawRegister, classes: drawClasses, messages: drawInbox };
+  function plurals() {
+    const pr = new Intl.PluralRules('en-GB');
+    const ov = rowsOf('overview');
+    document.querySelectorAll('#ra-app [data-plural]').forEach((el) => {
+      const r = ov.find((x) => x.metric === el.dataset.plural);
+      if (r) el.textContent = pr.select(Number(r.value)) === 'one' ? el.dataset.one : el.dataset.other;
+    });
+    document.querySelectorAll('#ra-app [data-hide-zero]').forEach((el) => {
+      const r = ov.find((x) => x.metric === el.dataset.hideZero);
+      el.hidden = !r || Number(r.value) === 0;
+    });
+    document.querySelectorAll('#ra-app .ra-badge').forEach((el) => {
+      const r = ov.find((x) => x.metric === (el.dataset.where || '').split('=')[1]);
+      el.hidden = !r || Number(r.value) === 0;
+      el.parentElement.setAttribute('aria-label', el.parentElement.getAttribute('aria-label').split(' (')[0] + (r && Number(r.value) ? ` (${f0(r.value)})` : ''));
+    });
+  }
+  function draw() { fillMarks(); plurals();(DRAW[current] || (() => {}))(); }
+  function go(id, noLink) {
+    const sec = document.getElementById(id); if (!sec || !sec.classList.contains('ra-page')) return;
+    current = id;
+    document.querySelectorAll('#ra-app .ra-page').forEach((p) => { p.hidden = p.id !== id; });
+    document.querySelectorAll('#ra-app .ra-nav-btn').forEach((b) => b.toggleAttribute('aria-current', false));
+    const nb = document.querySelector(`#ra-app .ra-nav-btn[data-page="${id}"]`); if (nb) nb.setAttribute('aria-current', 'page');
+    document.getElementById('ra-crumb-group').textContent = sec.dataset.group;
+    document.getElementById('ra-crumb-title').textContent = sec.dataset.title;
+    if (!noLink) dash.setLink(id);
+    draw();
+  }
+  document.getElementById('ra-app').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-page],[data-go]'); if (!b) return;
+    go(b.dataset.page || b.dataset.go);
+  });
+  document.getElementById('stu-search').addEventListener('input', (e) => { stuQuery = e.target.value; drawStudents(); });
+  document.getElementById('pay-search').addEventListener('input', (e) => { payQuery = e.target.value; drawFees(); });
+  document.getElementById('cls-sort').addEventListener('change', drawClasses);
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+    const t = e.target; if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    e.preventDefault(); document.getElementById('ra-global-search').focus();
+  });
+  document.getElementById('ra-global-search').addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    stuQuery = e.target.value; document.getElementById('stu-search').value = stuQuery; go('students');
+  });
+
+  // First-view stagger: index dashboard tiles, then drop the class so later visits don't replay it
+  document.querySelectorAll('#dashboard .ra-anim').forEach((el, i) => {
+    el.style.setProperty('--i', i);
+    el.addEventListener('animationend', () => { el.classList.remove('ra-anim'); el.style.removeProperty('--i'); }, { once: true });
+  });
+
+  // Fire drill: hold-to-confirm (2s linear fill, 200ms snap back on release)
+  const drill = document.getElementById('ra-drill');
+  const fill = drill.querySelector('.ra-drill-fill');
+  const label = drill.querySelector('.ra-drill-label');
+  const hint = document.getElementById('ra-drill-hint');
+  let holding = false;
+  const startHold = (e) => { if (drill.classList.contains('done') || holding) return; if (e.type === 'keydown') { if (e.key !== ' ' && e.key !== 'Enter') return; if (e.repeat) return; e.preventDefault(); } holding = true; drill.classList.add('holding'); };
+  const endHold = () => { if (!holding) return; holding = false; drill.classList.remove('holding'); };
+  fill.addEventListener('transitionend', (e) => {
+    if (e.propertyName !== 'clip-path' || !holding) return;
+    holding = false; drill.classList.remove('holding'); drill.classList.add('done');
+    fill.textContent = 'Drill started'; hint.textContent = 'Attendance lists are ready for every class.';
+    setTimeout(() => { drill.classList.remove('done'); fill.textContent = 'Keep holding…'; hint.textContent = 'Press and hold for 2 seconds'; }, 4000);
+  });
+  drill.addEventListener('pointerdown', startHold);
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((t) => drill.addEventListener(t, endHold));
+  drill.addEventListener('keydown', startHold);
+  drill.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'Enter') endHold(); });
+  drill.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  const start = location.hash.slice(1);
+  go(document.getElementById(start) && document.getElementById(start).classList.contains('ra-page') ? start : 'dashboard', true);
+  dash.onData(draw);
+})();
+</script>

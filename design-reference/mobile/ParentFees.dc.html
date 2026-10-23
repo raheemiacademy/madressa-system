@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Parent fees</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+.app{font-family:'Inter',system-ui,sans-serif;color:#1F2340;font-variant-numeric:tabular-nums}
+.app *{box-sizing:border-box}
+.scroll{overscroll-behavior:contain}
+.tap{touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:transform 120ms cubic-bezier(0.23,1,0.32,1),background-color 120ms ease,color 120ms ease}
+.tap:active{transform:scale(0.97)}
+.tap:focus-visible{outline:2px solid #5680E9;outline-offset:2px}
+.copyable{user-select:text;-webkit-user-select:text}
+a{color:inherit;text-decoration:none}
+.tab{color:#5E6380}
+.tab[aria-current="page"]{color:#3D5BC0}
+@media (prefers-reduced-motion:reduce){.tap:active{transform:none}}
+</style>
+</helmet>
+<div class="app" style="width: 390px; height: 844px; display: flex; flex-direction: column; background: #F5F6FB; overflow: hidden">
+  <header style="padding: calc(env(safe-area-inset-top, 0px) + 18px) 20px 8px">
+    <h1 style="margin: 0; font-family: 'Fraunces', Georgia, serif; font-weight: 400; font-size: 28px">Fees</h1>
+  </header>
+
+  <main class="scroll" style="flex: 1; overflow-y: auto; padding: 6px 20px 20px; display: flex; flex-direction: column; gap: 14px">
+    <section style="border-radius: 22px; padding: 18px 20px; color: #fff; background: radial-gradient(80% 120% at 100% 0%, rgba(90,185,234,.42), transparent 60%), #1C2147; display: flex; flex-direction: column; gap: 14px">
+      <div>
+        <div style="font-size: 13px; color: #B9BEDB">{{dueLabel}}</div>
+        <div style="font-family: 'Fraunces', Georgia, serif; font-size: 36px; line-height: 1.15">{{dueAmount}}</div>
+        <div style="font-size: 13px; color: #E6E8F5">{{dueSub}}</div>
+      </div>
+      <sc-if value="{{unpaid}}" hint-placeholder-val="{{true}}">
+        <button class="tap" onClick="{{pay}}" style="min-height: 52px; border-radius: 16px; border: 0; background: #84CEEB; color: #1C2147; font: 600 16px Inter, system-ui, sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1C2147" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Pay £45 by card</button>
+      </sc-if>
+    </section>
+
+    <div style="display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; padding: 14px 16px">
+      <span style="width: 40px; height: 40px; border-radius: 12px; background: rgba(47,125,50,.12); display: grid; place-items: center; flex: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F5E22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg></span>
+      <span style="flex: 1"><span style="display: block; font-size: 15px; font-weight: 600">Direct debit is active</span><span style="display: block; font-size: 13px; color: #5E6380">Monthly fees are collected automatically</span></span>
+    </div>
+
+    <details style="background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; padding: 0 16px">
+      <summary class="tap" style="min-height: 56px; display: flex; align-items: center; font-size: 15px; font-weight: 600; cursor: pointer; list-style: none">Pay by bank transfer instead</summary>
+      <dl class="copyable" style="margin: 0 0 14px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px 16px; font-size: 14px">
+        <dt style="color: #5E6380">Account name</dt><dd style="margin: 0; font-weight: 500">[ACCOUNT NAME]</dd>
+        <dt style="color: #5E6380">Sort code</dt><dd style="margin: 0; font-weight: 500">[SORT CODE]</dd>
+        <dt style="color: #5E6380">Account no.</dt><dd style="margin: 0; font-weight: 500">[ACCOUNT NUMBER]</dd>
+        <dt style="color: #5E6380">Reference</dt><dd style="margin: 0; font-weight: 600; overflow-wrap: anywhere">FEES-S1042-1043</dd>
+      </dl>
+      <button class="tap" onClick="{{copy}}" style="width: 100%; min-height: 44px; margin-bottom: 14px; border-radius: 12px; border: 1px solid #E3E5F0; background: #F5F6FB; font: 500 14px Inter, system-ui, sans-serif; color: #3D5BC0; cursor: pointer">{{copyLabel}}</button>
+    </details>
+
+    <section aria-labelledby="h-inv">
+      <h2 id="h-inv" style="margin: 4px 2px 10px; font-size: 16px; font-weight: 600">Invoices</h2>
+      <ul style="list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid #E3E5F0; border-radius: 18px; overflow: hidden">
+        <sc-for list="{{invoices}}" as="i" hint-placeholder-count="4">
+          <li style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 12px 16px; border-bottom: 1px solid #EEF0F6; align-items: center">
+            <span style="font-size: 15px; font-weight: 500">{{i.title}}</span>
+            <span style="font-size: 15px; font-weight: 600">{{i.amount}}</span>
+            <span style="font-size: 13px; color: #5E6380">{{i.meta}}</span>
+            <span style="{{i.chip}}">{{i.status}}</span>
+          </li>
+        </sc-for>
+      </ul>
+    </section>
+  </main>
+
+  <nav aria-label="Main" style="display: flex; background: #fff; border-top: 1px solid #E3E5F0; padding: 6px 6px calc(env(safe-area-inset-bottom, 0px) + 10px)">
+    <a href="ParentHome.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10 12 4l9 6"/><path d="M5 10v10h14V10"/></svg>Home</a>
+    <a href="ParentAbsence.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 12 3 3 5-6"/></svg>Attendance</a>
+    <a href="ParentFees.dc.html" class="tab tap" aria-current="page" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 6a4 4 0 0 0-7 2.6V19H7m11 0H10M7 12h7"/></svg>Fees</a>
+    <a href="ParentHomework.dc.html" class="tab tap" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2z"/><path d="M8 7h8"/></svg>Homework</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { paid: false, copied: false }; }
+  renderVals() {
+    var self = this, paid = this.state.paid;
+    var C = { Paid: '#2F7D32', Due: '#8860D0' };
+    var inv = [
+      ['November fees', '£45', 'Yusuf & Amina · due 1 Nov', paid ? 'Paid' : 'Due'],
+      ['Museum trip', '£20', 'Yusuf · paid 18 Oct', 'Paid'],
+      ['October fees', '£45', 'Yusuf & Amina · paid 1 Oct', 'Paid'],
+      ['September fees', '£45', 'Yusuf & Amina · paid 1 Sep', 'Paid']
+    ];
+    return {
+      unpaid: !paid,
+      dueLabel: paid ? 'Nothing to pay' : 'Due on 1 November',
+      dueAmount: paid ? '£0' : '£45',
+      dueSub: paid ? 'Thank you — a receipt is on its way by email.' : 'November fees for Yusuf and Amina, after the sibling discount',
+      pay: function () { self.setState({ paid: true }); },
+      copyLabel: this.state.copied ? 'Copied to clipboard' : 'Copy reference',
+      copy: function () { try { navigator.clipboard.writeText('FEES-S1042-1043'); } catch (e) {} self.setState({ copied: true }); },
+      invoices: inv.map(function (r) { return { title: r[0], amount: r[1], meta: r[2], status: r[3], chip: 'justify-self: end; font-size: 12px; padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, ' + C[r[3]] + ' 16%, transparent)' }; })
+    };
+  }
+}
+</script>
+</body>
+</html>

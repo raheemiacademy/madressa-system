@@ -1,0 +1,80 @@
+/* The only file allowed to contain raw colour values (enforced by tests/tokens.test.ts). Source: design-reference/DESIGN.md */
+:root {
+  color-scheme: light;
+  /* Client palette — do not change */
+  --ra-indigo: #5680E9;
+  --ra-sky: #84CEEB;
+  --ra-blue: #5AB9EA;
+  --ra-lav: #C1C8E4;
+  --ra-violet: #8860D0;
+
+  /* Derived roles */
+  --ra-ink: #1C2147;
+  --ra-on-ink: #FFFFFF;
+  --ra-on-ink-muted: #B9BEDB;
+  --ra-on-ink-body: #E6E8F5;
+  --ra-primary: #4364B6;
+  --ra-primary-hover: #3D5BC0;
+  --ra-on-primary: #FFFFFF;
+  --ra-accent-text: #4563AF;
+
+  /* Surfaces */
+  --color-bg: #F5F6FB;
+  --color-panel: #FFFFFF;
+  --color-border-line: #E3E5F0;
+  --color-fg: #1F2340;
+  --color-fg-muted: #5E6380;
+  --color-ok: #2F7D32;
+  --color-bad: #C62828;
+  --color-warn: #9A6700;
+  --ra-side-bg: var(--ra-ink);
+  --ra-shadow-pop: 0 8px 24px rgb(28 33 71 / 0.16);
+
+  --ra-surface: color-mix(in srgb, var(--ra-lav) 9%, var(--color-bg));
+  --ra-tint: color-mix(in srgb, var(--ra-lav) 18%, var(--color-panel));
+  --ra-hairline: color-mix(in srgb, var(--color-border-line) 60%, transparent);
+  --ra-chart-grid: color-mix(in srgb, var(--color-border-line) 80%, transparent);
+
+  /* Shape, type, motion */
+  --ra-r-lg: 16px; --ra-r: 10px; --ra-r-sm: 8px; --ra-r-mobile: 18px;
+  --ra-ctl: 40px;
+  --fs-heading: 1rem;
+  --fs-title: 1.75rem;
+  --fw-medium: 500;
+  --ra-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-bg: #12152E;
+    --color-panel: #1A1E40;
+    --color-border-line: #2F3566;
+    --color-fg: #ECEEF8;
+    --color-fg-muted: #A9AFD3;
+    --color-ok: #7BD17F;
+    --color-bad: #FF8A80;
+    --color-warn: #E3B341;
+    --ra-accent-text: #819FEB;
+    --ra-side-bg: #0E1129;
+    --ra-shadow-pop: 0 8px 24px rgb(0 0 0 / 0.45);
+    --ra-surface: var(--color-bg);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #12152E;
+  --color-panel: #1A1E40;
+  --color-border-line: #2F3566;
+  --color-fg: #ECEEF8;
+  --color-fg-muted: #A9AFD3;
+  --color-ok: #7BD17F;
+  --color-bad: #FF8A80;
+  --color-warn: #E3B341;
+  --ra-accent-text: #819FEB;
+  --ra-side-bg: #0E1129;
+  --ra-shadow-pop: 0 8px 24px rgb(0 0 0 / 0.45);
+  --ra-surface: var(--color-bg);
+}
+
+@media (pointer: coarse) { :root { --ra-ctl: 44px; } }
