@@ -9,7 +9,6 @@ import { saveHoliday } from '@/server/holidays';
 import { saveProfile } from '@/server/profile';
 import { readTab, saveTab } from '@/server/settings';
 import { deleteStaff, saveStaff } from '@/server/staff';
-import { addNote, deleteNote, updateNote } from '@/server/sticky-notes';
 import { formToValues, tabByKey, tabSchema, TABS } from '@/settings/tabs';
 import { db, makeStaff, resetDb } from './helpers';
 
@@ -178,26 +177,5 @@ describe('school profile', () => {
     expect(await saveProfile(db, actor, { name: '' })).toMatchObject({ ok: false, errors: { name: expect.any(String) } });
     expect(await saveProfile(db, actor, { name: 'Sample Academy', logoUrl: 'http://x.example/logo.png' })).toMatchObject({ ok: false, errors: { logoUrl: expect.any(String) } });
     expect(await saveProfile(db, actor, { name: 'Sample Academy', email: 'office@example.org' })).toEqual({ ok: true });
-  });
-});
-
-describe('sticky notes', () => {
-  it('only the author or a super admin can change a note', async () => {
-    const a = await makeStaff({ name: 'Author' });
-    const b = await makeStaff({ name: 'Someone Else' });
-    const sup = await makeStaff({ name: 'Super', isSuper: true });
-    await addNote(db, { identityId: a.identity.id, isSuper: false }, { pagePath: '/admin', body: 'Call the printer company', colour: 'sky' });
-    const notes = await db.query.stickyNote.findMany();
-    const id = notes[0]!.id;
-    expect((await updateNote(db, { identityId: b.identity.id, isSuper: false }, id, 'hijack')).ok).toBe(false);
-    expect((await deleteNote(db, { identityId: b.identity.id, isSuper: false }, id)).ok).toBe(false);
-    expect((await updateNote(db, { identityId: a.identity.id, isSuper: false }, id, 'Done')).ok).toBe(true);
-    expect((await deleteNote(db, { identityId: sup.identity.id, isSuper: true }, id)).ok).toBe(true);
-  });
-
-  it('rejects pages outside the admin area and unknown colours', async () => {
-    const a = await makeStaff();
-    expect((await addNote(db, { identityId: a.identity.id, isSuper: false }, { pagePath: 'https://evil.example', body: 'x', colour: 'sky' })).ok).toBe(false);
-    expect((await addNote(db, { identityId: a.identity.id, isSuper: false }, { pagePath: '/admin', body: 'x', colour: 'red' })).ok).toBe(false);
   });
 });
