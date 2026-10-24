@@ -1,0 +1,12 @@
+.git
+.next
+node_modules
+.env
+.env.*
+!.env.example
+.pg-local-secret
+.claude
+storage
+screenshots
+test-results
+playwright-report

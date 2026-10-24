@@ -180,13 +180,6 @@ export const TABS: Tab[] = [
     ]
   },
   {
-    key: 'spell', title: 'Spell checker', group: 'System', description: 'GrammarBot service used to check spelling in reports and messages.',
-    fields: [
-      { type: 'url', name: 'host', label: 'GrammarBot host' },
-      { type: 'secret', name: 'apiKey', label: 'API key' }
-    ]
-  },
-  {
     key: 'parentPortal', title: 'Parent portal', group: 'Portals', description: 'What parents see and can do. Hidden sections are blocked on the server, not just hidden.',
     fields: [
       { type: 'file', name: 'loginBackground', label: 'Login background image', accept: 'image/png,image/jpeg,image/webp', kind: 'image' },

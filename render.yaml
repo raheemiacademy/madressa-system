@@ -12,16 +12,13 @@ databases:
 services:
   - type: web
     name: madressa-preview
-    runtime: node
+    runtime: docker # Chromium for server-side PDFs; the Dockerfile migrates, seeds and starts
+    dockerfilePath: ./Dockerfile
     region: frankfurt
     plan: free # sleeps when idle; first visit after a break takes ~1 minute
     branch: preview
-    buildCommand: npm ci && npm run build
-    startCommand: npm run db:migrate && npm run db:seed && npx next start
     healthCheckPath: /admin/login
     envVars:
-      - key: NODE_VERSION
-        value: "22"
       - key: DATABASE_URL
         fromDatabase: { name: madressa-preview-db, property: connectionString }
       - key: DATA_ENCRYPTION_KEY
