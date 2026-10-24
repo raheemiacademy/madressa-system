@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { signIn } from './sign-in';
+import { PW, signIn } from './sign-in';
 
 // Captures the main screens at the three checked widths in both themes into screenshots/ for review against design-reference.
 const WIDTHS = [390, 860, 1440];
@@ -29,4 +29,25 @@ test('visual capture', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/admin/login');
   await page.screenshot({ path: 'screenshots/login-390-light.png' });
+});
+
+// The portals at the same widths and themes (Phase 8).
+const PORTALS = { parent: ['/parent', '/parent/attendance', '/parent/fees', '/parent/homework', '/parent/more', '/parent/events'], teacher: ['/teacher', '/teacher/register', '/teacher/homework', '/teacher/more', '/teacher/exams/1'] } as const;
+test('portal visual capture', async ({ page }) => {
+  test.setTimeout(240_000);
+  for (const [portal, paths] of Object.entries(PORTALS)) {
+    await page.context().clearCookies();
+    await signIn(page, portal === 'parent' ? 'parent001@example.org' : 'teacher1@example.org', PW, portal);
+    for (const scheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme: scheme });
+      for (const w of WIDTHS) {
+        await page.setViewportSize({ width: w, height: 900 });
+        for (const path of paths) {
+          await page.goto(path);
+          await page.screenshot({ path: `screenshots/${portal}${path.replace(/^\/(parent|teacher)/, '').replace(/\//g, '-') || '-home'}-${w}-${scheme}.png`, fullPage: true });
+          expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+        }
+      }
+    }
+  }
 });

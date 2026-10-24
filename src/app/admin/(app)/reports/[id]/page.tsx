@@ -40,6 +40,7 @@ export default async function ReportSettings({ params }: { params: Promise<{ id:
           <Check name="scoring" label="Score students on questions" defaultChecked={r?.scoring ?? true} />
           <Check name="active" label="Active (teachers can write comments)" defaultChecked={r?.active ?? true} />
           <Check name="teachersCanDownload" label="Teachers can preview and download" defaultChecked={r?.teachersCanDownload ?? false} />
+          <Check name="onPortal" label="Parents can see it on the parent portal" defaultChecked={r?.onPortal ?? false} />
         </div>
         <div className="ra-fields">
           <TextArea name="questions" label="Scoring questions, one per line" rows={4} defaultValue={(r?.questions ?? ['Behaviour', 'Progress', 'Effort']).join('\n')}

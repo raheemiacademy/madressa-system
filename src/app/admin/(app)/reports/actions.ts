@@ -20,7 +20,7 @@ export async function saveReportAction(id: number | null, _p: FormState, fd: For
   const r = await saveReport(db, actorOf(a), year.id, {
     title: fd.get('title'), termStart: fd.get('termStart'), termEnd: fd.get('termEnd'), semesterId: fd.get('semesterId') ?? '',
     includeExams: on('includeExams'), includePositions: on('includePositions'), includeAttendance: on('includeAttendance'), includeHomework: on('includeHomework'),
-    scoring: on('scoring'), active: on('active'), teachersCanDownload: on('teachersCanDownload'), scoreLabels: lines(fd.get('scoreLabels')), questions: lines(fd.get('questions'))
+    scoring: on('scoring'), active: on('active'), teachersCanDownload: on('teachersCanDownload'), onPortal: on('onPortal'), scoreLabels: lines(fd.get('scoreLabels')), questions: lines(fd.get('questions'))
   }, id ?? undefined);
   if (!r.ok) return { errors: r.errors, message: 'Check the highlighted fields.' };
   done();

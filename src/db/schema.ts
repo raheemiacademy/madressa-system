@@ -908,7 +908,8 @@ export const homeworkStudent = pgTable('homework_student', {
   studentId: integer('student_id').notNull().references(() => student.id, { onDelete: 'cascade' }),
   completedAt: tz('completed_at'),
   note: text('note'),
-  uploadFileId: uuid('upload_file_id').references(() => fileObject.id, { onDelete: 'set null' })
+  uploadFileId: uuid('upload_file_id').references(() => fileObject.id, { onDelete: 'set null' }),
+  uploadedAt: tz('uploaded_at') // handed in from the parent portal
 }, (t) => [primaryKey({ columns: [t.homeworkId, t.studentId] }), index('homework_student_student_idx').on(t.studentId)]);
 
 // §15 Grades: rows of "at least this % → grade".
@@ -989,6 +990,7 @@ export const eotyReport = pgTable('eoty_report', {
   questions: text('questions').array().notNull().default(sql`'{Behaviour,Progress,Effort}'::text[]`),
   active: boolean('active').notNull().default(true),
   teachersCanDownload: boolean('teachers_can_download').notNull().default(false),
+  onPortal: boolean('on_portal').notNull().default(false), // parents see their child's report
   createdAt: createdAt()
 }, (t) => [check('eoty_dates', sql`${t.termEnd} >= ${t.termStart}`)]);
 // One per student per report: scores for each question (1–5, by position) and the teacher's comment.
@@ -1221,3 +1223,25 @@ export const forumPost = pgTable('forum_post', {
   deletedAt: tz('deleted_at'),
   deletedBy: text('deleted_by')
 }, (t) => [index('forum_post_topic_idx').on(t.topicId)]);
+
+/* ───────── Phase 8: portals ───────── */
+
+// §20 Shared documents: "Files" in the parent portal, "Docs & Files" in the teacher portal.
+export const SHARED_DOC_AUDIENCES = ['parents', 'teachers', 'both'] as const;
+export const sharedDoc = pgTable('shared_doc', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  fileId: uuid('file_id').notNull().references(() => fileObject.id, { onDelete: 'cascade' }),
+  audience: text('audience').notNull(),
+  classIds: integer('class_ids').array().notNull().default(sql`'{}'::int[]`), // empty = everyone in the audience
+  createdBy: text('created_by').notNull(),
+  createdAt: createdAt()
+}, (t) => [check('shared_doc_audience', sql`${t.audience} in ('parents', 'teachers', 'both')`)]);
+
+// §20 A parent confirming a child's details are correct, once per academic year.
+export const detailsConfirmation = pgTable('details_confirmation', {
+  studentId: integer('student_id').notNull().references(() => student.id, { onDelete: 'cascade' }),
+  academicYearId: integer('academic_year_id').notNull().references(() => academicYear.id, { onDelete: 'cascade' }),
+  contactId: integer('contact_id').references(() => contact.id, { onDelete: 'set null' }),
+  confirmedAt: tz('confirmed_at').notNull().defaultNow()
+}, (t) => [primaryKey({ columns: [t.studentId, t.academicYearId] })]);

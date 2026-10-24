@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>You're offline</title>
+<style>
+  :root { color-scheme: light dark; --bg: #F5F6FB; --fg: #1F2340; --muted: #5E6380; --btn: #4364B6; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #12152E; --fg: #ECEEF8; --muted: #A9AFD3; } }
+  html { -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+  body { margin: 0; min-height: 100dvh; display: grid; place-items: center; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, sans-serif; padding: env(safe-area-inset-top) 24px env(safe-area-inset-bottom); }
+  main { max-width: 22rem; text-align: center; }
+  h1 { font-family: Georgia, serif; font-weight: 400; font-size: 26px; margin: 0 0 8px; }
+  p { color: var(--muted); margin: 0 0 20px; }
+  button { font: inherit; font-weight: 600; min-height: 48px; padding: 0 22px; border: 0; border-radius: 14px; background: var(--btn); color: #fff; cursor: pointer; touch-action: manipulation; }
+  button:focus-visible { outline: 2px solid #5680E9; outline-offset: 2px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>You're offline</h1>
+  <p>Check your internet connection, then try again. Nothing is saved on this device.</p>
+  <button type="button" onclick="location.reload()">Try again</button>
+</main>
+</body>
+</html>

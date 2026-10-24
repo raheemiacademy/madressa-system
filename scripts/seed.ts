@@ -1,5 +1,5 @@
 // Fictional seed data for local development and e2e tests. Never put real people here.
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from '../src/db/schema';
@@ -188,5 +188,23 @@ if (!anyMerit && year) {
   const [cat] = await db.select().from(schema.forumCategory);
   await post(db, { kind: 'admin', id: admin!.id, name: admin!.name }, { categoryId: cat!.id, title: 'Welcome to the forums' }, 'Salaam, this is the place for questions about classes and events.');
 }
+// Portals (Phase 8): a sample parent with two children and a sample teacher, who sign in with the seed password.
+async function portalLogin(portal: 'parent' | 'teacher', email: string, link: { contactId?: number; teacherId?: number }) {
+  const [idn] = await db.select().from(loginIdentity).where(and(eq(loginIdentity.portal, portal), eq(loginIdentity.email, email)));
+  const values = { passwordHash: hash, allowLogin: true, failedAttempts: 0, lockedUntil: null, emailVerifiedAt: new Date(), mustChangePassword: false };
+  if (idn) await db.update(loginIdentity).set(values).where(eq(loginIdentity.id, idn.id));
+  else await db.insert(loginIdentity).values({ portal, email, ...link, ...values });
+}
+const [parent1] = await db.select().from(schema.contact).where(eq(schema.contact.email, 'parent001@example.org'));
+const [teacher1] = await db.select().from(schema.teacher).where(eq(schema.teacher.email, 'teacher1@example.org'));
+if (parent1 && teacher1 && year) {
+  await portalLogin('parent', 'parent001@example.org', { contactId: parent1.id });
+  await portalLogin('teacher', 'teacher1@example.org', { teacherId: teacher1.id });
+  const [kid4] = await db.select().from(schema.student).where(eq(schema.student.surname, 'Student 004'));
+  if (kid4) await db.insert(schema.studentContact).values({ studentId: kid4.id, contactId: parent1.id, type: 'Parent', relation: 'Mother', isPrimary: false }).onConflictDoNothing();
+  const [classA] = await db.select().from(schema.schoolClass).where(and(eq(schema.schoolClass.academicYearId, year.id), eq(schema.schoolClass.name, 'Test Class A')));
+  if (classA) await db.update(schema.classTeacher).set({ canEoty: true, canMessage: true, canMerits: true, canIncidents: true }).where(and(eq(schema.classTeacher.classId, classA.id), eq(schema.classTeacher.teacherId, teacher1.id)));
+}
+
 await client.end();
-console.log('Seeded fictional sample data: admin@example.org (super) and clerk@example.org (can edit)');
+console.log('Seeded fictional sample data: admin@example.org (super) and clerk@example.org (can edit), parent001@example.org (parent portal), teacher1@example.org (teacher portal)');

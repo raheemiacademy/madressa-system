@@ -527,3 +527,83 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
 
 **Phase 7 gaps**
 - **The IBEAMS news/updates feed** ("Auto-refresh daily") is not built. It's in the "your own versions of the IBEAMS services" item in FUTURE.md.
+
+## 14. Phase 8 record (Portals, §20; Tools → Portals, §19)
+
+**Dependencies added** (both on the approved list, held over from Phase 4): `stripe` and `gocardless-nodejs`. Only test/sandbox keys are accepted: a live Stripe key (`sk_live_…`) or GoCardless "live" environment leaves online payment switched off until you approve real payments. `PAYMENTS_FAKE=1` (tests only, documented in `.env.example`) swaps in fakes, so no automated test calls Stripe or GoCardless.
+
+**Your answers (24/10/2026)**
+- **Files / Docs & Files** are *shared documents*: the office uploads a file in Communication → Shared files and chooses parents, teachers or both, and optionally which classes.
+- **Holiday requests in the teacher portal** show the requests parents made for students in that teacher's classes, read-only. The office still decides.
+
+**Decisions**
+- **Two installable apps (PWAs)** at `/parent` and `/teacher`, following the mobile designs:
+  - Bottom tabs: Parents get Home, Attendance, Fees, Homework, More. Teachers get Today, Register, Homework, Messages, More.
+  - On wide screens the same layout sits in a centred column.
+  - Each portal has its own manifest, icons and theme colour.
+  - The service worker only shows an offline page. Pages hold children's data, so nothing else is cached on the device.
+  - Mobile baseline: safe areas, 44px+ targets, 16px inputs, press feedback on controls only, light and dark.
+- **Server-side permissions** run through one access layer that every portal page, action and file route calls:
+  - A parent reaches only children they're linked to as an allowed contact type (Settings → Parent portal), and only children who haven't left. Any other child is a 404.
+  - A teacher reaches only their classes this year. Each action checks that class's privilege: registers, homework, merits, incidents, report comments, messaging.
+  - Sections hidden in Settings are refused on the server (404), not just left off the menu.
+  - A disabled parent portal shows its message and nothing else.
+- **Files** are served only when the person can reach them through something they're allowed to see: a shared document for them, homework set for their child or class, a hand-in, an active shop product's photo, or an attachment on their own conversation.
+- **Parent portal**
+  - **Home:** a child switcher (first names, or full names when two children share one), the next class, attendance %, homework due and merits. Also report absent/late, request a holiday, what's due in fees, and "From the school" (holidays in the next 30 days and events still open for opt-in).
+  - **Attendance:** the year's figures, recent registers, and sent notices and holiday requests with the school's answers. A notice goes onto the teacher's register and the office's notices list.
+  - **Fees:**
+    - All the family's invoices in one list.
+    - **Card:** Stripe Checkout for everything unpaid. Each invoice gets a Pending payment that only the Stripe webhook can clear, never the browser redirect. Abandoned checkouts expire and their payments fail.
+    - **Direct debit:** set up through GoCardless's hosted page. When it's in place, fees due are collected automatically each morning (the worker), or straight away with "Pay now". An invoice already being paid isn't collected twice.
+    - **Bank transfer:** the school's details and the family's reference, built from the Fees settings template.
+    - "Make parents set up direct debit" sends them to Fees until they have.
+  - **Homework:**
+    - Hand in a photo, PDF or recording (mp3, m4a, ogg, webm, mp4), up to 20 MB, checked by its contents, not its name.
+    - Only where the teacher allowed uploads and the homework isn't locked.
+    - A hand-in counts as handed in. The teacher's tick is still separate.
+  - **More:**
+    - **Messages:** to the office, or to a child's teacher when the §4 routes allow.
+    - **Events:** opt in with the timeslot, consents and optional costs. The cost goes on the family's fees.
+    - **Term reports:** only reports the office has switched to "Parents can see it on the parent portal" (a new switch on the report settings).
+    - **Exam results:** only once an exam or test is closed or locked. Class positions aren't shown.
+    - **Merits** with certificates shown on the portal (PDF).
+    - **Incidents** the office chose to share.
+    - **Shop:** pay on fees, or with the child's merits.
+    - **Files** and **Forums** (classes' forums only).
+    - **Your child's details:** confirm once per school year when the school requires it, plus walk-home consent when the school asks for it. Changes go to the office as a message.
+    - The school's custom and social links.
+- **Teacher portal**
+  - **Today:**
+    - Sign in and out.
+    - Today's timetabled sessions, with whether each register is taken.
+    - Homework done, parents' notes for today, and a shortcut to award merits.
+    - A banner during a fire drill.
+  - **Register:**
+    - Today or catching up on the past 7 days, using the same register screen as the office.
+    - Parents' notes pre-fill it.
+    - Teachers don't set "authorised": the office decides that.
+  - **Homework:** set for classes with the privilege (notify parents, allow uploads, lock after the deadline), tick who's done it, open hand-ins, and remind the parents still waiting.
+  - **Messages:** to the office, colleagues (when allowed), and the primary contacts of classes with the Messaging privilege.
+  - **More:**
+    - **Classes and student details:** only the details Settings → Teacher portal allows; medical notes stay with the office.
+    - **Merits** and **incidents**: a teacher's incident isn't emailed or shown to parents; the office decides.
+    - **Exams and tests:** add for their classes, add papers, enter marks while open.
+    - **Report comments and scores** for open reports (with a preview when "teachers can preview" is on).
+    - **Events:** who from their classes is going.
+    - **Holiday requests** (read-only), **forums**, **docs and files**.
+    - **My log:** with today's times editable when "Let teachers adjust" is on.
+    - **Fire drill:** a roll call for their classes, with "All safe" per class.
+- **Admin additions:**
+  - **Communication → Shared files:** add needs Can edit; delete needs Can delete, is audited and removes the stored file.
+  - **System → Portals** (§19 Tools): each portal's address and status, and who has signed in in the last 30 days.
+- **Sample data:** the seed now adds a parent login (`parent001@example.org`, with two fictional children) and a teacher login (`teacher1@example.org`, with privileges on Test Class A). Both use the seed password from `.env`.
+- **Shared code:**
+  - The register screen and the report card are now shared by the office and the portals.
+  - Admin, parent and teacher file downloads share one response helper.
+
+**Phase 8 gaps**
+- **Student portal** stays on hold, as agreed (FUTURE.md).
+- **Student Diary / Daily Progress Tracker** waits for your fields. The "Student Diaries" and "Diary" sections stay hidden.
+- **Real payments** are off until you approve them. Stripe and GoCardless haven't been called; the flows are built to their published APIs and tested with fakes.
+- **Push notifications to phones** are still on the future list (FUTURE.md). The portals tell people by email, as before.

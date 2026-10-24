@@ -3,6 +3,7 @@ import type { Db } from '@/db';
 import { formatInstant } from '@/lib/dates';
 import { currentYear } from '../academic-years';
 import { generateInvoices } from '../fees/generate';
+import { collectDirectDebits } from '../portal/fees';
 import { todayIso } from '../people/common';
 import { readTab } from '../settings';
 import { processMailQueue } from './mail';
@@ -26,6 +27,8 @@ export async function runDaily(db: Db, now = new Date()) {
   if ((await readTab(db, 'alerts')).enabled) await sendAttendanceAlerts(db, SYSTEM, today);
   const year = await currentYear(db);
   if (year && today >= year.startsOn && today <= year.endsOn) await generateInvoices(db, SYSTEM, year.id, { scope: 'today' }, { today });
+  // Families with a direct debit pay what's due without doing anything (§20 "collected automatically").
+  await collectDirectDebits(db, SYSTEM, { dueBy: today });
   return true;
 }
 

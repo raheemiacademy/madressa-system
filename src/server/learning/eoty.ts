@@ -78,7 +78,7 @@ export const reportInput = z.object({
   termStart: isoDate, termEnd: isoDate,
   semesterId: z.union([z.literal(''), z.coerce.number().int().positive()]).optional().transform((v) => (v ? v : null)),
   includeExams: z.boolean(), includePositions: z.boolean(), includeAttendance: z.boolean(), includeHomework: z.boolean(),
-  scoring: z.boolean(), active: z.boolean(), teachersCanDownload: z.boolean(),
+  scoring: z.boolean(), active: z.boolean(), teachersCanDownload: z.boolean(), onPortal: z.boolean().default(false),
   scoreLabels: z.array(z.string().trim().min(1).max(30)).min(2, 'Add at least two score labels').max(10),
   questions: z.array(z.string().trim().min(1).max(80)).max(12)
 }).refine((v) => v.termEnd >= v.termStart, { path: ['termEnd'], message: 'The term can’t end before it starts' });

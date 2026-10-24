@@ -6,6 +6,7 @@ import { formatCalendarDate } from '@/lib/dates';
 import { requireAdmin } from '@/server/next/actor';
 import { codeMap, expectedSessions, getRegister, registerMode } from '@/server/attendance/registers';
 import { todayIso } from '@/server/people/common';
+import { saveRegisterAction } from '../actions';
 import { TakeRegister } from './TakeRegister';
 
 export const metadata = { title: 'Take register' };
@@ -33,7 +34,7 @@ export default async function Take({ searchParams }: { searchParams: Promise<{ c
       </form>
       {!time || !reg ? <p className="ra-empty">No register is due for {cls.name} on this date: it’s a holiday, not a school day, or there’s no session in the timetable.</p>
         : reg.rows.length === 0 ? <p className="ra-empty">No students are in this class on this date.</p> : (
-          <TakeRegister classId={classId} date={date} time={time} mode={mode}
+          <TakeRegister save={saveRegisterAction.bind(null, classId, date, time)} mode={mode}
             codes={Object.entries(codes).map(([code, c]) => ({ code, description: c.description, type: c.type }))}
             rows={reg.rows.map((r) => ({ id: r.id, name: `${r.firstName} ${r.surname}`, hasMedical: r.hasMedical, mark: r.mark ? { mark: r.mark.mark, code: r.mark.code, authorised: r.mark.authorised, notified: r.mark.notified, lateMinutes: r.mark.lateMinutes, leftEarlyMinutes: r.mark.leftEarlyMinutes, note: r.mark.note } : null,
               notice: r.notice ? { kind: r.notice.kind, reason: r.notice.reason, expectedArrival: r.notice.expectedArrival } : null }))} />

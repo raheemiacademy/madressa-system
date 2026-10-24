@@ -2,16 +2,15 @@
 
 import { useActionState, useState } from 'react';
 import type { FormState } from '@/lib/validate';
-import { saveRegisterAction } from '../actions';
 
 type Mark = { mark: string; code: string | null; authorised: boolean | null; notified: boolean; lateMinutes: number | null; leftEarlyMinutes: number | null; note: string | null };
 type Row = { id: number; name: string; hasMedical: boolean; mark: Mark | null; notice: { kind: string; reason: string | null; expectedArrival: string | null } | null };
 type Code = { code: string; description: string; type: string };
 const OPTS = [['present', 'P', 'Present'], ['late', 'L', 'Late'], ['absent', 'A', 'Absent'], ['left_early', 'E', 'Left early']] as const;
 
-/** Entry mode, modelled on the TeacherRegister phone screen: P/L/A per student, live counts, one save. */
-export function TakeRegister({ classId, date, time, mode, codes, rows }: { classId: number; date: string; time: string; mode: 'classic' | 'dfe'; codes: Code[]; rows: Row[] }) {
-  const [state, action, pending] = useActionState<FormState, FormData>(saveRegisterAction.bind(null, classId, date, time), undefined);
+/** Entry mode, modelled on the TeacherRegister phone screen: P/L/A per student, live counts, one save. Teachers (office=false) don't decide authorisation. */
+export function TakeRegister({ save, mode, codes, rows, office = true }: { save: (p: FormState, fd: FormData) => Promise<FormState>; mode: 'classic' | 'dfe'; codes: Code[]; rows: Row[]; office?: boolean }) {
+  const [state, action, pending] = useActionState<FormState, FormData>(save, undefined);
   // Parents' "absent today" notices pre-fill the register as notified absences until saved.
   const initial = (r: Row) => r.mark?.mark ?? (r.notice?.kind === 'absent' ? 'absent' : r.notice?.kind === 'late' ? 'late' : 'present');
   const [marks, setMarks] = useState<Record<number, string>>(() => Object.fromEntries(rows.map((r) => [r.id, initial(r)])));
@@ -45,7 +44,7 @@ export function TakeRegister({ classId, date, time, mode, codes, rows }: { class
                   </span>
                   {m === 'late' && <input className="ra-input" style={{ width: 120 }} name={`late.${r.id}`} inputMode="numeric" placeholder="Minutes late" aria-label={`Minutes late, ${r.name}`} defaultValue={r.mark?.lateMinutes ?? ''} />}
                   {m === 'left_early' && <input className="ra-input" style={{ width: 140 }} name={`left.${r.id}`} inputMode="numeric" placeholder="Minutes early" aria-label={`Minutes left early, ${r.name}`} defaultValue={r.mark?.leftEarlyMinutes ?? ''} />}
-                  {(m === 'absent' || m === 'late') && (
+                  {office && (m === 'absent' || m === 'late') && (
                     <>
                       <select className="ra-select" name={`authorised.${r.id}`} aria-label={`Authorisation, ${r.name}`} defaultValue={r.mark?.authorised === true ? 'yes' : r.mark?.authorised === false ? 'no' : ''}>
                         <option value="">Authorisation not decided</option><option value="yes">Authorised</option><option value="no">Unauthorised</option>

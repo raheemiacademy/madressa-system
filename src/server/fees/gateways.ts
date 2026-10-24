@@ -50,7 +50,7 @@ async function setStatus(tx: DbOrTx, provider: string, gatewayIds: string[], sta
 type StripeEvent = { id: string; type: string; data?: { object?: { id?: string; payment_intent?: string | null } } };
 const STRIPE: Record<string, Status> = {
   'checkout.session.completed': 'Cleared', 'checkout.session.async_payment_succeeded': 'Cleared', 'payment_intent.succeeded': 'Cleared',
-  'checkout.session.async_payment_failed': 'Failed', 'payment_intent.payment_failed': 'Failed', 'payment_intent.processing': 'Processing',
+  'checkout.session.async_payment_failed': 'Failed', 'checkout.session.expired': 'Failed', 'payment_intent.payment_failed': 'Failed', 'payment_intent.processing': 'Processing',
   'charge.refunded': 'Reversed', 'charge.dispute.created': 'Reversed'
 };
 

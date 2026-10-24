@@ -43,6 +43,13 @@
       "when": 1792844988270,
       "tag": "0005_learning",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792854337560,
+      "tag": "0006_portals",
+      "breakpoints": true
     }
   ]
 }

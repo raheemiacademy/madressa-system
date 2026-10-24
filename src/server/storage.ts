@@ -20,7 +20,10 @@ export function sniffMime(b: Buffer): string | null {
   if (b.length >= 8 && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return 'image/png';
   if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
   if (b.length >= 12 && b.toString('latin1', 0, 4) === 'RIFF' && b.toString('latin1', 8, 12) === 'WEBP') return 'image/webp';
-  if (b.length >= 12 && b.toString('latin1', 4, 8) === 'ftyp') return 'video/mp4';
+  if (b.length >= 12 && b.toString('latin1', 4, 8) === 'ftyp') return b.toString('latin1', 8, 11) === 'M4A' ? 'audio/mp4' : 'video/mp4';
+  if (b.length >= 12 && b.toString('latin1', 0, 4) === 'RIFF' && b.toString('latin1', 8, 12) === 'WAVE') return 'audio/wav';
+  if (b.length >= 4 && b.toString('latin1', 0, 4) === 'OggS') return 'audio/ogg';
+  if (b.length >= 3 && (b.toString('latin1', 0, 3) === 'ID3' || (b[0] === 0xff && (b[1]! & 0xe0) === 0xe0))) return 'audio/mpeg';
   if (b.length >= 4 && b.readUInt32BE(0) === 0x1a45dfa3) return 'video/webm';
   if (b.length >= 5 && b.toString('latin1', 0, 5) === '%PDF-') return 'application/pdf';
   return null;
@@ -29,7 +32,9 @@ export function sniffMime(b: Buffer): string | null {
 export const UPLOAD_RULES = {
   image: { mimes: ['image/png', 'image/jpeg', 'image/webp'], maxBytes: 5 * 1024 * 1024, label: 'a PNG, JPEG or WebP image up to 5 MB' },
   video: { mimes: ['video/mp4', 'video/webm'], maxBytes: 20 * 1024 * 1024, label: 'an MP4 or WebM video up to 20 MB' },
-  pdf: { mimes: ['application/pdf'], maxBytes: 10 * 1024 * 1024, label: 'a PDF up to 10 MB' }
+  pdf: { mimes: ['application/pdf'], maxBytes: 10 * 1024 * 1024, label: 'a PDF up to 10 MB' },
+  // Homework handed in from the parent portal: a photo, a PDF, or a recording (phones record m4a, webm or mp3).
+  homework: { mimes: ['image/png', 'image/jpeg', 'image/webp', 'application/pdf', 'audio/mp4', 'audio/mpeg', 'audio/wav', 'audio/ogg', 'video/webm', 'video/mp4'], maxBytes: 20 * 1024 * 1024, label: 'a photo, PDF or recording up to 20 MB' }
 } as const;
 
 export type UploadKind = keyof typeof UPLOAD_RULES;

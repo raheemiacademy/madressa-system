@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { attendanceCode, CODE_TYPES } from '@/db/schema';
+import { marksFromForm } from '@/lib/register-form';
 import { formObject, type FormState } from '@/lib/validate';
 import { audit } from '@/server/audit';
 import { actorOf, requireAdmin } from '@/server/next/actor';
@@ -26,12 +27,7 @@ export async function sendAlertsAction() {
 /** Entry mode: the register form posts every student's mark. */
 export async function saveRegisterAction(classId: number, date: string, startTime: string, _p: FormState, fd: FormData): Promise<FormState> {
   const a = await requireAdmin('edit');
-  const ids = fd.getAll('studentId').map(Number);
-  const marks = ids.map((id) => ({
-    studentId: id, mark: fd.get(`mark.${id}`), code: fd.get(`code.${id}`) ?? undefined, authorised: fd.get(`authorised.${id}`) ?? '',
-    notified: fd.get(`notified.${id}`) ?? '', lateMinutes: fd.get(`late.${id}`) ?? '', leftEarlyMinutes: fd.get(`left.${id}`) ?? '', note: fd.get(`note.${id}`) ?? ''
-  }));
-  const r = await saveRegister(db, actorOf(a), { classId, date, startTime, marks });
+  const r = await saveRegister(db, actorOf(a), { classId, date, startTime, marks: marksFromForm(fd) });
   if (!r.ok) return { message: r.error };
   done();
   return { ok: true, message: 'Register saved.' };

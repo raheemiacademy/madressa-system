@@ -7,10 +7,10 @@ export const NAV: { group: string; items: NavItem[] }[] = [
   { group: 'Overview', items: [{ href: '/admin', label: 'Dashboard', icon: 'home' }] },
   { group: 'School', items: [{ href: '/admin/students', label: 'Students', icon: 'users' }, { href: '/admin/classes', label: 'Classes', icon: 'grid' }, { href: '/admin/teachers', label: 'Teachers', icon: 'teacher' }, { href: '/admin/register', label: 'Register', icon: 'check' }, { href: '/admin/teacher-logs', label: 'Teacher logs', icon: 'clock' }] },
   { group: 'Finance', items: [{ href: '/admin/fees', label: 'Fees', icon: 'pound', need: 'fees' }] },
-  { group: 'Communication', items: [{ href: '/admin/messages', label: 'Messages', icon: 'mail' }, { href: '/admin/newsletters', label: 'Newsletters & SMS', icon: 'send', need: 'comm' }] },
+  { group: 'Communication', items: [{ href: '/admin/messages', label: 'Messages', icon: 'mail' }, { href: '/admin/newsletters', label: 'Newsletters & SMS', icon: 'send', need: 'comm' }, { href: '/admin/docs', label: 'Shared files', icon: 'paperclip' }] },
   { group: 'Learning', items: [{ href: '/admin/homework', label: 'Homework', icon: 'book' }, { href: '/admin/exams', label: 'Exams & reports', icon: 'exam' }, { href: '/admin/events', label: 'Events & trips', icon: 'event' },
     { href: '/admin/incidents', label: 'Incidents', icon: 'alert' }, { href: '/admin/merits', label: 'Merits & shop', icon: 'star' }, { href: '/admin/forums', label: 'Forums', icon: 'chat' }] },
-  { group: 'System', items: [{ href: '/admin/settings', label: 'Settings', icon: 'cog' }, { href: '/admin/tools/sticky-notes', label: 'Sticky notes', icon: 'note' }] }
+  { group: 'System', items: [{ href: '/admin/settings', label: 'Settings', icon: 'cog' }, { href: '/admin/tools/portals', label: 'Portals', icon: 'phone' }, { href: '/admin/tools/sticky-notes', label: 'Sticky notes', icon: 'note' }] }
 ];
 
 const EXTRA: { prefix: string; group: string; title: string }[] = [

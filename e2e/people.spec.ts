@@ -113,7 +113,7 @@ test('teachers and parents given a password by the school must choose their own,
   await page.getByLabel('Portal password').fill('teacher password 123');
   await page.getByRole('button', { name: 'Add teacher' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Portal Teacher Example');
-  await page.goto('/admin/contacts/1/edit');
+  await page.goto('/admin/contacts/2/edit'); // contact 1 is the seeded sample parent the portal tests sign in as
   await page.getByLabel('Set portal password').fill('parent password 123');
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByText(/password set by the school, to be changed at next sign-in, never signed in/)).toBeVisible();
@@ -133,10 +133,10 @@ test('teachers and parents given a password by the school must choose their own,
     await expect(t).toHaveURL(new RegExp(`/${portal}$`));
   }
   await firstSignIn('teacher', 'portal.teacher@example.org', 'teacher password 123', 'my own teacher password');
-  await expect(t.getByText('Signed in as portal.teacher@example.org')).toBeVisible();
+  await expect(t.getByRole('heading', { level: 1, name: 'Portal Teacher Example' })).toBeVisible();
   await t.goto('/admin');
   await expect(t).toHaveURL(/\/admin\/login/);
-  await firstSignIn('parent', 'parent001@example.org', 'parent password 123', 'my own parent password');
+  await firstSignIn('parent', 'parent002@example.org', 'parent password 123', 'my own parent password');
   await t.goto('/parent/login');
   await signIn(t, 'portal.teacher@example.org', 'my own teacher password', 'parent').catch(() => null);
   await expect(t.locator('.ra-alert')).toHaveText('Email or password is incorrect.');
