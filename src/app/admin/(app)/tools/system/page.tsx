@@ -5,7 +5,9 @@ import { Chip } from '@/components/Chip';
 import { ActionButton } from '@/components/Form';
 import { formatCalendarDate, formatInstant } from '@/lib/dates';
 import { requireAdmin } from '@/server/next/actor';
+import { setupProgress } from '@/server/onboarding';
 import { feedToken, systemStatus } from '@/server/ops/system';
+import { hideChecklistAction } from '../../onboarding-actions';
 import { appUrl } from '@/server/password-links';
 import { resetFeedAction } from '../actions';
 import { OpsNav } from '../OpsNav';
@@ -16,7 +18,7 @@ export const metadata = { title: 'System' };
 /** §3 System page: version, automation status, mail, storage, the setup checklist and the calendar feed. */
 export default async function System() {
   await requireAdmin('super');
-  const [s, token] = await Promise.all([systemStatus(db), feedToken(db)]);
+  const [s, token, setup] = await Promise.all([systemStatus(db), feedToken(db), setupProgress(db)]);
   const feed = `${appUrl()}/calendar/${token}.ics`;
   const done = s.checklist.filter((c) => c.done).length;
   return (
@@ -42,7 +44,8 @@ export default async function System() {
       </div>
       <div className="ra-grid">
         <section className="ra-card ra-c6" aria-labelledby="chk-h">
-          <div className="ra-card-h"><div><h2 id="chk-h">Setup checklist</h2><div className="ra-note">{done} of {s.checklist.length} done</div></div></div>
+          <div className="ra-card-h"><div><h2 id="chk-h">Go-live checklist</h2><div className="ra-note">{done} of {s.checklist.length} done</div></div></div>
+          {setup.hidden && <div className="ra-toolbar" style={{ marginBottom: 10 }}><ActionButton action={hideChecklistAction.bind(null, false)} label="Show the setup steps on the dashboard" /></div>}
           <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 8 }}>
             {s.checklist.map((c) => <li key={c.label} style={{ display: 'flex', gap: 10, alignItems: 'center' }}><Chip colour={c.done ? 'var(--color-ok)' : 'var(--color-warn)'}>{c.done ? 'Done' : 'To do'}</Chip><Link href={c.href}>{c.label}</Link></li>)}
           </ul>

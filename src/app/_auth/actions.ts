@@ -9,6 +9,7 @@ import { changeOwnPassword, isLinkPortal, requestPasswordLink, sendPasswordLink,
 import { loginIdentity } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { safeNext } from '@/lib/safe-next';
+import { setUpSchool } from '@/server/onboarding';
 
 export type LoginState = { error?: string; notice?: string; email?: string } | undefined;
 const LINK_SENT = 'Check your email: we’ve sent you a link to set your password. It expires in 48 hours.';
@@ -72,4 +73,16 @@ export async function changePasswordAction(portal: Portal, _prev: LoginState, fd
   const r = await changeOwnPassword(db, s.identity.id, String(fd.get('password') ?? ''), String(fd.get('confirm') ?? ''));
   if (!r.ok) return { error: r.error };
   redirect(`/${portal}`);
+}
+
+export type SetupState = { error?: string; errors?: Record<string, string>; values?: Record<string, string> } | undefined;
+
+/** First-time setup of a new madrasah: creates the school and its first admin, signs them in, and opens the dashboard with the welcome. */
+export async function setupAction(_prev: SetupState, fd: FormData): Promise<SetupState> {
+  const raw = Object.fromEntries(['code', 'school', 'name', 'email', 'password'].map((k) => [k, String(fd.get(k) ?? '')]));
+  const res = await setUpSchool(db, raw, await requestMeta());
+  const { password: _pw, code: _code, ...values } = raw;
+  if (!res.ok) return { error: 'error' in res ? res.error : undefined, errors: 'errors' in res ? res.errors : undefined, values };
+  await setSessionCookie('admin', res.token);
+  redirect('/admin?welcome=1');
 }

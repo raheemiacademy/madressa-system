@@ -8,6 +8,7 @@ import { HBarChart, TrendChart } from '@/components/charts';
 import { Icon, type IconName } from '@/components/Icon';
 import { formatCalendarDate, formatInstant, greeting } from '@/lib/dates';
 import { formatPence } from '@/lib/money';
+import { STEPS } from '@/lib/onboarding-steps';
 import { formatChange, initials, plural } from '@/lib/text';
 import { resolveYear } from '@/server/academic-years';
 import { weeklyTrend } from '@/server/attendance/registers';
@@ -17,8 +18,11 @@ import { dashboard as feesDashboard, paymentList } from '@/server/fees/reports';
 import { requireAdmin } from '@/server/next/actor';
 import { todayIso } from '@/server/people/common';
 import { adminCan } from '@/server/permissions';
+import { setupProgress } from '@/server/onboarding';
+import { getProfile } from '@/server/profile';
 import { readTab } from '@/server/settings';
 import { PanelBoundary, SeenOnce } from './DashParts';
+import { SetupChecklist, Welcome } from './Onboarding';
 import { AddFeesButton, AddFeesDialog } from './fees/AddFees';
 
 export const metadata = { title: 'Dashboard' };
@@ -54,8 +58,10 @@ function Panel({ id, cls, title, note, action, height, anim, children }: { id: s
 }
 
 /** §1 Dashboard: today's figures, banners, attendance, age groups, unread messages, teacher sign-in, and (with fees access) payments and fees by type. */
-export default async function Dashboard() {
+export default async function Dashboard({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
   const admin = await requireAdmin();
+  // A new madrasah's setup checklist comes first, for the Super admins who do the setting up.
+  const [setup, sp] = await Promise.all([admin.staff.isSuper ? setupProgress(db) : null, searchParams]);
   const jar = await cookies();
   const [local, { year }] = await Promise.all([readTab(db, 'local'), resolveYear(db, Number(jar.get('year_id')?.value) || null)]);
   const tz = local.timezone as string;
@@ -71,6 +77,8 @@ export default async function Dashboard() {
   return (
     <div className="ra-page">
       <SeenOnce />
+      {setup && sp.welcome === '1' && <Welcome school={(await getProfile(db))?.name ?? 'Your madrasah'} name={admin.name.split(/\s+/)[0]!} firstHref={STEPS[0].href} />}
+      {setup && !setup.hidden && <SetupChecklist p={setup} />}
       <div className={`ra-hero${anim}`}>
         <div className="ra-hero-date">{formatInstant(now, 'EEEE d MMMM', tz)}</div>
         <h1>{greeting(now, tz)}, {admin.name.split(/\s+/)[0]}</h1>

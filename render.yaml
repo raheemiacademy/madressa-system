@@ -25,6 +25,8 @@ services:
         generateValue: true
       - key: BACKUP_ENCRYPTION_KEY
         generateValue: true # backups are encrypted; on the free preview they live on the server's disk and go with each deploy
+      - key: SEED_SAMPLE_DATA
+        value: "1" # demo preview only: fictional sample school and logins
       - key: SEED_ADMIN_PASSWORD
         sync: false # you type this in Render when creating the blueprint
       - key: APP_URL

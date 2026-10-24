@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, useTransition } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useRef, useTransition } from 'react';
 import { Icon } from '@/components/Icon';
+import { STEPS } from '@/lib/onboarding-steps';
 import { initials } from '@/lib/text';
 import { logoutAction } from '@/app/_auth/actions';
 import { crumbFor, isCurrent, NAV } from '../nav';
@@ -69,6 +70,7 @@ export function Shell({ school, logoSrc, userName, userEmail, years, yearId, dri
             </div>
           </header>
           {drillRunning && !pathname.startsWith('/admin/fire-drill') && <div className="ra-banner ra-alert" role="alert" style={{ margin: '12px 28px 0' }}><div><b>A fire drill is running.</b></div><Link className="ra-link" href="/admin/fire-drill">Open roll call</Link></div>}
+          <Suspense fallback={null}><SetupBanner /></Suspense>
           <main id="main" tabIndex={-1} className="ra-content">{children}</main>
         </div>
       </div>
@@ -130,5 +132,18 @@ function AccountMenu({ name, email }: { name: string; email: string }) {
         <form action={logoutAction.bind(null, 'admin')}><button type="submit">Sign out</button></form>
       </div>
     </>
+  );
+}
+
+/** Shown on a page opened from the setup checklist (?setup=N): where you are, what to do here, and the way back. */
+function SetupBanner() {
+  const n = Number(useSearchParams().get('setup'));
+  const step = STEPS[n - 1];
+  if (!step) return null;
+  return (
+    <div className="ra-banner ra-setup-banner" role="status" style={{ ['--c' as string]: 'var(--ra-indigo)' }}>
+      <div><b>Setup step {n} of {STEPS.length}: {step.title}.</b> {step.why}</div>
+      <Link className="ra-link" href="/admin">Back to the checklist</Link>
+    </div>
   );
 }
