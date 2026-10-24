@@ -658,3 +658,8 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
 **Phase 9 gaps**
 - **Real hosting** (question 11) waits until the project is complete: a UK-region server and database, plus an S3 bucket set with the variables above. Until then, backups and uploads on the preview don't survive a deploy.
 - **Restoring from a backup file kept elsewhere** (uploading one) isn't built: the inventory lists restoring from the list only.
+
+## 16. Changes after Phase 9
+
+- **Sticky notes removed (your request, 24/10/2026).** The inventory lists them (§1, §19), but you asked for them to go. The header button, the notes shown on pages, Tools → Sticky notes and the "Sticky note colours" preference are all gone. The `sticky_note` table and any notes in it are kept, because dropping it would delete data. It can be removed in a later migration if you say so.
+

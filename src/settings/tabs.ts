@@ -237,7 +237,6 @@ export const TABS: Tab[] = [
       { type: 'int', name: 'studentsPerPage', label: 'Students per list page', default: 50, min: 10, max: 500 },
       { type: 'int', name: 'photoTimeout', label: 'Photo timeout (seconds)', default: 30, min: 0, max: 3600, help: 'How long a student photo stays on screen before it is hidden again.' },
       yes('photosInSearch', 'Show photos in search results'),
-      { type: 'checks', name: 'stickyNoteColours', label: 'Sticky note colours', default: ['lav', 'sky', 'violet'], options: PALETTE_COLOURS },
       yes('emailOnPortalMessages', 'Email me when a portal message arrives', true)
     ]
   }

@@ -150,7 +150,7 @@ export const holiday = pgTable('holiday', {
   createdAt: createdAt()
 }, (t) => [check('holiday_dates', sql`${t.endsOn} >= ${t.startsOn}`)]);
 
-// §1/§19 Sticky notes
+// §1/§19 Sticky notes: removed from the app at the school's request (24/10/2026). The table is kept so existing notes aren't deleted without asking.
 export const stickyNote = pgTable('sticky_note', {
   id: serial('id').primaryKey(),
   pagePath: text('page_path').notNull(),
