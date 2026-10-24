@@ -8,6 +8,7 @@ import type { Actor } from '../people/common';
 import { getProfile } from '../profile';
 import { readTab } from '../settings';
 import { htmlToPdf } from './pdf';
+import { log } from '../ops/logs';
 
 export type NewMail = {
   to: string; toName?: string | null; subject: string; html: string; attachments?: { filename: string; html: string }[];
@@ -64,10 +65,12 @@ async function deliver(db: DbOrTx, rows: (typeof mailQueue.$inferSelect)[]) {
       await t.send({ from: address(m.fromEmail, m.fromName), to: address(m.toEmail, m.toName), cc: m.cc ?? undefined, bcc: m.bcc ?? undefined, replyTo: m.replyTo ?? undefined, subject: m.subject, html: m.html, attachments });
       await db.update(mailQueue).set({ status: 'sent', sentAt: new Date(), lastError: null }).where(eq(mailQueue.id, m.id));
       if (m.entity === 'payment' && m.entityId) await db.update(payment).set({ receiptState: 'sent', receiptSentAt: new Date() }).where(eq(payment.id, m.entityId));
+      await log(db, 'notification', `Email sent to ${m.toEmail}: ${m.subject}`, m.createdBy);
       sent++;
     } catch (e) {
       const failed = m.attempts >= 5;
       await db.update(mailQueue).set({ status: failed ? 'failed' : 'queued', lastError: String((e as Error).message ?? e).slice(0, 500), sendAfter: new Date(Date.now() + 2 ** m.attempts * 60_000) }).where(eq(mailQueue.id, m.id));
+      await log(db, 'notification', `Email to ${m.toEmail} ${failed ? 'failed' : 'will be retried'}: ${String((e as Error).message ?? e).slice(0, 200)}`, m.createdBy);
     }
   }
   return sent;

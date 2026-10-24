@@ -50,6 +50,13 @@
       "when": 1792854337560,
       "tag": "0006_portals",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792869500358,
+      "tag": "0007_ops",
+      "breakpoints": true
     }
   ]
 }

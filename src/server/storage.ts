@@ -1,10 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import type { DbOrTx } from '@/db';
 import { fileObject } from '@/db/schema';
 
-// shortcut: local-disk driver only; the S3 driver from DECISIONS.md lands with Phase 9 deployment work.
+/* Where uploaded files and backups live: local disk (development, and the free preview), or S3-compatible storage (STORAGE_DRIVER=s3). */
+
 const root = () => path.resolve(process.env.STORAGE_LOCAL_DIR ?? './storage');
 const pathFor = (key: string) => {
   const p = path.join(root(), key);
@@ -12,8 +14,40 @@ const pathFor = (key: string) => {
   return p;
 };
 
-export const readStored = (key: string) => readFile(pathFor(key));
-export const removeStored = (key: string) => rm(pathFor(key), { force: true });
+export type StorageDriver = { name: string; read(key: string): Promise<Buffer>; write(key: string, body: Buffer, mime: string): Promise<void>; remove(key: string): Promise<void> };
+
+const local: StorageDriver = {
+  name: 'local',
+  read: (key) => readFile(pathFor(key)),
+  async write(key, body) { await mkdir(path.dirname(pathFor(key)), { recursive: true }); await writeFile(pathFor(key), body); },
+  remove: (key) => rm(pathFor(key), { force: true })
+};
+
+/** S3-compatible storage (any UK-region provider). Files are private; the app always serves them itself. */
+export function s3Driver(client: Pick<S3Client, 'send'>, bucket: string): StorageDriver {
+  return {
+    name: 's3',
+    async read(key) {
+      const r = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+      return Buffer.from(await r.Body!.transformToByteArray());
+    },
+    async write(key, body, mime) { await client.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: mime, ServerSideEncryption: 'AES256' })); },
+    async remove(key) { await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key })); }
+  };
+}
+
+let chosen: StorageDriver | null = null;
+export function storage(): StorageDriver {
+  if (chosen) return chosen;
+  if (process.env.STORAGE_DRIVER !== 's3') return (chosen = local);
+  const need = (k: string) => { const v = process.env[k]; if (!v) throw new Error(`Set ${k} for STORAGE_DRIVER=s3`); return v; };
+  const client = new S3Client({ region: need('S3_REGION'), endpoint: process.env.S3_ENDPOINT || undefined, forcePathStyle: !!process.env.S3_ENDPOINT, credentials: { accessKeyId: need('S3_ACCESS_KEY_ID'), secretAccessKey: need('S3_SECRET_ACCESS_KEY') } });
+  return (chosen = s3Driver(client, need('S3_BUCKET')));
+}
+
+export const readStored = (key: string) => storage().read(key);
+export const removeStored = (key: string) => storage().remove(key);
+export const writeStored = (key: string, body: Buffer, mime: string) => storage().write(key, body, mime);
 
 /** Detects the real type from the file's first bytes — the browser-supplied type is not trusted. */
 export function sniffMime(b: Buffer): string | null {
@@ -46,8 +80,7 @@ export async function storeUpload(db: DbOrTx, file: File, kind: UploadKind, purp
   const mime = sniffMime(buf);
   if (!mime || !(rule.mimes as readonly string[]).includes(mime)) return { ok: false as const, error: `Upload ${rule.label}.` };
   const key = `${purpose}/${randomUUID()}`;
-  await mkdir(path.dirname(pathFor(key)), { recursive: true });
-  await writeFile(pathFor(key), buf);
+  await writeStored(key, buf, mime);
   const [row] = await db.insert(fileObject).values({ storageKey: key, filename: file.name.slice(0, 200) || 'upload', mime, size: buf.length, purpose, createdBy }).returning();
   return { ok: true as const, file: row! };
 }
@@ -69,8 +102,8 @@ export async function storeAttachment(db: DbOrTx, file: File, allowed: string[],
   if (file.size > 10 * 1024 * 1024) return { ok: false as const, error: 'Use a file under 10 MB.' };
   const buf = Buffer.from(await file.arrayBuffer());
   const key = `${purpose}/${randomUUID()}`;
-  await mkdir(path.dirname(pathFor(key)), { recursive: true });
-  await writeFile(pathFor(key), buf);
-  const [row] = await db.insert(fileObject).values({ storageKey: key, filename: file.name.replace(/[\/\r\n"]/g, '_').slice(0, 200), mime: MIME[ext] ?? 'application/octet-stream', size: buf.length, purpose, createdBy }).returning();
+  const mime = MIME[ext] ?? 'application/octet-stream';
+  await writeStored(key, buf, mime);
+  const [row] = await db.insert(fileObject).values({ storageKey: key, filename: file.name.replace(/[\/\r\n"]/g, '_').slice(0, 200), mime, size: buf.length, purpose, createdBy }).returning();
   return { ok: true as const, file: row! };
 }

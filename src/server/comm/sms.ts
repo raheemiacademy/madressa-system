@@ -9,6 +9,7 @@ import { decrypt } from '../crypto';
 import { LEFT_STATUSES, todayIso, type Actor } from '../people/common';
 import { readTab } from '../settings';
 import { commonVars, fill } from './templates';
+import { log } from '../ops/logs';
 
 /** "07700 900123" → "+447700900123" with the settings' country code. Null if it isn't a phone number. */
 export function normaliseNumber(raw: string, countryCode = '44') {
@@ -156,9 +157,11 @@ export async function processSmsQueue(db: Db) {
     try {
       const out = await d.send(r.to_number, r.body, from);
       await db.update(smsMessage).set({ provider: d.name, providerId: out.providerId, credits: out.credits }).where(eq(smsMessage.id, r.id));
+      await log(db, 'notification', `Text sent to ${r.to_number}`);
       sent++;
     } catch (e) {
       await db.update(smsMessage).set({ status: 'failed', provider: d.name, error: String((e as Error).message).slice(0, 300), sentAt: null }).where(eq(smsMessage.id, r.id));
+      await log(db, 'notification', `Text to ${r.to_number} failed: ${String((e as Error).message).slice(0, 200)}`);
     }
   }
   return sent;

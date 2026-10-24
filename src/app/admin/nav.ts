@@ -10,7 +10,7 @@ export const NAV: { group: string; items: NavItem[] }[] = [
   { group: 'Communication', items: [{ href: '/admin/messages', label: 'Messages', icon: 'mail' }, { href: '/admin/newsletters', label: 'Newsletters & SMS', icon: 'send', need: 'comm' }, { href: '/admin/docs', label: 'Shared files', icon: 'paperclip' }] },
   { group: 'Learning', items: [{ href: '/admin/homework', label: 'Homework', icon: 'book' }, { href: '/admin/exams', label: 'Exams & reports', icon: 'exam' }, { href: '/admin/events', label: 'Events & trips', icon: 'event' },
     { href: '/admin/incidents', label: 'Incidents', icon: 'alert' }, { href: '/admin/merits', label: 'Merits & shop', icon: 'star' }, { href: '/admin/forums', label: 'Forums', icon: 'chat' }] },
-  { group: 'System', items: [{ href: '/admin/settings', label: 'Settings', icon: 'cog' }, { href: '/admin/tools/portals', label: 'Portals', icon: 'phone' }, { href: '/admin/tools/sticky-notes', label: 'Sticky notes', icon: 'note' }] }
+  { group: 'System', items: [{ href: '/admin/settings', label: 'Settings', icon: 'cog' }, { href: '/admin/tools/system', label: 'System', icon: 'eye' }, { href: '/admin/tools/portals', label: 'Portals', icon: 'phone' }, { href: '/admin/tools/sticky-notes', label: 'Sticky notes', icon: 'note' }] }
 ];
 
 const EXTRA: { prefix: string; group: string; title: string }[] = [
@@ -20,7 +20,8 @@ const EXTRA: { prefix: string; group: string; title: string }[] = [
   { prefix: '/admin/import', group: 'School', title: 'Import' },
   { prefix: '/admin/fire-drill', group: 'School', title: 'Fire drill' },
   { prefix: '/admin/reports', group: 'Learning', title: 'Exams & reports' },
-  { prefix: '/admin/products', group: 'Learning', title: 'Merits & shop' }
+  { prefix: '/admin/products', group: 'Learning', title: 'Merits & shop' },
+  ...['backups', 'logs', 'email', 'api'].map((t) => ({ prefix: `/admin/tools/${t}`, group: 'System', title: 'System' }))
 ];
 
 export function crumbFor(pathname: string) {

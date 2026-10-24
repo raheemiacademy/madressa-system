@@ -607,3 +607,54 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
 - **Student Diary / Daily Progress Tracker** waits for your fields. The "Student Diaries" and "Diary" sections stay hidden.
 - **Real payments** are off until you approve them. Stripe and GoCardless haven't been called; the flows are built to their published APIs and tested with fakes.
 - **Push notifications to phones** are still on the future list (FUTURE.md). The portals tell people by email, as before.
+
+## 15. Phase 9 record (Ops: §3 Backup, System page, Logs, Email delivery tracking; §19 Calendar feed, Developer API)
+
+**Dependencies added** (on the approved list): `@aws-sdk/client-s3`, for the S3 storage driver. Its tests use a fake client; no real storage service has been called.
+
+**Not used:** `pg_dump` / `pg_restore`. Backups are made by the app itself (see below), so they don't depend on the host's Postgres client version.
+
+**Decisions**
+- **Backups (§3)**, under System → Backups (Super only):
+  - **What's in a backup:** every table's rows, exported in one consistent snapshot, gzipped, and encrypted with AES-256-GCM using a new `BACKUP_ENCRYPTION_KEY` (they hold children's data).
+  - **Where:** in file storage, with a SHA-256 checksum. There's "Full backup now", plus a nightly backup made by the worker after its daily jobs.
+  - **Restore:**
+    - Needs the school name typed.
+    - Refuses a damaged file, or one made with a different version of the database.
+    - Then, in one transaction, it replaces all data, resets ID counters and re-checks every link between tables. If anything fails, nothing changes.
+    - It signs everyone out. It's audited, with the entry added after the restored audit trail.
+  - **Not in a backup:** sign-in sessions, throttles, the backup list itself and worker status.
+  - **Uploaded files aren't in the backup:** they stay in file storage (S3 in production).
+  - "Delete backups older than 30 days" needs the school name and is audited.
+- **Storage:**
+  - `STORAGE_DRIVER=s3` stores uploads and backups in any S3-compatible bucket (private, encrypted at rest; the app always serves files itself).
+  - Local disk remains for development and the free preview.
+  - The variables are documented in `.env.example`.
+- **System page (§3):**
+  - Version and commit, plus "Automation services" (the worker checks in on every pass; two minutes of silence shows Stopped).
+  - The last daily run, the mail queue, whether email and texts are really sent or in test mode, and where files are kept.
+  - A setup checklist with links.
+  - "Subscription and invoices" and "telephone support" are IBEAMS's own services, which you said to skip.
+- **Header/menu theme (§3):** a new Preferences setting: follow each device, Light or Dark. The client's colours never change; this picks light or dark surfaces for the admin area.
+- **Logs (§3):**
+  - What's logged: sign-ins and wrong passwords (as Staff, Teacher, Parent or Student), set-password links (Teacher, Contact), emails and texts sent or failed (Notification), and daily jobs, backups and failed worker steps (System).
+  - "All" also shows the audit trail, which has its own Audit filter.
+  - **"Delete all logs" keeps the audit trail**, because it's the school's record of who changed what. It needs the school name and is itself audited.
+- **Email delivery tracking (§3):**
+  - Every sent email: date, subject, to, sent by, CC/BCC, and a text preview.
+  - "Delete sent emails before a date" needs the school name and is audited. Waiting and failed emails stay in the mail queue.
+  - **Bounces aren't tracked:** the inventory doesn't ask for it, and it would need the mail provider's webhooks.
+- **Calendar feed (§19):**
+  - One secret address (`/calendar/<token>.ics`) with holidays shown to parents and active events, to subscribe to in Google, Apple or Outlook.
+  - It has no personal data. "Make a new address" stops the old one.
+- **Developer API (§19):**
+  - Read-only `GET /api/v1/students` and `/api/v1/contacts`, 100 per page, with `Authorization: Bearer <key>`.
+  - Keys are created under System → Developer API, shown once, stored hashed, scoped (students, contacts) and revocable.
+  - Use is logged and limited to 120 requests a minute per key. Medical notes, notes and other sensitive fields are never returned.
+  - The "student diaries" scope waits for the Student Diary.
+- **Fixed along the way:** the Logs table can scroll sideways on a phone, so it's now a labelled, keyboard-focusable region (axe caught it).
+- **Preview:** `render.yaml` now generates `BACKUP_ENCRYPTION_KEY`. On the free preview, backups and uploads are on the server's disk, so they go with each redeploy. That's fine for a demo, but not for real use.
+
+**Phase 9 gaps**
+- **Real hosting** (question 11) waits until the project is complete: a UK-region server and database, plus an S3 bucket set with the variables above. Until then, backups and uploads on the preview don't survive a deploy.
+- **Restoring from a backup file kept elsewhere** (uploading one) isn't built: the inventory lists restoring from the list only.

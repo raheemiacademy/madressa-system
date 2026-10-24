@@ -6,6 +6,7 @@ import { audit } from './audit';
 import { createSession, hashPassword, hitRateLimit, invalidateAllSessions, passwordProblem, sha256, type Portal } from './auth';
 import { enqueueMail } from './comm/mail';
 import { render } from './comm/templates';
+import { log } from './ops/logs';
 
 /** Portals whose people get emailed links to set their own password (question 14). */
 export const LINK_PORTALS = ['teacher', 'parent'] as const;
@@ -39,6 +40,7 @@ export async function sendPasswordLink(db: DbOrTx, idn: typeof loginIdentity.$in
   const link = `${appUrl()}/${idn.portal}/set-password/${raw}`;
   const mail = await render(db, 'portals.set-password', { NAME: await personName(db, idn), PORTAL: PORTAL_NAME[idn.portal], LINK: link, HOURS: String(LINK_HOURS) });
   await enqueueMail(db, [{ to: idn.email, subject: mail.subject, html: mail.html, entity: 'login_identity', entityId: idn.id, createdBy }]);
+  await log(db, idn.portal === 'teacher' ? 'teacher' : 'contact', 'Emailed a set-password link', idn.id);
   return true;
 }
 

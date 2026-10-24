@@ -1,8 +1,11 @@
 import { sql } from 'drizzle-orm';
 import type { Db } from '@/db';
+import { workerHeartbeat } from '@/db/schema';
 import { formatInstant } from '@/lib/dates';
 import { currentYear } from '../academic-years';
 import { generateInvoices } from '../fees/generate';
+import { backupsConfigured, createBackup } from '../ops/backup';
+import { log } from '../ops/logs';
 import { collectDirectDebits } from '../portal/fees';
 import { todayIso } from '../people/common';
 import { readTab } from '../settings';
@@ -29,12 +32,15 @@ export async function runDaily(db: Db, now = new Date()) {
   if (year && today >= year.startsOn && today <= year.endsOn) await generateInvoices(db, SYSTEM, year.id, { scope: 'today' }, { today });
   // Families with a direct debit pay what's due without doing anything (§20 "collected automatically").
   await collectDirectDebits(db, SYSTEM, { dueBy: today });
+  if (backupsConfigured()) await createBackup(db, 'Nightly backup', 'nightly');
+  await log(db, 'system', `Daily jobs ran for ${today}`);
   return true;
 }
 
 /** One worker pass: send due emails and texts, then the daily jobs. Each part's failure is logged, not fatal. */
 export async function tick(db: Db) {
+  await db.insert(workerHeartbeat).values({ process: 'worker', lastBeat: new Date() }).onConflictDoUpdate({ target: workerHeartbeat.process, set: { lastBeat: new Date() } });
   for (const [name, step] of [['mail', processMailQueue], ['sms', processSmsQueue], ['daily', runDaily]] as const) {
-    try { await step(db); } catch (e) { console.error(`[worker] ${name} failed:`, (e as Error).message); }
+    try { await step(db); } catch (e) { console.error(`[worker] ${name} failed:`, (e as Error).message); await log(db, 'system', `Worker step “${name}” failed: ${(e as Error).message}`); }
   }
 }

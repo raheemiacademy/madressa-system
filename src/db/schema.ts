@@ -1245,3 +1245,57 @@ export const detailsConfirmation = pgTable('details_confirmation', {
   contactId: integer('contact_id').references(() => contact.id, { onDelete: 'set null' }),
   confirmedAt: tz('confirmed_at').notNull().defaultNow()
 }, (t) => [primaryKey({ columns: [t.studentId, t.academicYearId] })]);
+
+/* ───────── Phase 9: ops ───────── */
+
+// §3 Logs: sign-ins, background jobs and notifications. The audit trail stays in audit_log and isn't deleted with these.
+export const LOG_KINDS = ['system', 'parent', 'student', 'teacher', 'staff', 'contact', 'notification'] as const;
+export const appLog = pgTable('app_log', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  at: tz('at').notNull().defaultNow(),
+  kind: text('kind').notNull(),
+  message: text('message').notNull(),
+  identityId: integer('identity_id').references(() => loginIdentity.id, { onDelete: 'set null' }),
+  details: jsonb('details')
+}, (t) => [index('app_log_at_idx').on(t.at), check('app_log_kind', sql`${t.kind} in ('system', 'parent', 'student', 'teacher', 'staff', 'contact', 'notification')`)]);
+
+// §3 Backup: encrypted full exports of the database, kept in file storage.
+export const backup = pgTable('backup', {
+  id: serial('id').primaryKey(),
+  createdAt: createdAt(),
+  createdBy: text('created_by').notNull(),
+  kind: text('kind').notNull(), // manual | nightly
+  size: integer('size').notNull(),
+  storageKey: text('storage_key').notNull().unique(),
+  checksum: text('checksum').notNull(), // sha256 of the stored (encrypted) file
+  schemaVersion: text('schema_version').notNull(),
+  rowCount: integer('row_count').notNull()
+}, (t) => [check('backup_kind', sql`${t.kind} in ('manual', 'nightly')`)]);
+
+// §19 Developer API keys: stored hashed, shown once. Read-only scopes.
+export const apiKey = pgTable('api_key', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  prefix: text('prefix').notNull(),
+  keyHash: text('key_hash').notNull().unique(),
+  scopes: text('scopes').array().notNull(),
+  createdBy: text('created_by').notNull(),
+  createdAt: createdAt(),
+  lastUsedAt: tz('last_used_at'),
+  revokedAt: tz('revoked_at')
+});
+
+// §3 "Check Automation Services Status": the worker records each pass.
+export const workerHeartbeat = pgTable('worker_heartbeat', {
+  process: text('process').primaryKey(),
+  lastBeat: tz('last_beat').notNull().defaultNow(),
+  details: jsonb('details')
+});
+
+// §19 Calendar (ICS) feed: one secret address for the school's holidays and events.
+export const calendarFeed = pgTable('calendar_feed', {
+  id: integer('id').primaryKey().default(1),
+  token: text('token').notNull(),
+  createdAt: createdAt()
+}, (t) => [check('calendar_feed_one', sql`${t.id} = 1`)]);
+

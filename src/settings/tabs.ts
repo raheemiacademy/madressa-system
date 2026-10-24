@@ -230,6 +230,7 @@ export const TABS: Tab[] = [
   {
     key: 'preferences', title: 'Preferences', group: 'General', description: 'Display preferences for the admin area.',
     fields: [
+      { type: 'select', name: 'theme', label: 'Header and menu theme', default: 'system', options: opts(['system', 'Follow each device (light or dark)'], ['light', 'Light'], ['dark', 'Dark']), help: 'The school’s colours stay the same; this picks light or dark surfaces for the admin area.' },
       yes('logoInSideMenu', 'Show the school logo in the side menu', true),
       yes('html5DatePicker', 'Use the built-in date picker', true),
       yes('teacherLogsOnDashboard', 'Show teacher logs on the dashboard', true),

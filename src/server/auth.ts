@@ -3,6 +3,7 @@ import { hash, verify } from '@node-rs/argon2';
 import { and, eq, sql as dsql } from 'drizzle-orm';
 import type { DbOrTx } from '@/db';
 import { loginIdentity, rateLimit, session } from '@/db/schema';
+import { log, PORTAL_LOG } from './ops/logs';
 
 export type Portal = 'admin' | 'teacher' | 'parent' | 'student';
 export const PORTALS: readonly Portal[] = ['admin', 'teacher', 'parent', 'student'];
@@ -105,6 +106,7 @@ export async function login(db: DbOrTx, portal: Portal, emailRaw: string, passwo
   const good = await verifyPassword(idn.passwordHash, password);
   if (!good) {
     const failed = idn.failedAttempts + 1;
+    await log(db, PORTAL_LOG[portal]!, failed >= MAX_FAILED_ATTEMPTS ? 'Wrong password: account locked for a while' : 'Wrong password', idn.id);
     await db.update(loginIdentity).set(failed >= MAX_FAILED_ATTEMPTS
       ? { failedAttempts: 0, lockedUntil: new Date(now.getTime() + LOCKOUT_MS) }
       : { failedAttempts: failed }).where(eq(loginIdentity.id, idn.id));
@@ -114,5 +116,6 @@ export async function login(db: DbOrTx, portal: Portal, emailRaw: string, passwo
 
   await db.update(loginIdentity).set({ failedAttempts: 0, lockedUntil: null, lastLoginAt: now }).where(eq(loginIdentity.id, idn.id));
   const s = await createSession(db, idn.id, portal, meta);
+  await log(db, PORTAL_LOG[portal]!, 'Signed in', idn.id, meta.ip ? { ip: meta.ip } : undefined);
   return { ok: true, ...s, identityId: idn.id, mustChangePassword: idn.mustChangePassword };
 }
