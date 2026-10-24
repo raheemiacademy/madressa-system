@@ -363,3 +363,29 @@ button.ra-mk { cursor: pointer; }
 .ra-period { border: 1px solid var(--color-border-line); border-radius: var(--ra-r); padding: 12px; display: grid; gap: 8px; }
 .ra-receipt { max-width: 640px; }
 .ra-receipt th { color: var(--color-fg-muted); font-weight: 500; }
+
+/* Messages (Phase 5), ported from the design; each list item also holds a select checkbox */
+.ra-msg-list { display: flex; flex-direction: column; }
+.ra-msg-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 6px; border-bottom: 1px solid var(--ra-hairline); }
+.ra-msg-row:last-child { border-bottom: 0; }
+.ra-msg { all: unset; cursor: pointer; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; padding: 12px 8px; border-radius: var(--ra-r); color: var(--color-fg); transition: background-color .15s ease; }
+.ra-msg:focus-visible { outline: 2px solid var(--ra-indigo); outline-offset: 2px; }
+@media (hover: hover) { .ra-msg:hover { background: color-mix(in srgb, var(--ra-lav) 16%, transparent); } }
+.ra-msg[aria-current="true"] { background: color-mix(in srgb, var(--ra-lav) 24%, transparent); }
+.ra-msg-top { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.ra-msg-from { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 0 1 auto; }
+.ra-msg-top .ra-chip { flex: 0 3 auto; min-width: 0; }
+.ra-msg-subj { font-size: 14px; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ra-msg-prev { font-size: 13px; color: var(--color-fg-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ra-msg-side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; font-size: 12px; color: var(--color-fg-muted); white-space: nowrap; }
+.ra-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ra-violet); }
+.ra-msg[data-unread="false"] .ra-dot { visibility: hidden; }
+.ra-msg[data-unread="false"] .ra-msg-from { font-weight: 400; }
+@container (max-width: 480px) { .ra-msg-top .ra-chip { display: none; } }
+.ra-thread { display: flex; flex-direction: column; gap: 14px; }
+.ra-bubble { background: var(--ra-tint); border-radius: 4px 14px 14px 14px; padding: 14px 16px; line-height: 1.6; overflow-wrap: anywhere; }
+.ra-rich { border: 1px solid var(--color-border-line); border-radius: var(--ra-r); background: var(--color-bg); padding: 8px; display: grid; gap: 8px; }
+.ra-rich-body { min-height: 220px; padding: 8px 10px; outline: none; line-height: 1.6; overflow-wrap: anywhere; }
+.ra-rich-body:focus-visible { outline: 2px solid var(--ra-indigo); outline-offset: 2px; border-radius: var(--ra-r-sm); }
+.ra-rich-body a { color: var(--ra-accent-text); }
+.ra-preview { width: 100%; min-height: 520px; border: 1px solid var(--color-border-line); border-radius: var(--ra-r); background: var(--color-panel); }

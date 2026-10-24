@@ -397,3 +397,50 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
 - **Admin mobile `AdminFees` screen** with its bottom tab bar is Phase 8. On phones the fees pages follow the narrow-screen rules.
 
 **Questions still open:** 3 (PayFast: not built until you decide), 13 (real PDFs), 14 (Portal Login).
+
+---
+
+## 11. Phase 5 record (Communication: §10 Messages, §11 Newsletters/SMS, §19 Mail queue and Templates)
+
+**Dependencies added** (all on the approved list): `nodemailer` (+ `@types/nodemailer`), `sanitize-html` (+ `@types/sanitize-html`), `@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/pm`, and `playwright` (already added for the Docker preview, now used for PDFs). **Not used:** `pg-boss`. A small worker loop over the mail and SMS tables (with `FOR UPDATE SKIP LOCKED`, and a once-a-day claim row) did the job without a second queue.
+
+**Decisions**
+- **Worker** (`npm run worker`). Every 15 seconds it sends due emails (within Settings → Mail's per-minute limit) and queued texts. Once a day after 06:00 UK time it emails attendance alerts (if they're on) and generates the day's fees invoices for the current year. The preview container runs the worker beside the web server. Failed emails retry with growing gaps and are marked failed after 5 tries.
+- **Email and SMS stay in test mode** until you approve real sending. `EMAIL_DRIVER=log` and `SMS_DRIVER=log` (the defaults, used on the preview) log messages instead of sending them. SMTP (system, or the school's own from Settings → Mail) works with `EMAIL_DRIVER=smtp`. ClickSend and VoodooSMS are written to their published APIs but haven't been called, and only run with `SMS_DRIVER=clicksend` or `voodoo`.
+- **Real PDFs** (question 13): every print layout now also has **Download PDF**. Chromium opens the same page as the signed-in admin, so the page's own permission checks still apply. Only `/admin/…` paths on our own server are accepted, and any other address is blocked. Receipts can be attached to emails as PDFs.
+- **Templates editor** (§19): the built-in wording lives in code; an edit is saved as an override. Extra versions (e.g. "Urgent") can be added, and reminders let you choose one. `{VARIABLES}` are HTML-escaped. Edited HTML is cleaned of scripts and unsafe attributes. `{HIJRI_DATE}` follows Local settings (language, format, offset). The groups shown so far are Fees, Registers, Messaging, Portals and Student; the others (certificates, EOTY reports, homework, incidents) arrive with their features.
+- **Messages** (§10):
+  - Each recipient of a compose gets their own conversation, so families never see each other. "Pick a class" adds its students' primary contacts.
+  - Office conversations are shared by all admins, or by one rank when "for the attention of" is set. Super admins see all.
+  - Locked is the same as Archived. Locking stops parents and teachers replying and clears the conversation from unread.
+  - Read status is shown per message ("Not yet read" / "Read by …").
+  - Delete (bulk, or by date range and person) needs Can delete and is audited.
+- **Messaging routes** (§4) are enforced on the server for every portal sender, and tested now so the Phase 8 portals inherit them:
+  - Teachers can reach admins and teachers. They can reach primary contacts only of students in classes where they have the Messaging privilege.
+  - Contacts can reach admins. They can reach their children's (Messaging-privileged) teachers only if "all genders", or "same gender" with both genders recorded and equal, is on.
+- **Message notifications:** recipients get an email with the message and a link, and admins are emailed about portal messages when Preferences → "Email me when a portal message arrives" is on.
+- **Newsletters** (§11): audiences are parents of current students, all contacts, active teachers, admins (for testing), student emails, or parents in chosen classes. Each address gets one copy, and `{NAME}` personalises it.
+  - The five layout styles are named **Modern, Fresh, Classic, Dark theme, Plain**, because the IBEAMS names (IBE New/IBE Classic) are the vendor's.
+  - Image manager files are public, because they appear in emails; the page says so. Newsletters need the **Marketing** access level, and texts need **Send SMS**.
+- **SMS:** numbers are normalised with the country code (07… → +44…) and de-duplicated. A text is 160 characters, or 153 each when split. System templates can be reworded but not deleted.
+- **WhatsApp button** (question 8): on teacher and contact profiles. It opens `wa.me` (the app, or WhatsApp Web) with a ready-written message from the SMS templates. Nothing is sent by the system.
+- **Teacher and parent logins** (question 14):
+  - An admin can save just an email. On first sign-in, or from "First time here, or forgotten your password?", the person is emailed a one-time link (48 hours) that confirms the email and sets their password.
+  - A password chosen by an admin must be changed after signing in.
+  - Profiles show the state (invited / email confirmed / to be changed) and have "Email a set-password link".
+  - The "forgotten password" form gives the same answer whether or not the email has an account. One leak remains: signing in with an invited email that has no password yet triggers the link, so it shows that account exists.
+  - Admin logins are unchanged.
+- **Emails held over from earlier phases now send:**
+  - attendance alerts (each morning or "Send now", at most once per look-back period per student);
+  - fire drill emails (admins, and each class's main teacher with their roll call);
+  - holiday request replies;
+  - the "student left" email (a new option when marking a student as leaving);
+  - receipts (Send selected, Quick send, optional PDF; a receipt moves to Sent once delivered);
+  - fees reminders (one email per family, choosing a template version and an optional direct-debit line);
+  - "Send holidays newsletter" (makes a draft from the year's holidays).
+- **Header:** a Messages icon shows your unread count. Mail queue and Templates are in Settings (Super).
+
+**Phase 5 gaps**
+- **Students as message recipients and senders** wait for the student portal, which is on hold (FUTURE.md). Their routes are not offered.
+- **Teacher-portal and parent-portal screens** for reading and sending messages are Phase 8. The server functions and route checks are built.
+- **Email delivery tracking and bounce handling** (§3 Logs) are Phase 9.

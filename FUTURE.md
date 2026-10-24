@@ -23,7 +23,7 @@ Things deliberately left out of the current build, kept so nothing is forgotten.
    - paid FTP storage or an upload script on your own server.
 
 4. **Student portal** (§20)
-   Students signing in to see custom links and messages, plus the sections the inventory couldn't confirm. Not built now. The `/student` login page, student login emails on the student form and the Student portal settings tab from Phases 1–2 are already there for when it's picked up.
+   Students signing in to see custom links and messages, plus the sections the inventory couldn't confirm. That includes messaging students and the Students → Admins / Students → Teachers routes. Not built now. The `/student` login page, student login emails on the student form and the Student portal settings tab from Phases 1–2 are already there for when it's picked up.
 
 5. **Fire drill phone alerts** (§19)
    Push notifications to teachers' phones when a drill starts. For now, drills alert by email only. This needs web push, which is a new dependency.

@@ -82,6 +82,8 @@ export const loginIdentity = pgTable('login_identity', {
   failedAttempts: integer('failed_attempts').notNull().default(0),
   lockedUntil: tz('locked_until'),
   lastLoginAt: tz('last_login_at'),
+  emailVerifiedAt: tz('email_verified_at'),
+  mustChangePassword: boolean('must_change_password').notNull().default(false), // set when an admin chose the password
   adminStaffId: integer('admin_staff_id').references(() => adminStaff.id, { onDelete: 'cascade' }),
   // Explicit types break the loginIdentity ↔ fileObject ↔ person reference cycle for TypeScript.
   teacherId: integer('teacher_id').references((): AnyPgColumn => teacher.id, { onDelete: 'cascade' }),
@@ -732,3 +734,147 @@ export const gatewayEvent = pgTable('gateway_event', {
   type: text('type').notNull(),
   receivedAt: tz('received_at').notNull().defaultNow()
 }, (t) => [primaryKey({ columns: [t.provider, t.eventId] })]);
+
+/* ───────────── Phase 5: communication (§10, §11, §19 mail queue and templates) ───────────── */
+
+// §19 Mail Queue Manager. Attachments are HTML rendered to PDF by the worker when it sends.
+export const MAIL_STATUSES = ['queued', 'sending', 'sent', 'failed'] as const;
+export const mailStatusEnum = pgEnum('mail_status', MAIL_STATUSES);
+export const mailQueue = pgTable('mail_queue', {
+  id: serial('id').primaryKey(),
+  toEmail: text('to_email').notNull(),
+  toName: text('to_name'),
+  fromEmail: text('from_email'),
+  fromName: text('from_name'),
+  replyTo: text('reply_to'),
+  cc: text('cc'),
+  bcc: text('bcc'),
+  subject: text('subject').notNull(),
+  html: text('html').notNull(),
+  attachments: jsonb('attachments').$type<{ filename: string; html: string }[]>().notNull().default(sql`'[]'::jsonb`),
+  status: mailStatusEnum('status').notNull().default('queued'),
+  attempts: smallint('attempts').notNull().default(0),
+  lastError: text('last_error'),
+  sendAfter: tz('send_after').notNull().defaultNow(),
+  sentAt: tz('sent_at'),
+  entity: text('entity'), // what it is about, e.g. payment, so a receipt can be marked sent
+  entityId: integer('entity_id'),
+  createdBy: integer('created_by').references(() => loginIdentity.id, { onDelete: 'set null' }),
+  createdAt: createdAt()
+}, (t) => [index('mail_queue_due_idx').on(t.status, t.sendAfter)]);
+
+// §19 Templates Editor: a row overrides the built-in text for a template key; extra versions (e.g. "Urgent") sit beside it.
+export const template = pgTable('template', {
+  id: serial('id').primaryKey(),
+  key: text('key').notNull(),
+  version: text('version').notNull().default('Standard'),
+  subject: text('subject').notNull(),
+  body: text('body').notNull(),
+  updatedAt: tz('updated_at').notNull().defaultNow(),
+  updatedBy: integer('updated_by').references(() => loginIdentity.id, { onDelete: 'set null' })
+}, (t) => [uniqueIndex('template_key_version_uq').on(t.key, sql`lower(${t.version})`)]);
+
+// §11 Newsletters.
+export const newsletter = pgTable('newsletter', {
+  id: serial('id').primaryKey(),
+  fromName: text('from_name'),
+  fromEmail: text('from_email'),
+  subject: text('subject').notNull(),
+  audience: text('audience').notNull(), // parents | contacts | teachers | admins | students | classes
+  classIds: integer('class_ids').array().notNull().default(sql`'{}'::int[]`),
+  style: text('style').notNull().default('modern'),
+  signature: text('signature'),
+  body: text('body').notNull().default(''),
+  fileIds: uuid('file_ids').array().notNull().default(sql`'{}'::uuid[]`),
+  createdBy: integer('created_by').references(() => loginIdentity.id, { onDelete: 'set null' }),
+  createdAt: createdAt(),
+  updatedAt: tz('updated_at').notNull().defaultNow(),
+  lastSentAt: tz('last_sent_at'),
+  lastSentCount: integer('last_sent_count')
+});
+
+// §10 Messages. A thread is either with the office (admins, optionally for one rank) or between a teacher and a contact.
+export const PARTY_KINDS = ['admin', 'teacher', 'contact'] as const;
+export const partyKindEnum = pgEnum('party_kind', PARTY_KINDS);
+export const messageThread = pgTable('message_thread', {
+  id: serial('id').primaryKey(),
+  subject: text('subject').notNull(),
+  withOffice: boolean('with_office').notNull().default(true),
+  faoRank: text('fao_rank'), // null = all admins
+  locked: boolean('locked').notNull().default(false),
+  createdAt: createdAt(),
+  lastMessageAt: tz('last_message_at').notNull().defaultNow(),
+  deletedAt: tz('deleted_at')
+}, (t) => [index('message_thread_last_idx').on(t.lastMessageAt)]);
+
+export const message = pgTable('message', {
+  id: serial('id').primaryKey(),
+  threadId: integer('thread_id').notNull().references(() => messageThread.id, { onDelete: 'cascade' }),
+  senderKind: partyKindEnum('sender_kind').notNull(),
+  senderId: integer('sender_id').notNull(), // admin_staff / teacher / contact id
+  senderName: text('sender_name').notNull(),
+  body: text('body').notNull(),
+  attachmentFileId: uuid('attachment_file_id').references(() => fileObject.id, { onDelete: 'set null' }),
+  createdAt: createdAt()
+}, (t) => [index('message_thread_idx').on(t.threadId)]);
+
+// Everyone on a thread with their read state. Admins get a row each once they've opened or archived it.
+export const messageParticipant = pgTable('message_participant', {
+  threadId: integer('thread_id').notNull().references(() => messageThread.id, { onDelete: 'cascade' }),
+  kind: partyKindEnum('kind').notNull(),
+  personId: integer('person_id').notNull(),
+  lastReadAt: tz('last_read_at'),
+  unreadOverride: boolean('unread_override').notNull().default(false)
+}, (t) => [primaryKey({ columns: [t.threadId, t.kind, t.personId] }), index('message_participant_person_idx').on(t.kind, t.personId)]);
+
+// §11 SMS.
+export const smsTemplate = pgTable('sms_template', {
+  id: serial('id').primaryKey(),
+  category: text('category').notNull(),
+  systemKey: text('system_key').unique(), // two_factor | absence | fees_reminder | homework | incident | late; null for custom
+  name: text('name').notNull(),
+  body: text('body').notNull()
+});
+export const SMS_STATUSES = ['queued', 'sent', 'failed'] as const;
+export const smsStatusEnum = pgEnum('sms_status', SMS_STATUSES);
+export const smsMessage = pgTable('sms_message', {
+  id: serial('id').primaryKey(),
+  toNumber: text('to_number').notNull(),
+  recipientKind: text('recipient_kind').notNull(), // contact | teacher | admin | student | number
+  recipientId: integer('recipient_id'),
+  recipientName: text('recipient_name'),
+  body: text('body').notNull(),
+  status: smsStatusEnum('status').notNull().default('queued'),
+  provider: text('provider'),
+  providerId: text('provider_id'),
+  credits: integer('credits'),
+  error: text('error'),
+  batchId: uuid('batch_id'),
+  sentBy: integer('sent_by').references(() => loginIdentity.id, { onDelete: 'set null' }),
+  createdAt: createdAt(),
+  sentAt: tz('sent_at')
+}, (t) => [index('sms_message_created_idx').on(t.createdAt), index('sms_message_status_idx').on(t.status)]);
+
+// Attendance alerts already emailed, so a student isn't alerted again within the look-back interval.
+export const alertSent = pgTable('alert_sent', {
+  studentId: integer('student_id').notNull().references(() => student.id, { onDelete: 'cascade' }),
+  kind: text('kind').notNull(), // low | high
+  sentOn: date('sent_on', { mode: 'string' }).notNull()
+}, (t) => [primaryKey({ columns: [t.studentId, t.kind, t.sentOn] })]);
+
+// Daily background jobs claim their day here so they run once even with several workers.
+export const jobRun = pgTable('job_run', {
+  key: text('key').primaryKey(),
+  lastRunOn: date('last_run_on', { mode: 'string' }).notNull(),
+  updatedAt: tz('updated_at').notNull().defaultNow()
+});
+
+// One-time links: verify an email and set a password (teacher invites, forgotten passwords). Stored hashed.
+export const authToken = pgTable('auth_token', {
+  id: serial('id').primaryKey(),
+  identityId: integer('identity_id').notNull().references(() => loginIdentity.id, { onDelete: 'cascade' }),
+  tokenHash: text('token_hash').notNull().unique(),
+  expiresAt: tz('expires_at').notNull(),
+  usedAt: tz('used_at'),
+  createdAt: createdAt()
+});

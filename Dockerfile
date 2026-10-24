@@ -15,4 +15,5 @@ COPY --from=build /app ./
 RUN npx playwright install --with-deps chromium && rm -rf /var/lib/apt/lists/* \
   && node -e "require('playwright').chromium.launch().then((b) => b.close()).then(() => console.log('Chromium launches'))"
 EXPOSE 3000
-CMD ["sh", "-c", "npm run db:migrate && npm run db:seed && npx next start -p ${PORT:-3000}"]
+# The worker (mail, SMS, daily jobs) runs beside the web server in this preview container.
+CMD ["sh", "-c", "npm run db:migrate && npm run db:seed && (npm run worker &) && npx next start -p ${PORT:-3000}"]

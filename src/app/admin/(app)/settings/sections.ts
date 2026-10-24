@@ -11,7 +11,9 @@ const ADMIN: Section[] = [
   { href: '/admin/settings/audits', label: 'Audits' },
   { href: '/admin/settings/year-groups', label: 'Year & age groups' },
   { href: '/admin/settings/custom-fields', label: 'Custom fields' },
-  { href: '/admin/settings/attendance-codes', label: 'Attendance codes' }
+  { href: '/admin/settings/attendance-codes', label: 'Attendance codes' },
+  { href: '/admin/settings/templates', label: 'Templates' },
+  { href: '/admin/settings/mail-queue', label: 'Mail queue' }
 ];
 const GROUPS = ['General', 'School', 'Finance', 'Communication', 'Learning', 'Portals', 'System'];
 

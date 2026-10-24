@@ -6,11 +6,16 @@ import { db } from '@/db';
 import { actorOf, requireAdmin } from '@/server/next/actor';
 import { endDrill, runningDrill, setClassSafe, startDrill } from '@/server/attendance/drill';
 import { yearAndClasses } from '../students/year-classes';
+import { drillEmails } from '@/server/comm/notify';
 
 /** Any signed-in staff member can start a drill: it's a safety tool. */
 export async function startDrillAction() {
   const a = await requireAdmin();
-  await startDrill(db, actorOf(a));
+  const wasRunning = await runningDrill(db);
+  const d = await startDrill(db, actorOf(a));
+  const { year } = await yearAndClasses();
+  // Emails only when this press started the drill, as the fire drill settings say.
+  if (!wasRunning && year) await drillEmails(db, d.id, year.id);
   revalidatePath('/admin', 'layout');
   redirect('/admin/fire-drill');
 }

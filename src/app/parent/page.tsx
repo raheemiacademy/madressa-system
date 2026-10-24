@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 export default async function Page() {
   const s = await sessionFor('parent');
   if (!s) redirect('/parent/login');
+  if (s.identity.mustChangePassword) redirect('/parent/change-password');
   return (
     <main className="ra-page">
       <div className="ra-page-h"><div><h1>Parent portal</h1><p>Signed in as {s.identity.email}</p></div></div>

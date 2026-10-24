@@ -33,19 +33,21 @@ export function Form({ action, children, submit = 'Save changes', card = true, r
   );
 }
 
-/** A button that runs a bound server action, optionally after a confirm prompt, and shows any error. */
+/** A button that runs a bound server action, optionally after a confirm prompt, and shows any error or message. */
 export function ActionButton({ action, label, confirm: ask, danger, className = 'ra-btn', ariaLabel, children }: {
-  action: () => Promise<{ error?: string } | void>; label?: string; confirm?: string; danger?: boolean; className?: string; ariaLabel?: string; children?: React.ReactNode;
+  action: () => Promise<{ error?: string; message?: string } | void>; label?: string; confirm?: string; danger?: boolean; className?: string; ariaLabel?: string; children?: React.ReactNode;
 }) {
   const [pending, start] = useTransition();
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   return (
     <>
       <button type="button" className={`${className}${danger ? ' danger' : ''}`} aria-label={ariaLabel} disabled={pending}
-        onClick={() => { if (ask && !window.confirm(ask)) return; start(async () => setError((await action())?.error ?? '')); }}>
+        onClick={() => { if (ask && !window.confirm(ask)) return; start(async () => { const r = await action(); setError(r?.error ?? ''); setMessage(r?.message ?? ''); }); }}>
         {children ?? (pending ? 'Working…' : label)}
       </button>
       {error && <span role="alert" style={{ color: 'var(--color-bad)', fontSize: 12, whiteSpace: 'normal' }}>{error}</span>}
+      {message && <span role="status" style={{ fontSize: 12, whiteSpace: 'normal' }}>{message}</span>}
     </>
   );
 }

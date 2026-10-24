@@ -11,6 +11,8 @@ import { actorOf, requireAdmin, type AdminActor } from '@/server/next/actor';
 import { adminCan } from '@/server/permissions';
 import { resolveYear } from '@/server/academic-years';
 import { createAdmissionFees } from '@/server/fees/generate';
+import { studentLeftEmails } from '@/server/comm/notify';
+import { isLeftStatus } from '@/server/people/common';
 import { addHistory, deleteHistory, moveStudents } from '@/server/people/classes';
 import { linkContact, setContactBlocked, setLinkFlags, unlinkContact } from '@/server/people/contacts';
 import { deleteNote, saveNote, setConsent } from '@/server/people/extras';
@@ -31,6 +33,7 @@ export async function saveStudentAction(id: number | undefined, _p: FormState, f
   if (feesRefused(a, fd)) return { message: 'Fee options need the Access Fees Area level.' };
   const r = await saveStudent(db, actorOf(a), formObject(fd), contactLinksFromForm(fd), fd, id);
   if (!r.ok) return { errors: r.errors, message: 'Check the highlighted fields.' };
+  if (fd.get('sendLeftEmail') === 'on' && isLeftStatus(String(fd.get('status') ?? ''))) await studentLeftEmails(db, [r.id]);
   if (fd.get('admissionFee') === 'on') {
     const y = await yearId();
     const fee = y ? await createAdmissionFees(db, actorOf(a), [r.id], y) : { ok: false as const, error: 'Add an academic year first.' };
@@ -60,6 +63,7 @@ export async function bulkAction(_p: FormState, fd: FormData): Promise<FormState
   }
   const r = await bulkUpdate(db, actorOf(a), chosen, formObject(fd));
   if (!r.ok) return { message: r.error };
+  if (fd.get('action') === 'status' && fd.get('sendLeftEmail') === 'on' && isLeftStatus(String(fd.get('status') ?? ''))) await studentLeftEmails(db, chosen);
   done();
   return { ok: true, message: `Updated ${r.n === 1 ? '1 student' : `${r.n} students`}.` };
 }

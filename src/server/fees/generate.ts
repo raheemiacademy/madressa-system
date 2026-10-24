@@ -53,7 +53,7 @@ export const generateInput = z.object({
  * on each invoice's period start. `today` stops at invoices dated up to today; `year` creates the whole year now.
  * Re-running never duplicates: each invoice is keyed on period, invoice number and student.
  */
-export async function generateInvoices(db: Db, actor: Actor, yearId: number, raw: unknown, opts: { force?: boolean; today?: string } = {}): Promise<{ ok: true; result: GenerateResult } | { ok: false; error: string }> {
+export async function generateInvoices(db: Db, actor: AuditActor, yearId: number, raw: unknown, opts: { force?: boolean; today?: string } = {}): Promise<{ ok: true; result: GenerateResult } | { ok: false; error: string }> {
   const p = generateInput.safeParse(raw);
   if (!p.success) return { ok: false, error: 'Check the options' };
   const { scope, activeOnly } = p.data;

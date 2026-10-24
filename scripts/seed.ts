@@ -7,6 +7,8 @@ import { hashPassword } from '../src/server/auth';
 import { createContribution, generateInvoices } from '../src/server/fees/generate';
 import { saveSet, setAdjustments } from '../src/server/fees/adjustments';
 import { saveStructure } from '../src/server/fees/structures';
+import { compose, startFromPortal } from '../src/server/comm/messages';
+import { saveNewsletter } from '../src/server/comm/newsletters';
 
 const url = process.argv.includes('--test') ? process.env.DATABASE_URL_TEST : process.env.DATABASE_URL;
 const password = process.env.SEED_ADMIN_PASSWORD;
@@ -128,6 +130,17 @@ if (!anyStructure && year) {
   const oct = invoices.filter((x) => x.periodFrom === '2026-10-01');
   if (oct[0]) await db.insert(schema.payment).values({ invoiceId: oct[0].id, amountPence: oct[0].amountPence, receivedOn: '2026-10-03', method: 'Bank Transfer', status: 'Pending', reference: `SAMPLE-FEES-S${oct[0].studentId}`, createdBy: admin!.id });
   if (oct[1]) await db.insert(schema.payment).values({ invoiceId: oct[1].id, amountPence: oct[1].amountPence, receivedOn: '2026-10-08', method: 'Direct Debit', status: 'Bounced', createdBy: admin!.id });
+}
+// Communication: a parent's message to the office, an office message to a teacher, and a draft newsletter.
+const [anyThread] = await db.select({ id: schema.messageThread.id }).from(schema.messageThread).limit(1);
+if (!anyThread && year) {
+  const [admin] = await db.select().from(adminStaff).where(eq(adminStaff.email, 'admin@example.org'));
+  const [idn] = await db.select().from(loginIdentity).where(eq(loginIdentity.adminStaffId, admin!.id));
+  const [parent] = await db.select().from(schema.contact).where(eq(schema.contact.name, 'Sample Parent 001'));
+  const [t1] = await db.select().from(schema.teacher).where(eq(schema.teacher.name, 'Sample Teacher One'));
+  if (parent) await startFromPortal(db, { kind: 'contact', id: parent.id, name: parent.name }, { kind: 'admin', id: 0 }, 'Away next Monday', 'Salaam, Test Student 001 will be away next Monday for a family event. Thank you.');
+  if (t1) await compose(db, { identityId: idn!.id, name: admin!.name, staffId: admin!.id }, { teacherIds: [String(t1.id)], subject: 'Register reminder', body: 'Please remember to take the register at the start of class.' });
+  await saveNewsletter(db, { identityId: idn!.id, name: admin!.name }, { subject: 'Sample term newsletter', audience: 'parents', style: 'modern', body: '<p>Dear {NAME},</p><p>Welcome back to a new term at Sample Academy.</p>', signature: 'The office team' });
 }
 await client.end();
 console.log('Seeded fictional sample data: admin@example.org (super) and clerk@example.org (can edit)');

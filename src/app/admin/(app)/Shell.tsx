@@ -14,11 +14,11 @@ import { DrillStart } from './fire-drill/DrillStart';
 type Props = {
   school: string; logoSrc: string | null; userName: string; userEmail: string;
   years: { id: number; title: string }[]; yearId: number | null; noteColours: string[];
-  drillPlaces: string[]; drillRunning: boolean; notifications: number; canFees: boolean;
+  drillPlaces: string[]; drillRunning: boolean; notifications: number; unreadMessages: number; areas: ('fees' | 'comm')[];
   children: React.ReactNode;
 };
 
-export function Shell({ school, logoSrc, userName, userEmail, years, yearId, noteColours, drillPlaces, drillRunning, notifications, canFees, children }: Props) {
+export function Shell({ school, logoSrc, userName, userEmail, years, yearId, noteColours, drillPlaces, drillRunning, notifications, unreadMessages, areas, children }: Props) {
   const pathname = usePathname();
   const crumb = crumbFor(pathname);
   return (
@@ -34,7 +34,7 @@ export function Shell({ school, logoSrc, userName, userEmail, years, yearId, not
             <span className="ra-brand-text"><span className="ra-brand-name">{school}</span><span className="ra-brand-sub">School admin</span></span>
           </Link>
           <nav className="ra-nav" aria-label="Sections">
-            {NAV.map((g) => ({ ...g, items: g.items.filter((i) => canFees || !i.fees) })).filter((g) => g.items.length).map((g) => (
+            {NAV.map((g) => ({ ...g, items: g.items.filter((i) => !i.need || areas.includes(i.need)) })).filter((g) => g.items.length).map((g) => (
               <div className="ra-nav-group" key={g.group}>
                 <div className="ra-nav-label">{g.group}</div>
                 {g.items.map((i) => (
@@ -62,6 +62,9 @@ export function Shell({ school, logoSrc, userName, userEmail, years, yearId, not
               {drillPlaces.includes('header') && <Link className="ra-btn" href="/admin/fire-drill">Fire drill</Link>}
               <Link className="ra-icon-btn" href="/admin/register" aria-label={notifications ? `${notifications} ${notifications === 1 ? 'notification' : 'notifications'}: parent notices and holiday requests` : 'Notifications'}>
                 <Icon name="bell" />{notifications > 0 && <span className="ra-badge" aria-hidden="true">{notifications}</span>}
+              </Link>
+              <Link className="ra-icon-btn" href="/admin/messages" aria-label={unreadMessages ? `${unreadMessages} unread ${unreadMessages === 1 ? 'message' : 'messages'}` : 'Messages'}>
+                <Icon name="mail" />{unreadMessages > 0 && <span className="ra-badge" aria-hidden="true">{unreadMessages}</span>}
               </Link>
               <NotesButton colours={noteColours} />
               <AccountMenu name={userName} email={userEmail} />

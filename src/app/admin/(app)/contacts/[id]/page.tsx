@@ -14,6 +14,10 @@ import { answersFor, answerText } from '@/server/people/custom-fields';
 import { getContact } from '@/server/people/contacts';
 import { linkContactAction, setBlockedAction, setLinkFlagsAction, unlinkContactAction } from '../../students/actions';
 import { copyAddressAction, deleteContactAction } from '../actions';
+import { WhatsAppButton } from '@/components/WhatsAppButton';
+import { normaliseNumber, whatsappMessages } from '@/server/comm/sms';
+import { describeLogin } from '@/server/password-links';
+import { sendLoginLinkAction } from '../../login-actions';
 
 export const metadata = { title: 'Contact' };
 
@@ -29,6 +33,9 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
   const canEdit = adminCan(admin.staff, 'edit');
   const linked = new Set(c.students.map((s) => s.s.id));
   const blocked = c.login && !c.login.allowLogin;
+  const wa = c.mobile ? normaliseNumber(c.mobile) : null;
+  const firstChild = c.students[0]?.s;
+  const waMessages = wa ? await whatsappMessages(db, { NAME: c.name, STUDENT_NAME: firstChild ? `${firstChild.firstName} ${firstChild.surname}` : '' }) : [];
   return (
     <div className="ra-page">
       <div className="ra-page-h"><div><h1>{c.name}</h1><p>Contact #{c.id}{c.groups.length ? ` · ${c.groups.map((g) => g.name).join(', ')}` : ''}{!c.active ? ' · inactive' : ''}</p></div>
@@ -43,10 +50,13 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
             <dt>Email</dt><dd>{c.email ?? '—'}</dd><dt>Telephone</dt><dd>{c.tel ?? '—'}</dd>
             <dt>Mobile</dt><dd>{c.mobile ?? '—'}</dd><dt>Alt mobile</dt><dd>{c.altMobile ?? '—'}</dd>
             <dt>Address</dt><dd>{[c.address, c.postcode].filter(Boolean).join('\n') || '—'}</dd>
-            <dt>Parent portal</dt><dd>{!c.login ? 'No login (add an email)' : blocked ? 'Blocked' : c.login.passwordHash ? `Can sign in${c.login.lastLoginAt ? `, last on ${formatInstant(c.login.lastLoginAt, 'dd/MM/yyyy')}` : ', never signed in'}` : 'No password set yet'}</dd>
+            <dt>Parent portal</dt><dd>{describeLogin(c.login, (d) => formatInstant(d, 'dd/MM/yyyy'))}</dd>
             {cf.fields.map((f) => <span key={f.id} style={{ display: 'contents' }}><dt>{f.label}</dt><dd>{answerText(cf.values[f.id]) || '—'}</dd></span>)}
           </dl>
-          {canEdit && c.login && <div className="ra-toolbar"><ActionButton action={setBlockedAction.bind(null, id, !blocked)} label={blocked ? 'Unblock portal' : 'Block portal'} confirm={blocked ? undefined : `Block ${c.name} from the parent portal?`} /></div>}
+          {canEdit && c.login && <div className="ra-toolbar"><ActionButton action={setBlockedAction.bind(null, id, !blocked)} label={blocked ? 'Unblock portal' : 'Block portal'} confirm={blocked ? undefined : `Block ${c.name} from the parent portal?`} />
+            {!blocked && <ActionButton action={sendLoginLinkAction.bind(null, 'parent', id)} label="Email a set-password link" />}</div>}
+          <div className="ra-toolbar"><Link className="ra-btn" href={`/admin/messages/new?contact=${id}`}><Icon name="mail" />Message</Link></div>
+          {wa && <WhatsAppButton number={wa.slice(1)} name={c.name} messages={waMessages} />}
         </section>
         <section className="ra-card ra-c7" aria-labelledby="cs-h">
           <div className="ra-card-h"><div><h2 id="cs-h">Students</h2></div></div>

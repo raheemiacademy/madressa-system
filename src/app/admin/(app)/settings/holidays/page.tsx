@@ -8,6 +8,8 @@ import { listHolidays } from '@/server/holidays';
 import { requireAdmin } from '@/server/next/actor';
 import { Icon } from '@/components/Icon';
 import { PrintButton } from '@/components/PrintButton';
+import { ActionButton } from '@/components/Form';
+import { holidayNewsletterAction } from '../../newsletters/actions';
 import { DeleteHoliday, HolidayForm } from './HolidayForm';
 import { holidayClassNames } from '@/server/people/extras';
 import { listClasses } from '@/server/people/classes';
@@ -30,7 +32,7 @@ export default async function HolidaysPage({ searchParams }: { searchParams: Pro
       <section className="ra-card" aria-labelledby="hol-h">
         <div className="ra-card-h">
           <div><h2 id="hol-h">Holidays in {year.title}</h2><div className="ra-note">{hols.length ? plural(hols.length, 'holiday') : 'None yet'}. Use the year switcher at the top to see another year.</div></div>
-          <div className="ra-toolbar no-print"><Link className="ra-btn" href={`/admin/settings/years/${year.id}/calendar`}>Year calendar</Link><PrintButton /></div>
+          <div className="ra-toolbar no-print"><Link className="ra-btn" href={`/admin/settings/years/${year.id}/calendar`}>Year calendar</Link><PrintButton /><ActionButton action={holidayNewsletterAction} label="Send holidays newsletter" /></div>
         </div>
         {hols.length === 0 ? <p className="ra-empty">Nothing here yet.</p> : (
           <div className="ra-table-wrap" tabIndex={0}>

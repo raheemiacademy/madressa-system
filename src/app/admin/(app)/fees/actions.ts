@@ -18,6 +18,7 @@ import { applyAdHoc, createAdmissionFees, createContribution, generateInvoices }
 import { checkFeeRows, commitFeeRows } from '@/server/fees/imports';
 import { bulkDelete, deleteInvoice, invoiceRows, movePayment, processPayments, recordPayment, saveInvoice } from '@/server/fees/invoices';
 import { applyModify, previewModify, setReceiptState } from '@/server/fees/modify';
+import { sendReceipts, sendReminders } from '@/server/comm/notify';
 import { deleteStructure, saveStructure, setClassStructure } from '@/server/fees/structures';
 import { parseCsv } from '@/server/people/csv';
 import type { RowResult } from '@/server/people/imports';
@@ -244,12 +245,33 @@ export async function modifyAction(_p: ModifyState, fd: FormData): Promise<Modif
 export async function receiptsAction(_p: FormState, fd: FormData): Promise<FormState> {
   const a = await requireFees();
   const state = String(fd.get('op'));
-  if (!['manual', 'no_email', 'unsent'].includes(state)) return { message: 'Choose what to do with them.' };
   const chosen = ids(fd);
   if (!chosen.length) return { message: 'Tick at least one payment.' };
+  if (state === 'send') {
+    const r = await sendReceipts(db, actorOf(a), chosen, fd.get('attachment') === 'on');
+    done();
+    return { ok: true, message: `Queued ${r.queued === 1 ? '1 receipt' : `${r.queued} receipts`}${r.noEmail ? `; ${r.noEmail} have no email address (flag them “no email” or send manually)` : ''}. They move to Sent once delivered.` };
+  }
+  if (!['manual', 'no_email', 'unsent'].includes(state)) return { message: 'Choose what to do with them.' };
   const n = await setReceiptState(db, actorOf(a), chosen, state as 'manual' | 'no_email' | 'unsent');
   done();
   return { ok: true, message: `Updated ${n === 1 ? '1 receipt' : `${n} receipts`}.` };
+}
+
+/** Quick Send from the receipts list (no attachment). */
+export async function quickSendReceiptAction(paymentId: number) {
+  const a = await requireFees();
+  const r = await sendReceipts(db, actorOf(a), [paymentId], false);
+  done();
+  return r.queued ? { message: 'Queued.' } : { error: 'No email address for this family.' };
+}
+
+/** Reminders: email each contact their chosen outstanding invoices, then show how many went. */
+export async function sendRemindersAction(fd: FormData) {
+  const a = await requireFees();
+  const r = await sendReminders(db, actorOf(a), ids(fd), { version: String(fd.get('version') || 'Standard'), directDebitLink: fd.get('ddLink') === 'on' });
+  done();
+  redirect(`/admin/fees/reminders?sent=${r.queued}`);
 }
 
 export type FeeImportState = { rows?: Record<string, string>[]; results?: RowResult[]; done?: string; error?: string } | undefined;

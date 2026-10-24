@@ -147,6 +147,17 @@ export const TABS: Tab[] = [
     ]
   },
   {
+    key: 'sms', title: 'SMS', group: 'Communication', description: 'Text messages through ClickSend or VoodooSMS. Keys set as environment variables take precedence. WhatsApp buttons need no account.',
+    fields: [
+      { type: 'select', name: 'provider', label: 'SMS provider', default: 'clicksend', options: opts(['clicksend', 'ClickSend API'], ['voodoo', 'VoodooSMS API']) },
+      { type: 'text', name: 'senderId', label: 'Sender ID', max: 11, pattern: /^[A-Za-z0-9 ]{0,11}$/, patternMessage: 'Up to 11 letters, numbers or spaces.', help: 'The name texts appear to come from.' },
+      { type: 'text', name: 'countryCode', label: 'Country code', default: '44', pattern: /^\d{1,4}$/, patternMessage: 'Digits only, e.g. 44.', help: 'Used for numbers that start with 0.' },
+      { type: 'text', name: 'clicksendUsername', label: 'ClickSend username', max: 200 },
+      { type: 'secret', name: 'clicksendApiKey', label: 'ClickSend API key' },
+      { type: 'secret', name: 'voodooApiKey', label: 'VoodooSMS API key' }
+    ]
+  },
+  {
     key: 'messaging', title: 'Messaging', group: 'Communication', description: 'Allow or block each messaging route. Blocked routes are refused by the server.',
     fields: [
       yes('teachersToAdmins', 'Teachers → Admins', true),
@@ -168,7 +179,7 @@ export const TABS: Tab[] = [
     ]
   },
   {
-    key: 'alerts', title: 'Attendance alerts', group: 'School', description: 'When to email a student’s contacts about their attendance. Emails go out once the mail queue is set up.',
+    key: 'alerts', title: 'Attendance alerts', group: 'School', description: 'When to email a student’s primary contacts about their attendance. Alerts go out each morning, at most once per look-back period per student.',
     fields: [
       yes('enabled', 'Send attendance alerts'),
       { type: 'int', name: 'thresholdPct', label: 'Alert below this attendance (%)', default: 90, min: 1, max: 100 },

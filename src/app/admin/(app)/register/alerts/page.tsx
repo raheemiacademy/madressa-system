@@ -6,19 +6,24 @@ import { plural } from '@/lib/text';
 import { requireAdmin } from '@/server/next/actor';
 import { alertCandidates } from '@/server/attendance/reports';
 import { todayIso } from '@/server/people/common';
+import { ActionButton } from '@/components/Form';
+import { adminCan } from '@/server/permissions';
+import { sendAlertsAction } from '../actions';
 
 export const metadata = { title: 'Attendance alerts' };
 
 export default async function Alerts() {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const r = await alertCandidates(db, todayIso());
   const s = r.settings;
   return (
     <div className="ra-page">
       <div className="ra-page-h"><div><h1>Attendance alerts</h1><p>Students whose attendance crosses your alert settings over the last {String(s.intervalDays)} days (since {formatCalendarDate(r.from)}).</p></div>
-        <div className="ra-toolbar"><Link className="ra-btn" href="/admin/settings/alerts">Alert settings</Link></div></div>
+        <div className="ra-toolbar">
+          {adminCan(admin.staff, 'edit') && <ActionButton className="ra-btn primary" action={sendAlertsAction} label="Send alert emails now" confirm="Email the contacts of the students listed? Anyone already emailed in this period is skipped." />}
+          <Link className="ra-btn" href="/admin/settings/alerts">Alert settings</Link></div></div>
       <div className="ra-banner" style={{ ['--c' as string]: 'var(--ra-blue)' }}><div>
-        Alerts are {s.enabled ? <b>on</b> : <b>off</b>}: below {String(s.thresholdPct)}%, or {String(s.absences)}+ absences, or {String(s.lates)}+ lates. Alert emails aren’t being sent yet, because email sending hasn’t been switched on. This list shows who would get one.
+        Alerts are {s.enabled ? <b>on</b> : <b>off</b>}: below {String(s.thresholdPct)}%, or {String(s.absences)}+ absences, or {String(s.lates)}+ lates. {s.enabled ? 'Emails go out each morning to primary contacts, at most once per period per student.' : 'Turn alerts on to email them each morning, or send them now.'}
       </div></div>
       <section className="ra-card" aria-labelledby="al-h">
         <div className="ra-card-h"><div><h2 id="al-h">Attendance concerns</h2><div className="ra-note">{plural(r.low.length, 'student')}</div></div></div>

@@ -88,7 +88,7 @@ export default async function StudentFees({ params, searchParams }: { params: Pr
 
       {view === 'history' && (
         <section className="ra-card" aria-labelledby="hist-h">
-          <div className="ra-card-h"><div><h2 id="hist-h">Full history</h2><div className="ra-note">Every year’s invoices and payments for {name}</div></div><PrintButton label="Download PDF fees history" /></div>
+          <div className="ra-card-h"><div><h2 id="hist-h">Full history</h2><div className="ra-note">Every year’s invoices and payments for {name}</div></div><span className="ra-toolbar"><PrintButton pdfLabel="Download PDF fees history" /></span></div>
           {rows.length === 0 ? <p className="ra-empty">No invoices yet.</p> : years.filter((y) => rows.some((r) => r.academicYearId === y.id)).map((y) => {
             const yr = rows.filter((r) => r.academicYearId === y.id);
             const yt = totals(yr);

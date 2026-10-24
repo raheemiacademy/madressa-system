@@ -105,7 +105,7 @@ test('public application form creates waiting-list students once opened', async 
   await anon.close();
 });
 
-test('teachers and parents given a password can sign in to their own portals only', async ({ page, browser }) => {
+test('teachers and parents given a password by the school must choose their own, and only reach their own portal', async ({ page, browser }) => {
   await signIn(page);
   await page.goto('/admin/teachers/new');
   await page.getByLabel('Full name').fill('Portal Teacher Example');
@@ -116,17 +116,29 @@ test('teachers and parents given a password can sign in to their own portals onl
   await page.goto('/admin/contacts/1/edit');
   await page.getByLabel('Set portal password').fill('parent password 123');
   await page.getByRole('button', { name: 'Save changes' }).click();
-  await expect(page.getByText('Can sign in, never signed in')).toBeVisible();
+  await expect(page.getByText(/password set by the school, to be changed at next sign-in, never signed in/)).toBeVisible();
 
   const ctx = await browser.newContext();
   const t = await ctx.newPage();
-  await signIn(t, 'portal.teacher@example.org', 'teacher password 123', 'teacher');
+  // Question 14: an admin-chosen password works once, then its owner must choose their own.
+  async function firstSignIn(portal: 'teacher' | 'parent', email: string, pw: string, next: string) {
+    await t.goto(`/${portal}/login`);
+    await t.getByLabel('Email').fill(email);
+    await t.getByLabel('Password').fill(pw);
+    await t.getByRole('button', { name: 'Sign in' }).click();
+    await expect(t).toHaveURL(new RegExp(`/${portal}/change-password$`));
+    await t.getByLabel('New password').fill(next);
+    await t.getByLabel('Type it again').fill(next);
+    await t.getByRole('button', { name: 'Save password' }).click();
+    await expect(t).toHaveURL(new RegExp(`/${portal}$`));
+  }
+  await firstSignIn('teacher', 'portal.teacher@example.org', 'teacher password 123', 'my own teacher password');
   await expect(t.getByText('Signed in as portal.teacher@example.org')).toBeVisible();
   await t.goto('/admin');
   await expect(t).toHaveURL(/\/admin\/login/);
-  await signIn(t, 'parent001@example.org', 'parent password 123', 'parent');
+  await firstSignIn('parent', 'parent001@example.org', 'parent password 123', 'my own parent password');
   await t.goto('/parent/login');
-  await signIn(t, 'portal.teacher@example.org', 'teacher password 123', 'parent').catch(() => null);
+  await signIn(t, 'portal.teacher@example.org', 'my own teacher password', 'parent').catch(() => null);
   await expect(t.locator('.ra-alert')).toHaveText('Email or password is incorrect.');
   await ctx.close();
 });

@@ -25,6 +25,8 @@ services:
         generateValue: true
       - key: SEED_ADMIN_PASSWORD
         sync: false # you type this in Render when creating the blueprint
+      - key: APP_URL
+        value: https://madressa-preview.onrender.com # links in emails (set-password, messages)
       - key: TRUST_PROXY
         value: "1" # Render's proxy sets X-Forwarded-For
       - key: STORAGE_DRIVER

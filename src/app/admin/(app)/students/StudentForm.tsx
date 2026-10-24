@@ -31,6 +31,7 @@ export function StudentForm({ s, contacts, classes, statuses, genders, contactTy
         <TextField name="startDate" label="Start date" type="date" defaultValue={s.startDate} />
         <TextField name="leftDate" label="Finish (left) date" type="date" defaultValue={s.leftDate} help="Filled with today when you choose a leaving status." />
         <Check name="deleteRegister" label="If leaving: delete register entries after the left date" />
+        <Check name="sendLeftEmail" label="If leaving: send the “student left” email to their primary contacts" />
         {canFees && <Check name="deleteInvoices" label="If leaving: delete unpaid invoices after the left date" />}
         {canFees && <Check name="admissionFee" label="Create an admission fee invoice" />}
       </div>

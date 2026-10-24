@@ -31,10 +31,12 @@ export async function syncPortalLogin(
   }
   const passwordHash = password ? await hashPassword(password) : undefined;
   if (existing) {
-    await db.update(loginIdentity).set({ email, allowLogin, ...(passwordHash ? { passwordHash, failedAttempts: 0, lockedUntil: null } : {}) }).where(eq(loginIdentity.id, existing.id));
-    if (passwordHash || !allowLogin || existing.email.toLowerCase() !== email.toLowerCase()) await invalidateAllSessions(db, existing.id);
+    // An admin-chosen password must be changed by its owner after signing in (question 14); a new email needs verifying again.
+    const emailChanged = existing.email.toLowerCase() !== email.toLowerCase();
+    await db.update(loginIdentity).set({ email, allowLogin, ...(emailChanged ? { emailVerifiedAt: null } : {}), ...(passwordHash ? { passwordHash, failedAttempts: 0, lockedUntil: null, mustChangePassword: true } : {}) }).where(eq(loginIdentity.id, existing.id));
+    if (passwordHash || !allowLogin || emailChanged) await invalidateAllSessions(db, existing.id);
   } else {
-    await db.insert(loginIdentity).values({ portal, email, allowLogin, passwordHash: passwordHash ?? null, [key[portal]]: personId });
+    await db.insert(loginIdentity).values({ portal, email, allowLogin, passwordHash: passwordHash ?? null, mustChangePassword: !!passwordHash, [key[portal]]: personId });
   }
   return null;
 }

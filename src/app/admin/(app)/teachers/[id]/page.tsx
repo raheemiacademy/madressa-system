@@ -14,6 +14,10 @@ import { todayIso } from '@/server/people/common';
 import { answersFor, answerText } from '@/server/people/custom-fields';
 import { getTeacher } from '@/server/people/teachers';
 import { deleteTeacherAction } from '../actions';
+import { WhatsAppButton } from '@/components/WhatsAppButton';
+import { normaliseNumber, whatsappMessages } from '@/server/comm/sms';
+import { describeLogin } from '@/server/password-links';
+import { sendLoginLinkAction } from '../../login-actions';
 
 export const metadata = { title: 'Teacher' };
 const DAY = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -30,6 +34,8 @@ export default async function TeacherProfile({ params }: { params: Promise<{ id:
     answersFor(db, 'teacher', id)
   ]);
   const dbsExpired = t.dbsExpiresOn && t.dbsExpiresOn < todayIso();
+  const wa = t.mobile ? normaliseNumber(t.mobile) : null;
+  const waMessages = wa ? await whatsappMessages(db, { NAME: t.name }) : [];
   const row = (k: string, v: React.ReactNode) => <><dt>{k}</dt><dd>{v || '—'}</dd></>;
   return (
     <div className="ra-page">
@@ -50,10 +56,13 @@ export default async function TeacherProfile({ params }: { params: Promise<{ id:
             {row('Email', t.email)}{row('Telephone', t.tel)}{row('Mobile', t.mobile)}{row('Gender', t.gender)}
             {row('Date of birth', t.dob && formatCalendarDate(t.dob))}{row('Start date', t.startDate && formatCalendarDate(t.startDate))}{row('Left date', t.leftDate && formatCalendarDate(t.leftDate))}
             {row('Address', [t.address, t.postcode].filter(Boolean).join('\n'))}
-            {row('Teacher portal', t.login ? `${t.login.email}${t.login.lastLoginAt ? `, last signed in ${formatInstant(t.login.lastLoginAt, 'dd/MM/yyyy')}` : ''}` : 'No login')}
+            {row('Teacher portal', describeLogin(t.login, (d) => formatInstant(d, 'dd/MM/yyyy')))}
             {row('Kiosk PIN', t.hasKioskPin ? 'Set' : 'Not set')}
             {cf.fields.map((f) => <span key={f.id} style={{ display: 'contents' }}>{row(f.label, answerText(cf.values[f.id]))}</span>)}
-          </dl></section>
+          </dl>
+          {adminCan(admin.staff, 'edit') && t.login && <div className="ra-toolbar"><ActionButton action={sendLoginLinkAction.bind(null, 'teacher', id)} label="Email a set-password link" /></div>}
+          {wa && <WhatsAppButton number={wa.slice(1)} name={t.name} messages={waMessages} />}
+        </section>
         <section className="ra-card ra-c6"><div className="ra-card-h"><div><h2>Checks, pay and health</h2><div className="ra-note">Shown masked. Open Edit to see them in full.</div></div></div>
           <dl className="ra-dl">
             {row('DBS number', t.dbsNumber)}

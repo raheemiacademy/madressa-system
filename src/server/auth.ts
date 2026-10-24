@@ -31,7 +31,7 @@ export function passwordProblem(pw: string): string | null {
   return null;
 }
 
-const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
+export const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
 export async function createSession(db: DbOrTx, identityId: number, portal: Portal, meta: { ip?: string | null; userAgent?: string | null } = {}) {
   const token = randomBytes(32).toString('base64url');
@@ -82,7 +82,7 @@ export async function hitRateLimit(db: DbOrTx, key: string, limit = IP_LIMIT, no
   return (row?.hits ?? 0) <= limit.hits;
 }
 
-export type LoginResult = { ok: true; token: string; expiresAt: Date; identityId: number } | { ok: false; error: string };
+export type LoginResult = { ok: true; token: string; expiresAt: Date; identityId: number; mustChangePassword: boolean } | { ok: false; error: string; noPasswordYet?: number };
 const BAD = 'Email or password is incorrect.';
 const SLOW = 'Too many attempts. Wait 15 minutes, then try again.';
 
@@ -95,7 +95,11 @@ export async function login(db: DbOrTx, portal: Portal, emailRaw: string, passwo
 
   const [idn] = await db.select().from(loginIdentity)
     .where(and(eq(loginIdentity.portal, portal), eq(dsql`lower(${loginIdentity.email})`, email))).limit(1);
-  if (!idn || !idn.passwordHash) { await verifyPassword(await dummy(), password); return { ok: false, error: BAD }; }
+  if (!idn || !idn.passwordHash) {
+    await verifyPassword(await dummy(), password);
+    // Invited people (no password yet) are emailed a link instead; the caller sends it.
+    return idn && !idn.passwordHash && idn.allowLogin && portal !== 'admin' ? { ok: false, error: BAD, noPasswordYet: idn.id } : { ok: false, error: BAD };
+  }
   if (idn.lockedUntil && idn.lockedUntil > now) return { ok: false, error: SLOW };
 
   const good = await verifyPassword(idn.passwordHash, password);
@@ -110,5 +114,5 @@ export async function login(db: DbOrTx, portal: Portal, emailRaw: string, passwo
 
   await db.update(loginIdentity).set({ failedAttempts: 0, lockedUntil: null, lastLoginAt: now }).where(eq(loginIdentity.id, idn.id));
   const s = await createSession(db, idn.id, portal, meta);
-  return { ok: true, ...s, identityId: idn.id };
+  return { ok: true, ...s, identityId: idn.id, mustChangePassword: idn.mustChangePassword };
 }

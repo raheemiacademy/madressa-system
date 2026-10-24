@@ -12,8 +12,16 @@ import { fixDoubleEntries } from '@/server/attendance/reports';
 import { decideMarks, deleteEntries, markAbsent, saveRegister } from '@/server/attendance/registers';
 import { deleteHolidayRequest, editHolidayRequest, markNoticeSeen, respondToRequest } from '@/server/attendance/requests';
 import { confirmsSchoolName } from '@/server/profile';
+import { holidayResponseEmail, sendAttendanceAlerts } from '@/server/comm/notify';
 
 const done = () => revalidatePath('/admin', 'layout');
+
+export async function sendAlertsAction() {
+  const a = await requireAdmin('edit');
+  const n = await sendAttendanceAlerts(db, actorOf(a));
+  done();
+  return { message: n ? `Queued ${n === 1 ? '1 email' : `${n} emails`}.` : 'Nobody new to email: everyone listed was already emailed this period, or has no email address.' };
+}
 
 /** Entry mode: the register form posts every student's mark. */
 export async function saveRegisterAction(classId: number, date: string, startTime: string, _p: FormState, fd: FormData): Promise<FormState> {
@@ -73,6 +81,7 @@ export async function respondAction(id: number, _p: FormState, fd: FormData): Pr
   const a = await requireAdmin('edit');
   const r = await respondToRequest(db, actorOf(a), id, formObject(fd));
   if (!r.ok) return { message: r.error };
+  await holidayResponseEmail(db, id);
   done();
   return { ok: true, message: r.marked ? `Saved. ${r.marked === 1 ? '1 register entry' : `${r.marked} register entries`} marked.` : 'Saved.' };
 }
