@@ -51,7 +51,7 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
         <section className="ra-card ra-c7" aria-labelledby="cs-h">
           <div className="ra-card-h"><div><h2 id="cs-h">Students</h2></div></div>
           {c.students.length === 0 ? <p className="ra-empty">Not linked to any students.</p> : (
-            <div className="ra-table-wrap"><table className="ra-table">
+            <div className="ra-table-wrap" tabIndex={0}><table className="ra-table">
               <thead><tr><th>Student</th><th>Type</th><th className="opt">Relation</th><th>Settings</th><th><span className="sr-only">Actions</span></th></tr></thead>
               <tbody>{c.students.map(({ s, link }) => (
                 <tr key={s.id}>

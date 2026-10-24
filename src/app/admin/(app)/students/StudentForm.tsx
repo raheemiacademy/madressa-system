@@ -2,7 +2,7 @@
 
 import { useContext, useState } from 'react';
 import { CustomFieldInputs, type CF } from '@/components/CustomFieldInputs';
-import { FormErrors, SelectField, TextArea, TextField } from '@/components/Fields';
+import { Check, FormErrors, SelectField, TextArea, TextField } from '@/components/Fields';
 import { Form } from '@/components/Form';
 import { Icon } from '@/components/Icon';
 import { searchContactsAction } from '../contacts/actions';
@@ -30,6 +30,7 @@ export function StudentForm({ s, contacts, classes, statuses, genders, contactTy
         <SelectField name="status" label="Status" defaultValue={s.status} options={statuses.map((x) => ({ value: x, label: x }))} />
         <TextField name="startDate" label="Start date" type="date" defaultValue={s.startDate} />
         <TextField name="leftDate" label="Finish (left) date" type="date" defaultValue={s.leftDate} help="Filled with today when you choose a leaving status." />
+        <Check name="deleteRegister" label="If leaving: delete register entries after the left date" />
       </div>
       <fieldset className="ra-fieldset"><legend>Contact details and address</legend>
         <div className="ra-fields">

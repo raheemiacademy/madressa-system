@@ -15,7 +15,7 @@ export function TeachersTable({ rows, canEdit, canDelete }: { rows: Row[]; canEd
   const all = sel.length === rows.length;
   return (
     <>
-      <div className="ra-table-wrap" style={{ maxHeight: 640 }}><table className="ra-table">
+      <div className="ra-table-wrap" tabIndex={0} style={{ maxHeight: 640 }}><table className="ra-table">
         <thead><tr>
           {canDelete && <th className="no-print"><input type="checkbox" aria-label="Select all teachers" checked={all} onChange={() => setSel(all ? [] : rows.map((r) => r.id))} /></th>}
           <th>#</th><th>Name</th><th>Work days</th><th>Status</th><th className="no-print"><span className="sr-only">Actions</span></th>

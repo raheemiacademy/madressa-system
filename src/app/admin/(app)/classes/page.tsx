@@ -2,8 +2,12 @@ import { inArray } from 'drizzle-orm';
 import Link from 'next/link';
 import { db } from '@/db';
 import { teacher } from '@/db/schema';
+import { Chip } from '@/components/Chip';
 import { Icon } from '@/components/Icon';
+import { pct1, summarise } from '@/lib/attendance';
 import { plural } from '@/lib/text';
+import { codeMap, marksBetween, registerStatus } from '@/server/attendance/registers';
+import { todayIso } from '@/server/people/common';
 import { requireAdmin } from '@/server/next/actor';
 import { adminCan } from '@/server/permissions';
 import { yearAndClasses } from '../students/year-classes';
@@ -19,7 +23,13 @@ export default async function Classes({ searchParams }: { searchParams: Promise<
   const q = (sp.q ?? '').trim().toLowerCase().slice(0, 60);
   const { year, classes } = await yearAndClasses();
   const ids = classes.map((c) => c.c.mainTeacherId).filter((x): x is number => !!x);
-  const genders = new Map(ids.length ? (await db.select({ id: teacher.id, gender: teacher.gender }).from(teacher).where(inArray(teacher.id, ids))).map((t) => [t.id, t.gender]) : []);
+  const today = todayIso();
+  const [teachers, status, marks, codes] = await Promise.all([
+    ids.length ? db.select({ id: teacher.id, gender: teacher.gender }).from(teacher).where(inArray(teacher.id, ids)) : Promise.resolve([]),
+    year ? registerStatus(db, year.id, today) : Promise.resolve([]),
+    marksBetween(db, `${today.slice(0, 7)}-01`, today), codeMap(db)
+  ]);
+  const genders = new Map(teachers.map((t) => [t.id, t.gender]));
   const rows = classes.filter((c) => !q || `${c.c.name} ${c.teacher ?? ''} ${c.yearGroup ?? ''}`.toLowerCase().includes(q)).sort((a, b) =>
     sort === 'name' ? a.c.name.localeCompare(b.c.name) : sort === 'size' ? b.students - a.students
       : sort === 'gender' ? (genders.get(a.c.mainTeacherId ?? 0) ?? 'zz').localeCompare(genders.get(b.c.mainTeacherId ?? 0) ?? 'zz') || a.c.name.localeCompare(b.c.name)
@@ -52,12 +62,15 @@ export default async function Classes({ searchParams }: { searchParams: Promise<
           {rows.map((r, i) => {
             const cap = r.c.capacity ?? 0;
             const over = cap > 0 && r.students > cap;
+            const reg = status.find((x) => x.classId === r.c.id);
             return (
               <article key={r.c.id} className="ra-class" style={{ ['--c' as string]: COLOURS[i % COLOURS.length] }}>
-                <div className="ra-class-h"><h3><i /><Link href={`/admin/classes/${r.c.id}`}>{r.c.name}</Link></h3></div>
+                <div className="ra-class-h"><h3><i /><Link href={`/admin/classes/${r.c.id}`}>{r.c.name}</Link></h3>
+                  {reg && reg.expected > 0 && <Chip colour={reg.status === 'Complete' ? 'var(--color-ok)' : 'var(--color-bad)'}>{`Register: ${reg.status}`}</Chip>}</div>
                 <div className="ra-class-row"><span>Age group</span><span>{r.yearGroup ?? '—'}</span></div>
                 <div className="ra-class-row"><span>Main teacher</span><span className={r.teacher ? undefined : 'ra-warn'}>{r.teacher ?? 'Not assigned'}</span></div>
                 <div className="ra-class-row"><span>Students</span><span className={over ? 'ra-warn' : undefined}>{cap ? `${r.students} of ${cap}${over ? ` · ${r.students - cap} over` : ''}` : `${plural(r.students, 'student')} · no capacity set`}</span></div>
+                <div className="ra-class-row"><span>Attendance this month</span><span>{pct1(summarise(marks.filter((m) => m.classId === r.c.id), codes).standardPct)}</span></div>
                 <div className={`ra-bar${over ? ' over' : ''}`} role="img" aria-label={cap ? `${r.students} of ${cap} places filled` : 'No capacity set'}><i style={{ width: `${cap ? Math.min(100, (r.students / cap) * 100) : 0}%` }} /></div>
               </article>
             );

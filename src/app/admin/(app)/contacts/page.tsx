@@ -45,7 +45,7 @@ export default async function Contacts({ searchParams }: { searchParams: Promise
           </nav>
         )}
         {rows.length === 0 ? <p className="ra-empty">{q || groupId ? 'Nothing matches these filters.' : 'No contacts yet.'}</p> : (
-          <div className="ra-table-wrap" style={{ maxHeight: 640 }}><table className="ra-table">
+          <div className="ra-table-wrap" tabIndex={0} style={{ maxHeight: 640 }}><table className="ra-table">
             <thead><tr><th>#</th><th>Name</th><th className="opt">Telephone</th><th>Mobiles</th><th className="opt">Email</th><th className="num">Students</th></tr></thead>
             <tbody>{rows.map(({ c, students }) => (
               <tr key={c.id}>

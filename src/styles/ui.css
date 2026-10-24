@@ -299,3 +299,56 @@ fieldset.ra-fieldset legend { font-size: 13px; font-weight: 500; padding: 0 4px;
 .ra-apply-card { width: min(760px, 100%); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--ra-r-lg); padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; height: fit-content; }
 .ra-apply-classic .ra-apply-card { border-radius: 4px; }
 .ra-apply-card h1 { font-family: var(--font-serif), Georgia, serif; font-weight: 400; font-size: 1.75rem; margin: 0; }
+
+/* Charts and register grid (dashboard design) */
+.ra-legend { display: flex; gap: 14px; font-size: 12px; color: var(--color-fg-muted); flex-wrap: wrap; align-items: center; }
+.ra-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.ra-chart { position: relative; width: 100%; }
+.ra-chart svg { display: block; overflow: visible; }
+.ra-chart text { fill: var(--color-fg-muted); font-size: 12px; font-family: var(--font-sans), sans-serif; }
+.ra-chart .ra-strong { fill: var(--color-fg); font-weight: 500; }
+.ra-tip { position: absolute; pointer-events: none; background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--ra-r-sm); box-shadow: var(--ra-shadow-pop); padding: 6px 10px; font-size: 12px; white-space: nowrap; z-index: 2; }
+.ra-tip .t { color: var(--color-fg-muted); margin-bottom: 2px; }
+.ra-reg td.m { text-align: center; padding: 6px 2px; }
+.ra-reg th.m { text-align: center; padding: 8px 2px; line-height: 1.25; }
+.ra-mk { display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 3px; border-radius: 7px; font-size: 12px; font-weight: 600; color: var(--color-fg); border: 0; font-family: inherit; }
+button.ra-mk { cursor: pointer; }
+.ra-mk-P { background: color-mix(in srgb, var(--ra-blue) 24%, transparent); }
+.ra-mk-L { background: color-mix(in srgb, var(--ra-sky) 50%, transparent); }
+.ra-mk-A { background: color-mix(in srgb, var(--ra-lav) 65%, transparent); }
+.ra-mk-N { background: color-mix(in srgb, var(--ra-violet) 30%, transparent); }
+.ra-mk-U { background: color-mix(in srgb, var(--color-bad) 18%, transparent); color: var(--color-bad); }
+.ra-mk-E { background: color-mix(in srgb, var(--ra-blue) 12%, transparent); outline: 1px dashed var(--ra-blue); }
+.ra-mk-H, .ra-mk-C { background: transparent; color: var(--color-fg-muted); font-weight: 500; }
+.ra-mk-X { background: color-mix(in srgb, var(--ra-lav) 30%, transparent); }
+.ra-legend .ra-mk { min-width: 20px; height: 20px; margin-right: 4px; }
+.ra-seg { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.ra-seg label { position: relative; }
+.ra-seg input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.ra-seg span { display: inline-grid; place-items: center; min-width: 44px; height: 40px; padding: 0 8px; border-radius: 10px; border: 1px solid var(--color-border-line); background: var(--color-panel); font-weight: 600; font-size: 14px; color: var(--color-fg-muted); }
+.ra-seg input:checked + span { color: var(--color-fg); border-color: transparent; }
+.ra-seg input:checked + span.P { background: color-mix(in srgb, var(--ra-blue) 45%, transparent); }
+.ra-seg input:checked + span.L { background: color-mix(in srgb, var(--ra-sky) 70%, transparent); }
+.ra-seg input:checked + span.A { background: var(--ra-violet); color: var(--ra-on-ink); }
+.ra-seg input:checked + span.E { background: color-mix(in srgb, var(--ra-blue) 25%, transparent); }
+.ra-seg input:focus-visible + span { box-shadow: 0 0 0 2px var(--color-panel), 0 0 0 4px var(--ra-indigo); }
+
+/* Fire drill hold-to-confirm (sidebar foot) */
+.ra-side-foot { margin-top: auto; border-radius: 12px; padding: 14px; background: color-mix(in srgb, var(--ra-on-ink) 6%, transparent); border: 1px solid color-mix(in srgb, var(--ra-on-ink) 10%, transparent); display: flex; flex-direction: column; gap: 10px; }
+.ra-side-foot p { margin: 0; font-size: 12px; line-height: 1.5; color: var(--ra-on-ink-muted); }
+.ra-side-foot strong { display: block; color: var(--ra-on-ink); font-weight: 500; font-size: 14px; margin-bottom: 2px; }
+.ra-drill { cursor: pointer; min-height: 36px; padding: 0 12px; border-radius: var(--ra-r-sm); font-size: 13px; font-weight: 500; color: var(--ra-ink); background: var(--ra-sky); text-align: center; display: grid; place-items: center; border: 0; position: relative; overflow: hidden; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none; font-family: inherit; }
+.ra-drill:focus-visible { box-shadow: 0 0 0 2px var(--ra-ink), 0 0 0 4px var(--ra-sky); }
+.ra-drill-fill { position: absolute; inset: 0; display: grid; place-items: center; background: var(--ra-violet); color: var(--ra-on-ink); clip-path: inset(0 100% 0 0); transition: clip-path 200ms var(--ra-ease-out); pointer-events: none; }
+.ra-drill.holding .ra-drill-fill { clip-path: inset(0 0 0 0); transition: clip-path 2s linear; }
+.ra-drill.done .ra-drill-fill { clip-path: inset(0 0 0 0); transition: none; }
+.ra-drill.big { min-height: 160px; width: 160px; border-radius: 50%; font-size: 16px; }
+@media (prefers-reduced-motion: reduce) { .ra-drill.holding .ra-drill-fill { transition: clip-path 2s steps(1, end); } }
+/* Narrow screens: the drill card becomes just its hold button at the end of the scrolling nav strip. */
+@container (max-width: 860px) {
+  .ra-side-foot { display: flex; flex: none; margin: 0; padding: 0; background: none; border: 0; }
+  .ra-side-foot p { display: none; }
+  .ra-side-foot .ra-drill { white-space: nowrap; }
+}
+/* A filter bar that is also a card lays its fields out in a row. */
+.ra-card.ra-toolbar { flex-direction: row; align-items: flex-end; }

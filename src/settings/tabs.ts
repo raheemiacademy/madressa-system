@@ -154,6 +154,18 @@ export const TABS: Tab[] = [
     ]
   },
   {
+    key: 'alerts', title: 'Attendance alerts', group: 'School', description: 'When to email a student’s contacts about their attendance. Emails go out once the mail queue is set up.',
+    fields: [
+      yes('enabled', 'Send attendance alerts'),
+      { type: 'int', name: 'thresholdPct', label: 'Alert below this attendance (%)', default: 90, min: 1, max: 100 },
+      { type: 'int', name: 'absences', label: 'Or after this many absences', default: 3, min: 1, max: 100 },
+      { type: 'int', name: 'lates', label: 'Or after this many lates', default: 3, min: 1, max: 100 },
+      { type: 'int', name: 'intervalDays', label: 'Looking back over (days)', default: 28, min: 7, max: 366 },
+      yes('highAttendance', 'Also send a well-done email above the threshold'),
+      { type: 'int', name: 'highPct', label: 'Well-done email at or above (%)', default: 98, min: 50, max: 100 }
+    ]
+  },
+  {
     key: 'spell', title: 'Spell checker', group: 'System', description: 'GrammarBot service used to check spelling in reports and messages.',
     fields: [
       { type: 'url', name: 'host', label: 'GrammarBot host' },

@@ -28,7 +28,7 @@ export default async function WalkHome({ searchParams }: { searchParams: Promise
         {options.length === 0 ? <p className="ra-empty">No classes this year yet.</p> : rows.length === 0 ? <p className="ra-empty">No current students in this class.</p> : (
           <>
             <div className="ra-note" role="status">{given} of {rows.length} have consent.</div>
-            <div className="ra-table-wrap"><table className="ra-table">
+            <div className="ra-table-wrap" tabIndex={0}><table className="ra-table">
               <thead><tr><th>Student</th><th>Consent</th><th className="opt">Given by</th><th><span className="sr-only">Actions</span></th></tr></thead>
               <tbody>{rows.map((r) => (
                 <tr key={r.id}>

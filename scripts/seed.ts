@@ -72,5 +72,34 @@ if (!anyStudent && year) {
     if (!waiting) await db.insert(schema.classAssignment).values({ studentId: s!.id, classId: (i === 8 || i === 9 ? classes[1]! : cls).id, fromDate: year.startsOn });
   }
 }
+// Attendance: the last eight Monday registers, a few teacher logs, a parent notice and a holiday request.
+const [anySession] = await db.select({ id: schema.registerSession.id }).from(schema.registerSession).limit(1);
+if (!anySession && year) {
+  const today = new Date().toISOString().slice(0, 10);
+  const mondays: string[] = [];
+  for (let d = new Date(`${today}T12:00:00Z`); mondays.length < 8; d.setUTCDate(d.getUTCDate() - 1)) {
+    const iso = d.toISOString().slice(0, 10);
+    if (d.getUTCDay() === 1 && iso < today && iso >= year.startsOn) mondays.push(iso);
+    if (iso < year.startsOn) break;
+  }
+  const classes = await db.select().from(schema.schoolClass).where(eq(schema.schoolClass.academicYearId, year.id));
+  const assigns = await db.select().from(schema.classAssignment);
+  const teachers = await db.select().from(schema.teacher);
+  for (const [w, date] of mondays.entries()) {
+    for (const c of classes) {
+      const [s] = await db.insert(schema.registerSession).values({ classId: c.id, date, startTime: '17:00', takenAt: new Date(`${date}T17:10:00Z`) }).returning();
+      for (const [i, a] of assigns.filter((x) => x.classId === c.id).entries()) {
+        const k = (i + w) % 11;
+        await db.insert(schema.attendanceMark).values({ sessionId: s!.id, studentId: a.studentId, mark: k === 3 ? 'late' : k === 7 ? 'absent' : 'present', lateMinutes: k === 3 ? 10 : null, authorised: k === 7 && w % 2 ? true : null, notified: k === 7 });
+      }
+    }
+    for (const t of teachers) await db.insert(schema.teacherLog).values({ teacherId: t.id, date, timeIn: '16:50', timeOut: '19:35', source: 'admin' }).onConflictDoNothing();
+  }
+  const [firstKid] = await db.select().from(schema.student).where(eq(schema.student.status, 'Current')).limit(1);
+  const [parent] = await db.select().from(schema.studentContact).where(eq(schema.studentContact.studentId, firstKid!.id)).limit(1);
+  await db.insert(schema.absenceNotice).values({ studentId: firstKid!.id, contactId: parent?.contactId, date: today, kind: 'absent', reason: 'Dentist appointment' });
+  const [req] = await db.insert(schema.holidayRequest).values({ contactId: parent?.contactId, startsOn: `${today.slice(0, 4)}-12-14`, endsOn: `${today.slice(0, 4)}-12-17`, request: 'Family visit abroad for a wedding.' }).returning();
+  await db.insert(schema.holidayRequestStudent).values({ requestId: req!.id, studentId: firstKid!.id });
+}
 await client.end();
 console.log('Seeded fictional sample data: admin@example.org (super) and clerk@example.org (can edit)');

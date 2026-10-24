@@ -2,7 +2,7 @@ import { and, asc, desc, eq, gte, inArray, isNull, lte, notInArray, sql, type SQ
 import { z } from 'zod';
 import type { Db, DbOrTx } from '@/db';
 import {
-  classAssignment, CONTACT_TYPES, contact, GENDERS, schoolClass, STUDENT_STATUSES, student, studentContact, yearGroup
+  attendanceMark, classAssignment, CONTACT_TYPES, contact, GENDERS, registerSession, schoolClass, STUDENT_STATUSES, student, studentContact, yearGroup
 } from '@/db/schema';
 import { checkbox, isoDate, optionalIsoDate, optionalText, zodErrors, type FieldErrors } from '@/lib/validate';
 import { audit } from '../audit';
@@ -26,7 +26,8 @@ export const studentInput = z.object({
   startDate: optionalIsoDate, leftDate: optionalIsoDate,
   // number = put in that class, 'none' = remove from classes (waiting list), absent = leave classes alone
   classId: z.union([z.literal(''), z.literal('none'), z.coerce.number().int().positive()]).optional().transform((v) => (v === '' ? undefined : v)),
-  medicalNotes: optionalText(5000), notes: optionalText(5000)
+  medicalNotes: optionalText(5000), notes: optionalText(5000),
+  deleteRegister: checkbox
 }).refine((v) => !v.dob || v.dob <= todayIso(), { path: ['dob'], message: 'Date of birth can’t be in the future' })
   .refine((v) => !v.leftDate || !v.startDate || v.leftDate >= v.startDate, { path: ['leftDate'], message: 'Left date can’t be before the start date' });
 
@@ -57,6 +58,12 @@ type SaveResult = { ok: true; id: number } | { ok: false; errors: FieldErrors };
 export const closeAssignments = (db: DbOrTx, studentId: number, on: string) =>
   db.update(classAssignment).set({ toDate: sql`greatest(${classAssignment.fromDate}, ${on}::date)` }).where(and(eq(classAssignment.studentId, studentId), isNull(classAssignment.toDate)));
 
+/** "When marking someone left": drop register entries dated after the left date. Returns how many went. */
+async function dropMarksAfter(db: DbOrTx, studentIds: number[], after: string) {
+  const sessions = db.select({ id: registerSession.id }).from(registerSession).where(sql`${registerSession.date} > ${after}::date`);
+  return (await db.delete(attendanceMark).where(and(inArray(attendanceMark.studentId, studentIds), inArray(attendanceMark.sessionId, sessions))).returning({ id: attendanceMark.id })).length;
+}
+
 export async function assignClass(db: DbOrTx, studentId: number, classId: number, from: string) {
   await db.insert(classAssignment).values({ studentId, classId, fromDate: from }).onConflictDoNothing();
 }
@@ -77,7 +84,7 @@ export async function saveStudent(db: Db, actor: Actor, raw: unknown, links: unk
   Object.assign(errors, cf.errors);
   if (Object.keys(errors).length) return { ok: false, errors };
 
-  const { password, classId, medicalNotes, ...v } = p.data;
+  const { password, classId, medicalNotes, deleteRegister, ...v } = p.data;
   const today = todayIso();
   if (isLeftStatus(v.status) && !v.leftDate) v.leftDate = today;
 
@@ -98,6 +105,7 @@ export async function saveStudent(db: Db, actor: Actor, raw: unknown, links: unk
 
     // Class: the form holds one class; changing it closes the old assignment and opens the new one.
     const open = await tx.select({ classId: classAssignment.classId }).from(classAssignment).where(and(eq(classAssignment.studentId, sid), isNull(classAssignment.toDate)));
+    const dropped = isLeftStatus(v.status) && deleteRegister ? await dropMarksAfter(tx, [sid], v.leftDate!) : 0;
     if (isLeftStatus(v.status)) await closeAssignments(tx, sid, v.leftDate!);
     else if (typeof classId === 'number' && !open.some((o) => o.classId === classId)) {
       if (open[0]) await tx.update(classAssignment).set({ toDate: sql`greatest(${classAssignment.fromDate}, ${today}::date)` })
@@ -109,7 +117,7 @@ export async function saveStudent(db: Db, actor: Actor, raw: unknown, links: unk
     await saveAnswers(tx, sid, cf.values);
     const left = prev && !isLeftStatus(prev.status) && isLeftStatus(v.status);
     await audit(tx, actor, {
-      action: `${id ? 'Updated' : 'Added'} student ${row!.firstName} ${row!.surname}${left ? ` (marked ${v.status})` : ''}`,
+      action: `${id ? 'Updated' : 'Added'} student ${row!.firstName} ${row!.surname}${left ? ` (marked ${v.status})` : ''}${dropped ? `, deleted ${dropped === 1 ? '1 register entry' : `${dropped} register entries`} after ${v.leftDate}` : ''}`,
       page: 'Students', entity: 'student', entityId: sid
     });
     return { ok: true, id: sid };
@@ -210,7 +218,7 @@ export const bulkInput = z.discriminatedUnion('action', [
   z.object({ action: z.literal('accept') }),
   z.object({ action: z.literal('reject') }),
   z.object({ action: z.literal('activate'), classId: z.coerce.number().int().positive('Choose a class'), date: isoDate }),
-  z.object({ action: z.literal('status'), status: z.enum(STUDENT_STATUSES), leftDate: optionalIsoDate })
+  z.object({ action: z.literal('status'), status: z.enum(STUDENT_STATUSES), leftDate: optionalIsoDate, deleteRegister: checkbox })
 ]);
 
 /** §5 Manage Students bulk actions (except permanent delete, which needs the typed school name). */
@@ -238,7 +246,8 @@ export async function bulkUpdate(db: Db, actor: Actor, ids: number[], raw: unkno
       const leftDate = isLeftStatus(a.status) ? a.leftDate ?? today : a.leftDate;
       await tx.update(student).set({ status: a.status, leftDate, updatedAt: new Date() }).where(inArray(student.id, ids));
       if (isLeftStatus(a.status)) for (const id of ids) await closeAssignments(tx, id, leftDate!);
-      label = `Set status to ${a.status}`;
+      const dropped = isLeftStatus(a.status) && a.deleteRegister ? await dropMarksAfter(tx, ids, leftDate!) : 0;
+      label = `Set status to ${a.status}${dropped ? ` (deleted ${dropped === 1 ? '1 register entry' : `${dropped} register entries`} after ${leftDate})` : ''}`;
     }
     await audit(tx, actor, { action: `${label} for ${ids.length === 1 ? '1 student' : `${ids.length} students`}`, page: 'Manage students', entity: 'student', details: { ids } });
     return { ok: true as const, n: ids.length };

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { Chip } from '@/components/Chip';
-import { TextField, SelectField } from '@/components/Fields';
+import { Check, SelectField, TextField } from '@/components/Fields';
 import { Form } from '@/components/Form';
 import { Icon } from '@/components/Icon';
 import { bulkAction, deleteStudentsAction } from './actions';
@@ -21,7 +21,7 @@ export function StudentsTable({ rows, classes, statuses, canEdit, canDelete, fil
   return (
     <>
       {rows.length === 0 ? <p className="ra-empty">{filtered ? 'Nothing matches these filters.' : 'No students yet. Add one, or import a CSV.'}</p> : (
-        <div className="ra-table-wrap" style={{ maxHeight: 620 }}>
+        <div className="ra-table-wrap" tabIndex={0} style={{ maxHeight: 620 }}>
           <table className="ra-table">
             <thead><tr>
               {canEdit && <th><input type="checkbox" aria-label="Select all students on this page" checked={all} onChange={() => setSel(all ? [] : rows.map((r) => r.id))} /></th>}
@@ -41,6 +41,7 @@ export function StudentsTable({ rows, classes, statuses, canEdit, canDelete, fil
                     {canEdit && <Link href={`/admin/students/${r.id}/edit`} aria-label={`Edit ${r.name}`}><Icon name="edit" /></Link>}
                     <Link href={`/admin/students/${r.id}`} aria-label={`Profile of ${r.name}`}><Icon name="eye" /></Link>
                     <Link href={`/admin/students/${r.id}/history`} aria-label={`Class history of ${r.name}`}><Icon name="clock" /></Link>
+                    <Link href={`/admin/register/student/${r.id}`} aria-label={`Register of ${r.name}`}><Icon name="check" /></Link>
                   </span></td>
                 </tr>
               ))}
@@ -56,7 +57,7 @@ export function StudentsTable({ rows, classes, statuses, canEdit, canDelete, fil
               <SelectField name="action" label={`With ${sel.length === 1 ? '1 selected student' : `${sel.length} selected students`}`} value={action} onChange={(e) => setAction(e.target.value)}
                 options={[{ value: 'accept', label: 'Move to Accepted' }, { value: 'activate', label: 'Move to a class and activate' }, { value: 'reject', label: 'Move to Rejected' }, { value: 'status', label: 'Set status and left date' }]} />
               {action === 'activate' && <><SelectField name="classId" label="Class" options={[{ value: '', label: 'Choose a class' }, ...classes]} /><TextField name="date" label="Start date" type="date" /></>}
-              {action === 'status' && <><SelectField name="status" label="Status" options={statuses.map((s) => ({ value: s, label: s }))} /><TextField name="leftDate" label="Left date" type="date" help="Filled with today for leaving statuses if blank." /></>}
+              {action === 'status' && <><SelectField name="status" label="Status" options={statuses.map((s) => ({ value: s, label: s }))} /><TextField name="leftDate" label="Left date" type="date" help="Filled with today for leaving statuses if blank." /><Check name="deleteRegister" label="If leaving: delete register entries after the left date" /></>}
             </div>
           </Form>
           {canDelete && (

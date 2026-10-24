@@ -1,0 +1,141 @@
+'use client';
+
+import * as d3 from 'd3';
+import { useEffect, useRef, useState } from 'react';
+
+// Ported from design-reference/dashboard/index.html (attendanceChart). Colours come from CSS variables.
+const css = (el: Element, name: string) => getComputedStyle(el).getPropertyValue(name).trim();
+const pct1 = (v: number) => `${v.toFixed(1)}%`;
+const dayFmt = d3.utcFormat('%-d %b');
+
+function useWidth(ref: React.RefObject<HTMLDivElement | null>) {
+  const [w, setW] = useState(600);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setW(Math.max(260, Math.floor(e!.contentRect.width))));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref]);
+  return w;
+}
+
+function Tip({ tip }: { tip: { x: number; y: number; title: string; lines: string[] } | null }) {
+  if (!tip) return null;
+  return (
+    <div className="ra-tip" style={{ left: tip.x, top: tip.y, opacity: 1 }} role="presentation">
+      <div className="t">{tip.title}</div>{tip.lines.map((l) => <div key={l} className="l">{l}</div>)}
+    </div>
+  );
+}
+
+/** Weekly attendance line (Register "Attendance trend" and the dashboard). */
+export function TrendChart({ data, empty = 'No registers taken yet this term.' }: { data: { week: string; rate: number }[]; empty?: string }) {
+  const box = useRef<HTMLDivElement>(null);
+  const svg = useRef<SVGSVGElement>(null);
+  const W = useWidth(box);
+  const [tip, setTip] = useState<{ x: number; y: number; title: string; lines: string[] } | null>(null);
+  const H = 230;
+  useEffect(() => {
+    const el = svg.current;
+    if (!el || !data.length) return;
+    const s = d3.select(el);
+    s.selectAll('*').remove();
+    const rows = data.map((r) => ({ d: new Date(`${r.week}T00:00:00Z`), v: r.rate }));
+    const indigo = css(el, '--ra-indigo'), blue = css(el, '--ra-blue'), violet = css(el, '--ra-violet');
+    const lo = Math.max(0, Math.floor(((d3.min(rows, (r) => r.v) ?? 90) - 2) / 2) * 2);
+    const y = d3.scaleLinear([lo, 100], [H - 26, 10]);
+    const yt = y.ticks(5);
+    const ml = 44, last = rows[rows.length - 1]!, mr = 56;
+    const ext = d3.extent(rows, (r) => r.d) as [Date, Date];
+    if (+ext[0] === +ext[1]) { ext[0] = d3.utcDay.offset(ext[0], -3); ext[1] = d3.utcDay.offset(ext[1], 3); }
+    const x = d3.scaleUtc(ext, [ml, W - mr]);
+    s.append('g').selectAll('line').data(yt).join('line').attr('x1', ml).attr('x2', W - mr).attr('y1', (d) => y(d)).attr('y2', (d) => y(d)).attr('stroke', 'var(--ra-chart-grid)');
+    s.append('g').selectAll('text').data(yt).join('text').attr('x', ml - 8).attr('y', (d) => y(d) + 4).attr('text-anchor', 'end').text((d) => `${d}%`);
+    const step = Math.ceil(rows.length / Math.max(2, Math.min(rows.length, Math.floor((W - ml - mr) / 70))));
+    s.append('g').selectAll('text').data(rows.filter((_, i) => i % step === 0)).join('text').attr('x', (d) => x(d.d)).attr('y', H - 6).attr('text-anchor', 'middle').text((d) => dayFmt(d.d));
+    const grad = s.append('defs').append('linearGradient').attr('id', 'ra-trend-grad').attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 1);
+    [[0, 0.32], [0.5, 0.1], [1, 0]].forEach(([o, a]) => grad.append('stop').attr('offset', o!).attr('style', `stop-color:${blue};stop-opacity:${a}`));
+    s.append('path').datum(rows).attr('fill', 'url(#ra-trend-grad)').attr('d', d3.area<{ d: Date; v: number }>().x((d) => x(d.d)).y0(y(lo)).y1((d) => y(d.v)));
+    s.append('path').datum(rows).attr('fill', 'none').attr('stroke', indigo).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('d', d3.line<{ d: Date; v: number }>().x((d) => x(d.d)).y((d) => y(d.v)));
+    s.append('circle').attr('cx', x(last.d)).attr('cy', y(last.v)).attr('r', 4).attr('fill', indigo);
+    s.append('text').attr('class', 'ra-strong').attr('x', x(last.d) + 8).attr('y', y(last.v) + 4).text(pct1(last.v));
+    const hov = s.append('circle').attr('r', 5).attr('fill', violet).attr('stroke', 'var(--color-panel)').attr('stroke-width', 2).style('opacity', 0);
+    s.append('rect').attr('x', ml).attr('y', 0).attr('width', Math.max(0, W - ml - mr)).attr('height', H).attr('fill', 'transparent')
+      .on('mousemove', (ev: MouseEvent) => {
+        const [mx] = d3.pointer(ev); const t = x.invert(mx);
+        const r = rows.reduce((a, b) => (Math.abs(+b.d - +t) < Math.abs(+a.d - +t) ? b : a));
+        hov.attr('cx', x(r.d)).attr('cy', y(r.v)).style('opacity', 1);
+        setTip({ x: Math.min(W - 150, x(r.d) + 12), y: Math.max(0, y(r.v) - 50), title: `Week of ${dayFmt(r.d)}`, lines: [`${pct1(r.v)} attendance`] });
+      })
+      .on('mouseleave', () => { hov.style('opacity', 0); setTip(null); });
+  }, [data, W]);
+  if (!data.length) return <div className="ra-chart"><p className="ra-empty">{empty}</p></div>;
+  return (
+    <div ref={box} className="ra-chart" style={{ minHeight: H }}>
+      <svg ref={svg} width="100%" height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Weekly attendance: ${data.map((r) => `${dayFmt(new Date(`${r.week}T00:00:00Z`))} ${pct1(r.rate)}`).join(', ')}`} />
+      <Tip tip={tip} />
+    </div>
+  );
+}
+
+type MonthRow = { month: string; present: number; late: number; authorised: number; unauthorised: number };
+const series = [['present', 'Present', '--ra-blue'], ['late', 'Late', '--ra-sky'], ['authorised', 'Authorised absence', '--ra-lav'], ['unauthorised', 'Unauthorised absence', '--ra-violet']] as const;
+
+/** Student record: 12 months of sessions by outcome; stacked or grouped bars, or lines / steps of the attendance %. */
+export function MonthChart({ data }: { data: MonthRow[] }) {
+  const box = useRef<HTMLDivElement>(null);
+  const svg = useRef<SVGSVGElement>(null);
+  const W = useWidth(box);
+  const [kind, setKind] = useState<'stacked' | 'grouped' | 'line' | 'step'>('stacked');
+  const H = 240;
+  useEffect(() => {
+    const el = svg.current;
+    if (!el || !data.length) return;
+    const s = d3.select(el);
+    s.selectAll('*').remove();
+    const mf = d3.utcFormat('%b');
+    const months = data.map((r) => ({ ...r, d: new Date(`${r.month}-01T00:00:00Z`), total: r.present + r.late + r.authorised + r.unauthorised }));
+    const ml = 40, mb = 26;
+    const xb = d3.scaleBand(months.map((m) => mf(m.d)), [ml, W - 8]).padding(0.25);
+    s.append('g').selectAll('text').data(months).join('text').attr('x', (m) => xb(mf(m.d))! + xb.bandwidth() / 2).attr('y', H - 6).attr('text-anchor', 'middle').text((m) => mf(m.d));
+    if (kind === 'line' || kind === 'step') {
+      const pts = months.filter((m) => m.total).map((m) => ({ x: xb(mf(m.d))! + xb.bandwidth() / 2, v: ((m.present + m.late) / m.total) * 100 }));
+      const y = d3.scaleLinear([Math.max(0, Math.floor(((d3.min(pts, (p) => p.v) ?? 80) - 5) / 10) * 10), 100], [H - mb, 10]);
+      s.append('g').selectAll('text').data(y.ticks(4)).join('text').attr('x', ml - 6).attr('y', (d) => y(d) + 4).attr('text-anchor', 'end').text((d) => `${d}%`);
+      s.append('path').datum(pts).attr('fill', 'none').attr('stroke', css(el, '--ra-indigo')).attr('stroke-width', 2)
+        .attr('d', d3.line<{ x: number; v: number }>().x((p) => p.x).y((p) => y(p.v)).curve(kind === 'step' ? d3.curveStepAfter : d3.curveLinear));
+      s.append('g').selectAll('circle').data(pts).join('circle').attr('cx', (p) => p.x).attr('cy', (p) => y(p.v)).attr('r', 3.5).attr('fill', css(el, '--ra-indigo'));
+      return;
+    }
+    const max = kind === 'stacked' ? d3.max(months, (m) => m.total) ?? 1 : d3.max(months, (m) => Math.max(m.present, m.late, m.authorised, m.unauthorised)) ?? 1;
+    const y = d3.scaleLinear([0, Math.max(1, max)], [H - mb, 10]).nice();
+    s.append('g').selectAll('text').data(y.ticks(4)).join('text').attr('x', ml - 6).attr('y', (d) => y(d) + 4).attr('text-anchor', 'end').text((d) => String(d));
+    const inner = d3.scaleBand(series.map((x) => x[0]), [0, xb.bandwidth()]).padding(0.1);
+    for (const m of months) {
+      let acc = 0;
+      for (const [k, , c] of series) {
+        const v = m[k];
+        if (!v) continue;
+        const colour = css(el, c);
+        if (kind === 'stacked') { s.append('rect').attr('x', xb(mf(m.d))!).attr('width', xb.bandwidth()).attr('y', y(acc + v)).attr('height', y(acc) - y(acc + v)).attr('fill', colour); acc += v; }
+        else s.append('rect').attr('x', xb(mf(m.d))! + inner(k)!).attr('width', inner.bandwidth()).attr('y', y(v)).attr('height', y(0) - y(v)).attr('rx', 2).attr('fill', colour);
+      }
+    }
+  }, [data, W, kind]);
+  if (!data.some((d) => d.present + d.late + d.authorised + d.unauthorised)) return <p className="ra-empty">No register entries in this period.</p>;
+  return (
+    <div>
+      <div className="ra-toolbar" style={{ justifyContent: 'space-between' }}>
+        <div className="ra-legend">{series.map(([k, l, c]) => <span key={k}><i style={{ background: `var(${c})` }} />{l}</span>)}</div>
+        <div className="ra-filters" role="group" aria-label="Chart style">
+          {(['stacked', 'grouped', 'line', 'step'] as const).map((k) => <button key={k} type="button" className="ra-filter" aria-pressed={kind === k} onClick={() => setKind(k)}>{k === 'stacked' ? 'Stacked' : k === 'grouped' ? 'Bars' : k === 'line' ? 'Line' : 'Steps'}</button>)}
+        </div>
+      </div>
+      <div ref={box} className="ra-chart" style={{ minHeight: H }}>
+        <svg ref={svg} width="100%" height={H} viewBox={`0 0 ${W} ${H}`} role="img"
+          aria-label={`Sessions by month: ${data.map((r) => `${r.month} ${r.present} present, ${r.late} late, ${r.authorised} authorised and ${r.unauthorised} unauthorised absences`).join('; ')}`} />
+      </div>
+    </div>
+  );
+}

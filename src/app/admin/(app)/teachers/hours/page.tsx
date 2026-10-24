@@ -22,7 +22,7 @@ export default async function Hours({ searchParams }: { searchParams: Promise<{ 
       <div className="ra-page-h"><div><h1>Working hours</h1><p>Each teacher’s weekly start and finish times.</p></div><div className="ra-toolbar"><Link className="ra-btn" href="/admin/teachers">Teachers</Link></div></div>
       <section className="ra-card">
         {teachers.length === 0 ? <p className="ra-empty">No teachers yet.</p> : (
-          <div className="ra-table-wrap"><table className="ra-table">
+          <div className="ra-table-wrap" tabIndex={0}><table className="ra-table">
             <thead><tr><th>Teacher</th>{DAYS.map(([, l]) => <th key={l}>{l}</th>)}<th><span className="sr-only">Edit</span></th></tr></thead>
             <tbody>{teachers.map((t) => (
               <tr key={t.id}><td className="wrap">{t.name}</td>

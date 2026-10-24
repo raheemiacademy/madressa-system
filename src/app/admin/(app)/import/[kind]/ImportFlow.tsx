@@ -27,7 +27,7 @@ export function ImportFlow({ kind, extra }: { kind: ImportKind; extra?: React.Re
       {state?.results && (
         <section className="ra-card" aria-labelledby="pv-h">
           <div className="ra-card-h"><div><h2 id="pv-h">2. Preview</h2><div className="ra-note" role="status">{good} ready, {bad} with problems. Rows with problems are skipped.</div></div></div>
-          <div className="ra-table-wrap" style={{ maxHeight: 460 }}><table className="ra-table">
+          <div className="ra-table-wrap" tabIndex={0} style={{ maxHeight: 460 }}><table className="ra-table">
             <thead><tr><th>Line</th><th>Row</th><th>Result</th></tr></thead>
             <tbody>{state.results.map((r) => (
               <tr key={r.line}><td className="ra-muted">{r.line}</td><td className="wrap">{r.summary || '(blank)'}{r.data?.id ? <span className="ra-muted"> · update #{String(r.data.id)}</span> : null}</td>

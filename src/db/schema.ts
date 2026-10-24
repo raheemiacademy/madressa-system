@@ -446,3 +446,122 @@ export const studentApplicationGroup = pgTable('student_application_group', {
   studentId: integer('student_id').notNull().references(() => student.id, { onDelete: 'cascade' }),
   groupId: integer('group_id').notNull().references(() => applicationGroup.id, { onDelete: 'cascade' })
 }, (t) => [primaryKey({ columns: [t.studentId, t.groupId] })]);
+
+/* ───────────── Phase 3: attendance (§6), teacher logs (§7), fire drill (§19) ───────────── */
+
+export const MARKS = ['present', 'late', 'absent', 'left_early', 'not_counted'] as const;
+export const CODE_TYPES = ['present', 'approved', 'authorised', 'unauthorised', 'not_counted'] as const;
+export const markEnum = pgEnum('attendance_mark_kind', MARKS);
+export const codeTypeEnum = pgEnum('attendance_code_type', CODE_TYPES);
+
+// §4 Register: DfE attendance codes (used when the register type is "dfe").
+export const attendanceCode = pgTable('attendance_code', {
+  code: text('code').primaryKey(),
+  description: text('description').notNull(),
+  type: codeTypeEnum('type').notNull(),
+  keys: text('keys'),
+  isLate: boolean('is_late').notNull().default(false),
+  sortOrder: integer('sort_order').notNull().default(0),
+  active: boolean('active').notNull().default(true)
+});
+
+// One register per class, date and start time.
+export const registerSession = pgTable('register_session', {
+  id: serial('id').primaryKey(),
+  classId: integer('class_id').notNull().references(() => schoolClass.id, { onDelete: 'cascade' }),
+  date: date('date', { mode: 'string' }).notNull(),
+  startTime: time('start_time').notNull(),
+  slotId: integer('slot_id').references(() => timetableSlot.id, { onDelete: 'set null' }),
+  takenBy: integer('taken_by').references(() => loginIdentity.id, { onDelete: 'set null' }),
+  takenAt: tz('taken_at'),
+  createdAt: createdAt()
+}, (t) => [uniqueIndex('register_session_uq').on(t.classId, t.date, t.startTime), index('register_session_date_idx').on(t.date)]);
+
+export const attendanceMark = pgTable('attendance_mark', {
+  id: serial('id').primaryKey(),
+  sessionId: integer('session_id').notNull().references(() => registerSession.id, { onDelete: 'cascade' }),
+  studentId: integer('student_id').notNull().references(() => student.id, { onDelete: 'cascade' }),
+  mark: markEnum('mark').notNull(),
+  code: text('code').references(() => attendanceCode.code, { onDelete: 'set null' }), // DfE mode only
+  authorised: boolean('authorised'), // null = authorisation unspecified
+  notified: boolean('notified').notNull().default(false),
+  lateMinutes: integer('late_minutes'),
+  leftEarlyMinutes: integer('left_early_minutes'),
+  note: text('note'),
+  updatedBy: integer('updated_by').references(() => loginIdentity.id, { onDelete: 'set null' }),
+  updatedAt: tz('updated_at').notNull().defaultNow()
+}, (t) => [
+  uniqueIndex('attendance_mark_uq').on(t.sessionId, t.studentId),
+  index('attendance_mark_student_idx').on(t.studentId),
+  check('attendance_mark_minutes', sql`coalesce(${t.lateMinutes}, 0) between 0 and 600 and coalesce(${t.leftEarlyMinutes}, 0) between 0 and 600`)
+]);
+
+// "Will be absent / late today" notices from parents (portal), shown on registers and the dashboard.
+export const absenceNotice = pgTable('absence_notice', {
+  id: serial('id').primaryKey(),
+  studentId: integer('student_id').notNull().references(() => student.id, { onDelete: 'cascade' }),
+  contactId: integer('contact_id').references(() => contact.id, { onDelete: 'set null' }),
+  date: date('date', { mode: 'string' }).notNull(),
+  kind: text('kind').notNull(), // absent | late
+  expectedArrival: time('expected_arrival'),
+  reason: text('reason'),
+  createdAt: createdAt(),
+  seenAt: tz('seen_at'),
+  seenBy: integer('seen_by').references(() => loginIdentity.id, { onDelete: 'set null' })
+}, (t) => [index('absence_notice_date_idx').on(t.date), check('absence_notice_kind', sql`${t.kind} in ('absent', 'late')`)]);
+
+export const HOLIDAY_REQUEST_STATUSES = ['Pending', 'Accepted', 'Declined', 'Info requested'] as const;
+export const holidayRequestStatusEnum = pgEnum('holiday_request_status', HOLIDAY_REQUEST_STATUSES);
+
+export const holidayRequest = pgTable('holiday_request', {
+  id: serial('id').primaryKey(),
+  contactId: integer('contact_id').references(() => contact.id, { onDelete: 'set null' }),
+  startsOn: date('starts_on', { mode: 'string' }).notNull(),
+  endsOn: date('ends_on', { mode: 'string' }).notNull(),
+  request: text('request').notNull(),
+  response: text('response'),
+  status: holidayRequestStatusEnum('status').notNull().default('Pending'),
+  acceptedAs: text('accepted_as'), // authorised | unauthorised
+  createdAt: createdAt(),
+  respondedAt: tz('responded_at'),
+  respondedBy: integer('responded_by').references(() => loginIdentity.id, { onDelete: 'set null' })
+}, (t) => [check('holiday_request_dates', sql`${t.endsOn} >= ${t.startsOn}`)]);
+export const holidayRequestStudent = pgTable('holiday_request_student', {
+  requestId: integer('request_id').notNull().references(() => holidayRequest.id, { onDelete: 'cascade' }),
+  studentId: integer('student_id').notNull().references(() => student.id, { onDelete: 'cascade' })
+}, (t) => [primaryKey({ columns: [t.requestId, t.studentId] })]);
+
+// §7 Teacher logs (staff attendance). One row per teacher per day.
+export const teacherLog = pgTable('teacher_log', {
+  id: serial('id').primaryKey(),
+  teacherId: integer('teacher_id').notNull().references(() => teacher.id, { onDelete: 'cascade' }),
+  date: date('date', { mode: 'string' }).notNull(),
+  timeIn: time('time_in'),
+  timeOut: time('time_out'),
+  absent: boolean('absent').notNull().default(false),
+  source: text('source').notNull(), // admin | import | portal | kiosk
+  note: text('note'),
+  loggedAt: tz('logged_at').notNull().defaultNow(),
+  updatedBy: integer('updated_by').references(() => loginIdentity.id, { onDelete: 'set null' })
+}, (t) => [uniqueIndex('teacher_log_uq').on(t.teacherId, t.date), check('teacher_log_times', sql`${t.timeOut} is null or ${t.timeIn} is null or ${t.timeOut} >= ${t.timeIn}`)]);
+
+// Devices an admin has set up as a sign-in kiosk (§7: kiosk PIN). Token stored hashed.
+export const kioskDevice = pgTable('kiosk_device', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  tokenHash: text('token_hash').notNull().unique(),
+  createdBy: integer('created_by').references(() => loginIdentity.id, { onDelete: 'set null' }),
+  createdAt: createdAt(),
+  revokedAt: tz('revoked_at')
+});
+
+// §19 Fire drill: who started it, and the roll call saved when it ended.
+export const fireDrill = pgTable('fire_drill', {
+  id: serial('id').primaryKey(),
+  startedAt: tz('started_at').notNull().defaultNow(),
+  startedBy: integer('started_by').references(() => loginIdentity.id, { onDelete: 'set null' }),
+  startedByName: text('started_by_name').notNull(),
+  endedAt: tz('ended_at'),
+  safeClassIds: integer('safe_class_ids').array().notNull().default(sql`'{}'::int[]`),
+  report: jsonb('report')
+}, (t) => [uniqueIndex('fire_drill_one_running').on(sql`(true)`).where(sql`${t.endedAt} is null`)]);

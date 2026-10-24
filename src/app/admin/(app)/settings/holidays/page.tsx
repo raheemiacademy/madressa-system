@@ -33,7 +33,7 @@ export default async function HolidaysPage({ searchParams }: { searchParams: Pro
           <div className="ra-toolbar no-print"><Link className="ra-btn" href={`/admin/settings/years/${year.id}/calendar`}>Year calendar</Link><PrintButton /></div>
         </div>
         {hols.length === 0 ? <p className="ra-empty">Nothing here yet.</p> : (
-          <div className="ra-table-wrap">
+          <div className="ra-table-wrap" tabIndex={0}>
             <table className="ra-table">
               <thead><tr><th>Holiday</th><th>Dates</th><th className="opt">Shown on</th><th className="opt">Still attending</th><th className="opt">Classes</th><th><span className="sr-only">Actions</span></th></tr></thead>
               <tbody>

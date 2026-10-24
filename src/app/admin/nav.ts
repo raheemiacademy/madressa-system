@@ -4,7 +4,7 @@ export type NavItem = { href: string; label: string; icon: IconName };
 // Same groups and order as the design's sidebar; each module's link is added in the phase that builds it.
 export const NAV: { group: string; items: NavItem[] }[] = [
   { group: 'Overview', items: [{ href: '/admin', label: 'Dashboard', icon: 'home' }] },
-  { group: 'School', items: [{ href: '/admin/students', label: 'Students', icon: 'users' }, { href: '/admin/classes', label: 'Classes', icon: 'grid' }, { href: '/admin/teachers', label: 'Teachers', icon: 'teacher' }] },
+  { group: 'School', items: [{ href: '/admin/students', label: 'Students', icon: 'users' }, { href: '/admin/classes', label: 'Classes', icon: 'grid' }, { href: '/admin/teachers', label: 'Teachers', icon: 'teacher' }, { href: '/admin/register', label: 'Register', icon: 'check' }, { href: '/admin/teacher-logs', label: 'Teacher logs', icon: 'clock' }] },
   { group: 'System', items: [{ href: '/admin/settings', label: 'Settings', icon: 'cog' }, { href: '/admin/tools/sticky-notes', label: 'Sticky notes', icon: 'note' }] }
 ];
 
@@ -12,7 +12,8 @@ const EXTRA: { prefix: string; group: string; title: string }[] = [
   { prefix: '/admin/search', group: 'Overview', title: 'Search' },
   { prefix: '/admin/no-access', group: 'Overview', title: 'No access' },
   { prefix: '/admin/contacts', group: 'School', title: 'Contacts' },
-  { prefix: '/admin/import', group: 'School', title: 'Import' }
+  { prefix: '/admin/import', group: 'School', title: 'Import' },
+  { prefix: '/admin/fire-drill', group: 'School', title: 'Fire drill' }
 ];
 
 export function crumbFor(pathname: string) {

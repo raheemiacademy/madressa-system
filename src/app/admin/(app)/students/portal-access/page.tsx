@@ -40,7 +40,7 @@ export default async function PortalAccess({ searchParams }: { searchParams: Pro
       </nav>
       <section className="ra-card">
         {byStudent.size === 0 ? <p className="ra-empty">No students with contacts yet.</p> : (
-          <div className="ra-table-wrap" style={{ maxHeight: 700 }}><table className="ra-table">
+          <div className="ra-table-wrap" tabIndex={0} style={{ maxHeight: 700 }}><table className="ra-table">
             <thead><tr><th>Student</th><th>Contact</th><th className="opt">Type</th><th>Portal</th><th><span className="sr-only">Actions</span></th></tr></thead>
             <tbody>{[...byStudent.values()].flatMap((list) => list.map((r, i) => {
               const typeOk = allowedTypes.includes(r.link.type);

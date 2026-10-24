@@ -10,7 +10,8 @@ const ADMIN: Section[] = [
   { href: '/admin/settings/staff', label: 'Admin staff' },
   { href: '/admin/settings/audits', label: 'Audits' },
   { href: '/admin/settings/year-groups', label: 'Year & age groups' },
-  { href: '/admin/settings/custom-fields', label: 'Custom fields' }
+  { href: '/admin/settings/custom-fields', label: 'Custom fields' },
+  { href: '/admin/settings/attendance-codes', label: 'Attendance codes' }
 ];
 const GROUPS = ['General', 'School', 'Finance', 'Communication', 'Learning', 'Portals', 'System'];
 

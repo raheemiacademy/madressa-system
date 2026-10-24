@@ -76,7 +76,7 @@ export default async function ClassPage({ params }: { params: Promise<{ id: stri
           <section className="ra-card" aria-labelledby="cs-h">
             <div className="ra-card-h"><div><h2 id="cs-h">Students</h2><div className="ra-note">{plural(c.students.length, 'student')} in this class now</div></div></div>
             {c.students.length === 0 ? <p className="ra-empty">No students in this class yet.</p> : (
-              <div className="ra-table-wrap" style={{ maxHeight: 420 }}><table className="ra-table">
+              <div className="ra-table-wrap" tabIndex={0} style={{ maxHeight: 420 }}><table className="ra-table">
                 <thead><tr><th>Student</th><th className="opt">Since</th><th>Status</th><th><span className="sr-only">Actions</span></th></tr></thead>
                 <tbody>{c.students.map((s) => (
                   <tr key={s.id}><td className="wrap"><Link href={`/admin/students/${s.id}`}>{s.firstName} {s.surname}</Link></td><td className="opt">{formatCalendarDate(s.from)}</td><td><Chip>{s.status}</Chip></td>

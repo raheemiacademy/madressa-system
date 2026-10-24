@@ -31,7 +31,7 @@ export default async function ClassHistory({ params }: { params: Promise<{ id: s
       <section className="ra-card" aria-labelledby="h-h">
         <div className="ra-card-h"><div><h2 id="h-h">Classes</h2><div className="ra-note">An entry with no “To” date is a current class.</div></div></div>
         {s.classes.length === 0 ? <p className="ra-empty">No class history yet.</p> : (
-          <div className="ra-table-wrap"><table className="ra-table">
+          <div className="ra-table-wrap" tabIndex={0}><table className="ra-table">
             <thead><tr><th>From</th><th>To</th><th>Class</th><th>Year</th><th><span className="sr-only">Actions</span></th></tr></thead>
             <tbody>{s.classes.map(({ a, c }) => (
               <tr key={a.id}>

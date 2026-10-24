@@ -47,7 +47,7 @@ export default async function Siblings({ searchParams }: { searchParams: Promise
         <div className="ra-card-h"><div><h2 id="sl-h">Sibling relations</h2><div className="ra-note">{plural(rows.length, 'relation')}</div></div>
           <div className="ra-toolbar"><Link className="ra-link" href="/admin/students">Students</Link></div></div>
         {rows.length === 0 ? <p className="ra-empty">Nothing here yet.</p> : (
-          <div className="ra-table-wrap"><table className="ra-table">
+          <div className="ra-table-wrap" tabIndex={0}><table className="ra-table">
             <thead><tr><th>Student</th><th>Sibling</th><th className="opt">Added</th><th><span className="sr-only">Actions</span></th></tr></thead>
             <tbody>{rows.map((r) => (
               <tr key={`${r.a}-${r.b}`}>

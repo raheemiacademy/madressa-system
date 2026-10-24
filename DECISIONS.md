@@ -318,3 +318,29 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
 **New questions**
 13. **Real PDFs.** Server-generated PDFs (Playwright Chromium, approved) work locally. On Render's plain Node runtime Chromium's system libraries aren't available, so the preview would need Render's Docker runtime. Phase 4 needs real PDFs for receipts attached to emails. Shall I switch the preview to Docker when Phase 4 starts, and keep print layouts for the Phase 2 documents until then?
 14. **"Portal Login" (§5).** I read this as "open the portal as this person" for support. I'd build it in Phase 8 as Super-only, time-limited, clearly bannered, and audited. Is that what you want, or should it only set or reset the person's portal password (which already works)?
+
+---
+
+## 9. Phase 3 record (Attendance, §6, §7, §19 fire drill)
+
+**Added dependencies** (both on the approved list): `d3` (attendance charts), `@types/d3`.
+
+**Decisions**
+- **Registers come from the timetable.** A class is due a register on each timetable session marked "Takes a register", unless that day is a holiday (whole school or that class) or not a school day (Settings → School days). A register is one row per class, date and start time, so saving it again updates it in place.
+- **Marks:** present, late (with minutes), absent, left early (with minutes), or not counted. An absence's authorisation is yes, no or **not decided yet**, and is kept separate from "parent notified". In **DfE mode** (Settings → Register) every mark needs one of the 22 DfE codes, which are seeded and can be edited under Settings → Attendance codes.
+- **Percentages:** standard % = (present + late) ÷ counted sessions. Strict % = on-time present ÷ counted sessions. Not-counted codes are left out of both.
+- **Quality bands** (student record): Excellent ≥ 97%, Good ≥ 95%, Needs improvement ≥ 90%, otherwise Serious concern. The inventory names the bands without thresholds, so these are my numbers.
+- **Accepting a holiday request** marks the child absent (authorised) on every register they're due in that range. Declining marks nothing. Parent absence notices must be for today or later.
+- **Double entries** means the same student marked on two registers with the same date and start time (usually two classes). "Fix" keeps the most recently saved mark and deletes the others (audited).
+- **Deleting register entries** (a date range, a class or students) needs the Can delete level and the school name typed, and is audited. When a student is marked as leaving, an option deletes their register entries **after** the left date. This doesn't need the typed name, because it can't touch entries on or before the date they left.
+- **Teacher logs:** "Pending logs" means a teacher due by their working hours with no log, or signed in but never signed out. Absentees are teachers marked absent.
+- **Kiosk:** `/kiosk` only works on a device a Super admin has set up from Teacher logs → Kiosk devices. That sets a long-lived token cookie, which is stored hashed and can be revoked. Teachers sign in or out with their kiosk PIN, with 5 tries per 15 minutes per device.
+- **Fire drill:** a 2-second hold starts it (Space or Enter works too), and only one drill can run at a time. The roll call lists who is on site per class from today's registers, falling back to class lists where no register has been taken. Classes are marked safe one by one. With "Process attendance without confirmation" on, every class counts as safe at once. Ending a drill keeps it in History with its times.
+
+**Phase 3 gaps (each lands in the phase named)**
+- **Emails:** attendance alert emails, the fire drill emails to admins and teachers, and the parent emails for absence notices and holiday request replies need the mail queue (Phase 5). The Alerts page already lists exactly who would be emailed.
+- **"Download register"** and the teacher log **print** are print layouts until real PDFs arrive (question 13).
+- **Parent-side absence notices and holiday requests** are entered by staff for now. Parents submit them from the parent portal in Phase 8.
+- **Teacher-portal register taking** (teachers with the Register privilege) is Phase 8. Until then only admin staff (Can edit level) take registers. That check, plus the per-class Register privilege, will be enforced on the server.
+- **Dashboard attendance tiles and chart** are Phase 7. The Register page shows the same weekly trend chart now.
+- **Admin mobile `AdminDrill` screen** with its bottom tab bar is Phase 8. On phones the web drill page and the compact hold button in the nav follow the narrow-screen rules.
