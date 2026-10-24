@@ -15,7 +15,7 @@ export default async function StickyNotesPage() {
       <div className="ra-page-h"><div><h1>Sticky notes</h1><p>{notes.length ? `${plural(notes.length, 'note')} across the admin pages` : 'Notes added to any page appear here'}</p></div></div>
       <div className="ra-card">
         {notes.length === 0 ? <p className="ra-empty">Nothing here yet. Use the note button at the top of any page to add one.</p> : (
-          <div className="ra-table-wrap">
+          <div className="ra-table-wrap" tabIndex={0}>
             <table className="ra-table">
               <thead><tr><th>Note</th><th>Page</th><th className="opt">Updated</th><th><span className="sr-only">Go</span></th></tr></thead>
               <tbody>

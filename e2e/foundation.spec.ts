@@ -1,15 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
+import { PW, signIn } from './sign-in';
 
-const PW = process.env.SEED_ADMIN_PASSWORD!;
-
-async function signIn(page: Page, email = 'admin@example.org') {
-  await page.goto('/admin/login');
-  await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Password').fill(PW);
-  await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page).toHaveURL(/\/admin$/);
-}
 
 async function axe(page: Page) {
   const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
@@ -84,9 +76,9 @@ test('“/” focuses search, and a sticky note can be added to a page', async (
   await signIn(page);
   await page.keyboard.press('/');
   await expect(page.getByRole('searchbox', { name: /Search students/ })).toBeFocused();
-  await page.keyboard.type('Test Student');
+  await page.keyboard.type('Nobody Called This');
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('status')).toHaveText('No students, contacts or teachers match “Test Student”.');
+  await expect(page.getByRole('status')).toHaveText('No students, contacts or teachers match “Nobody Called This”.');
   await page.goto('/admin');
   await page.getByRole('button', { name: 'Add a sticky note' }).click();
   await page.getByRole('textbox', { name: 'Note' }).fill('Order more register books');

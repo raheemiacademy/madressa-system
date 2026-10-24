@@ -10,6 +10,7 @@ type Base = { name: string; label: string; help?: string; full?: boolean };
 export type Field = Base & (
   | { type: 'text' | 'textarea'; default?: string; max?: number; pattern?: RegExp; patternMessage?: string }
   | { type: 'email' | 'url'; default?: string }
+  | { type: 'datetime' } // datetime-local, read as UK time
   | { type: 'int'; default: number; min: number; max: number }
   | { type: 'money'; default: number } // stored as integer pence
   | { type: 'toggle'; default: boolean }
@@ -73,6 +74,20 @@ export const TABS: Tab[] = [
     ]
   },
   {
+    key: 'gateways', title: 'Payment gateways', group: 'Finance', description: 'Online payments for parents: GoCardless direct debit and Stripe card payments. Keys set as environment variables take precedence over these.',
+    fields: [
+      yes('gocardlessEnabled', 'Offer GoCardless direct debit'),
+      { type: 'select', name: 'gocardlessEnvironment', label: 'GoCardless environment', default: 'sandbox', options: opts(['sandbox', 'Sandbox (testing)'], ['live', 'Live']) },
+      { type: 'secret', name: 'gocardlessAccessToken', label: 'GoCardless access token' },
+      { type: 'secret', name: 'gocardlessWebhookSecret', label: 'GoCardless webhook secret', help: 'Point GoCardless webhooks at this site’s address followed by /api/webhooks/gocardless' },
+      yes('forceDirectDebit', 'Ask parents to set up a direct debit before they can use the portal'),
+      yes('stripeEnabled', 'Offer card payments with Stripe'),
+      { type: 'text', name: 'stripePublishableKey', label: 'Stripe publishable key', max: 200, pattern: /^(pk_(test|live)_[A-Za-z0-9]+)?$/, patternMessage: 'Starts with pk_test_ or pk_live_.' },
+      { type: 'secret', name: 'stripeSecretKey', label: 'Stripe secret key' },
+      { type: 'secret', name: 'stripeWebhookSecret', label: 'Stripe webhook signing secret', help: 'Point Stripe webhooks at this site’s address followed by /api/webhooks/stripe' }
+    ]
+  },
+  {
     key: 'fire', title: 'Fire drills', group: 'School', description: 'How fire drills start and who is told.',
     fields: [
       yes('processWithoutConfirmation', 'Process attendance without confirmation'),
@@ -80,6 +95,27 @@ export const TABS: Tab[] = [
       yes('emailClassAttendance', 'Email class attendance to teachers', true),
       { type: 'checks', name: 'buttonPlaces', label: 'Show the fire drill button in', default: ['menu'], options: opts(['menu', 'Side menu'], ['dashboard', 'Dashboard'], ['header', 'Header']) },
       yes('teachersCanStart', 'Let teachers start a drill from the teacher portal')
+    ]
+  },
+  {
+    key: 'schoolDays', title: 'School days', group: 'School', description: 'The days of the week the school runs classes.',
+    fields: [{ type: 'checks', name: 'days', label: 'School days', full: true, default: ['1', '2', '3', '4'], options: opts(['1', 'Monday'], ['2', 'Tuesday'], ['3', 'Wednesday'], ['4', 'Thursday'], ['5', 'Friday'], ['6', 'Saturday'], ['7', 'Sunday']) }]
+  },
+  {
+    key: 'registration', title: 'Registration pages', group: 'School', description: 'The public application form for children and the adult application form. Applications arrive as Waiting List students.',
+    fields: [
+      yes('enabled', 'Accept applications through the public form'),
+      yes('adultEnabled', 'Accept adult applications'),
+      yes('requireDob', 'Require date of birth', true),
+      yes('requireMobile', 'Require a mobile number', true),
+      yes('requireAddress', 'Require an address'),
+      yes('requireEmergency', 'Require an emergency contact'),
+      yes('copySurname', 'Copy the parent’s surname to each child automatically'),
+      { type: 'datetime', name: 'opensAt', label: 'Form opens', help: 'Leave blank to open straight away.' },
+      { type: 'datetime', name: 'closesAt', label: 'Form closes', help: 'Leave blank to keep it open.' },
+      { type: 'textarea', name: 'header', label: 'Header text', full: true, max: 2000 },
+      { type: 'textarea', name: 'footer', label: 'Footer text', full: true, max: 2000 },
+      { type: 'select', name: 'theme', label: 'Layout', default: 'new', options: opts(['new', 'New'], ['classic', 'Classic']) }
     ]
   },
   {
@@ -111,6 +147,17 @@ export const TABS: Tab[] = [
     ]
   },
   {
+    key: 'sms', title: 'SMS', group: 'Communication', description: 'Text messages through ClickSend or VoodooSMS. Keys set as environment variables take precedence. WhatsApp buttons need no account.',
+    fields: [
+      { type: 'select', name: 'provider', label: 'SMS provider', default: 'clicksend', options: opts(['clicksend', 'ClickSend API'], ['voodoo', 'VoodooSMS API']) },
+      { type: 'text', name: 'senderId', label: 'Sender ID', max: 11, pattern: /^[A-Za-z0-9 ]{0,11}$/, patternMessage: 'Up to 11 letters, numbers or spaces.', help: 'The name texts appear to come from.' },
+      { type: 'text', name: 'countryCode', label: 'Country code', default: '44', pattern: /^\d{1,4}$/, patternMessage: 'Digits only, e.g. 44.', help: 'Used for numbers that start with 0.' },
+      { type: 'text', name: 'clicksendUsername', label: 'ClickSend username', max: 200 },
+      { type: 'secret', name: 'clicksendApiKey', label: 'ClickSend API key' },
+      { type: 'secret', name: 'voodooApiKey', label: 'VoodooSMS API key' }
+    ]
+  },
+  {
     key: 'messaging', title: 'Messaging', group: 'Communication', description: 'Allow or block each messaging route. Blocked routes are refused by the server.',
     fields: [
       yes('teachersToAdmins', 'Teachers → Admins', true),
@@ -132,10 +179,15 @@ export const TABS: Tab[] = [
     ]
   },
   {
-    key: 'spell', title: 'Spell checker', group: 'System', description: 'GrammarBot service used to check spelling in reports and messages.',
+    key: 'alerts', title: 'Attendance alerts', group: 'School', description: 'When to email a student’s primary contacts about their attendance. Alerts go out each morning, at most once per look-back period per student.',
     fields: [
-      { type: 'url', name: 'host', label: 'GrammarBot host' },
-      { type: 'secret', name: 'apiKey', label: 'API key' }
+      yes('enabled', 'Send attendance alerts'),
+      { type: 'int', name: 'thresholdPct', label: 'Alert below this attendance (%)', default: 90, min: 1, max: 100 },
+      { type: 'int', name: 'absences', label: 'Or after this many absences', default: 3, min: 1, max: 100 },
+      { type: 'int', name: 'lates', label: 'Or after this many lates', default: 3, min: 1, max: 100 },
+      { type: 'int', name: 'intervalDays', label: 'Looking back over (days)', default: 28, min: 7, max: 366 },
+      yes('highAttendance', 'Also send a well-done email above the threshold'),
+      { type: 'int', name: 'highPct', label: 'Well-done email at or above (%)', default: 98, min: 50, max: 100 }
     ]
   },
   {
@@ -178,6 +230,7 @@ export const TABS: Tab[] = [
   {
     key: 'preferences', title: 'Preferences', group: 'General', description: 'Display preferences for the admin area.',
     fields: [
+      { type: 'select', name: 'theme', label: 'Header and menu theme', default: 'system', options: opts(['system', 'Follow each device (light or dark)'], ['light', 'Light'], ['dark', 'Dark']), help: 'The school’s colours stay the same; this picks light or dark surfaces for the admin area.' },
       yes('logoInSideMenu', 'Show the school logo in the side menu', true),
       yes('html5DatePicker', 'Use the built-in date picker', true),
       yes('teacherLogsOnDashboard', 'Show teacher logs on the dashboard', true),
@@ -212,6 +265,7 @@ function fieldSchema(f: Field): z.ZodType {
       return f.name === 'bankReference' ? base.refine(validReferenceTemplate, 'Uses an unknown variable.') : base;
     }
     case 'email': return optional(z.email('Enter a valid email address'));
+    case 'datetime': return optional(z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, 'Enter a date and time'));
     case 'url': return optional(httpUrl);
     case 'int': return z.number().int().min(f.min).max(f.max).default(f.default);
     case 'money': return z.number().int().min(0).max(100_000_00).default(f.default);

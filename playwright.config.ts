@@ -17,6 +17,6 @@ export default defineConfig({
     command: `npx next start -p ${PORT}`,
     port: PORT,
     reuseExistingServer: false,
-    env: { ...process.env, DATABASE_URL: process.env.DATABASE_URL_TEST ?? '' } as Record<string, string>
+    env: { ...process.env, DATABASE_URL: process.env.DATABASE_URL_TEST ?? '', PAYMENTS_FAKE: '1' } as Record<string, string>
   }
 });

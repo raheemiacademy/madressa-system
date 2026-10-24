@@ -5,6 +5,7 @@ import { adminStaff, loginIdentity } from '@/db/schema';
 import { checkbox, optionalIsoDate, optionalText, zodErrors, type FieldErrors } from '@/lib/validate';
 import { audit, type AuditActor } from './audit';
 import { hashPassword, invalidateAllSessions, passwordProblem } from './auth';
+import { answersFromForm, listFields, saveAnswers } from './people/custom-fields';
 
 export const RANKS = ['Committee', 'Head Teacher', 'Head of Education', 'Administrator', 'Secretary', 'Director', 'Deputy Head', 'Head Administrator', 'Head of Day Alim', 'Head of Hifz', 'Head of Maktab'];
 
@@ -39,9 +40,11 @@ async function otherSupers(db: Pick<Db, 'select'>, exceptId: number) {
   return r?.n ?? 0;
 }
 
-export async function saveStaff(db: Db, actor: AuditActor & { staffId: number }, raw: unknown, id?: number): Promise<Result> {
+export async function saveStaff(db: Db, actor: AuditActor & { staffId: number }, raw: unknown, id?: number, fd?: FormData): Promise<Result> {
   const p = staffInput.safeParse(raw);
   if (!p.success) return { ok: false, errors: zodErrors(p.error) };
+  const cf = fd ? answersFromForm(await listFields(db, 'staff'), fd) : { values: {}, errors: {} };
+  if (Object.keys(cf.errors).length) return { ok: false, errors: cf.errors };
   const { password, allowLogin, ...v } = p.data;
   if (password || !id) {
     const problem = passwordProblem(password);
@@ -69,6 +72,7 @@ export async function saveStaff(db: Db, actor: AuditActor & { staffId: number },
     } else {
       await tx.insert(loginIdentity).values({ portal: 'admin', email: v.email, allowLogin, passwordHash: passwordHash ?? null, adminStaffId: row.id });
     }
+    await saveAnswers(tx, row.id, cf.values);
     const levels = (['isSuper', 'canEdit', 'canDelete', 'feesAccess', 'marketing', 'sendSms'] as const).filter((k) => v[k]);
     await audit(tx, actor, {
       action: `${id ? 'Updated' : 'Added'} admin staff ${row.name}`, page: 'Admin staff', entity: 'admin_staff', entityId: row.id,

@@ -58,6 +58,7 @@ function FieldInput({ f, value, error }: { f: Field; value: unknown; error?: str
     case 'int': input = <input className="ra-input" {...common} type="number" inputMode="numeric" min={f.min} max={f.max} step={1} defaultValue={String(value)} />; break;
     case 'money': input = <input className="ra-input" {...common} inputMode="decimal" defaultValue={penceToInput(Number(value))} placeholder="0.00" />; break;
     case 'email': input = <input className="ra-input" {...common} type="email" inputMode="email" autoComplete="off" defaultValue={String(value ?? '')} />; break;
+    case 'datetime': input = <input className="ra-input" {...common} type="datetime-local" defaultValue={String(value ?? '')} />; break;
     case 'url': input = <input className="ra-input" {...common} type="url" inputMode="url" placeholder="https://" defaultValue={String(value ?? '')} />; break;
     case 'extensions': input = <input className="ra-input" {...common} defaultValue={(value as string[]).join(', ')} autoCapitalize="none" spellCheck={false} />; break;
     case 'secret': input = <input className="ra-input" {...common} type="password" autoComplete="new-password" placeholder={value ? 'Saved. Leave blank to keep it' : ''} />; break;

@@ -1,7 +1,7 @@
 import { and, desc, eq, gte, lte, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Db, DbOrTx } from '@/db';
-import { academicYear, holiday } from '@/db/schema';
+import { academicYear, holiday, invoice, schoolClass } from '@/db/schema';
 import { checkbox, isoDate, zodErrors, type FieldErrors } from '@/lib/validate';
 import { audit, type AuditActor } from './audit';
 
@@ -57,6 +57,10 @@ export async function deleteYear(db: Db, actor: AuditActor, id: number): Promise
     if (y.isCurrent) return { ok: false, error: 'You can’t delete the current year. Make another year current first.' };
     const [used] = await tx.select({ n: sql<number>`count(*)::int` }).from(holiday).where(eq(holiday.academicYearId, id));
     if (used && used.n > 0) return { ok: false, error: `This year has ${used.n === 1 ? '1 holiday' : `${used.n} holidays`}. Delete them first.` };
+    const [cls] = await tx.select({ n: sql<number>`count(*)::int` }).from(schoolClass).where(eq(schoolClass.academicYearId, id));
+    if (cls && cls.n > 0) return { ok: false, error: `This year has ${cls.n === 1 ? '1 class' : `${cls.n} classes`}. Delete them first.` };
+    const [inv] = await tx.select({ n: sql<number>`count(*)::int` }).from(invoice).where(eq(invoice.academicYearId, id));
+    if (inv && inv.n > 0) return { ok: false, error: `This year has ${inv.n === 1 ? '1 invoice' : `${inv.n} invoices`}, so it can’t be deleted.` };
     await tx.delete(academicYear).where(eq(academicYear.id, id));
     await audit(tx, actor, { action: `Deleted academic year ${y.title}`, page: 'Academic years', entity: 'academic_year', entityId: id });
     return { ok: true };

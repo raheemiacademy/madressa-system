@@ -4,6 +4,7 @@ import type { Db, DbOrTx } from '@/db';
 import { academicYear, holiday } from '@/db/schema';
 import { checkbox, isoDate, optionalText, zodErrors, type FieldErrors } from '@/lib/validate';
 import { audit, type AuditActor } from './audit';
+import { setHolidayClasses } from './people/extras';
 
 export const holidayInput = z.object({
   academicYearId: z.coerce.number().int().positive('Choose a year'),
@@ -11,16 +12,18 @@ export const holidayInput = z.object({
   description: optionalText(2000),
   startsOn: isoDate, endsOn: isoDate,
   showTeacher: checkbox, showParent: checkbox, showStudent: checkbox,
-  studentsAttend: checkbox, teachersAttend: checkbox
+  studentsAttend: checkbox, teachersAttend: checkbox,
+  allClasses: checkbox
 }).refine((v) => v.endsOn >= v.startsOn, { path: ['endsOn'], message: 'The end date can’t be before the start date' });
 
 export const listHolidays = (db: DbOrTx, yearId: number) =>
   db.select().from(holiday).where(eq(holiday.academicYearId, yearId)).orderBy(asc(holiday.startsOn));
 
-export async function saveHoliday(db: Db, actor: AuditActor, raw: unknown, id?: number): Promise<{ ok: true; id: number } | { ok: false; errors: FieldErrors }> {
+export async function saveHoliday(db: Db, actor: AuditActor, raw: unknown, id?: number, classIds: number[] = []): Promise<{ ok: true; id: number } | { ok: false; errors: FieldErrors }> {
   const p = holidayInput.safeParse(raw);
   if (!p.success) return { ok: false, errors: zodErrors(p.error) };
   const v = p.data;
+  if (!v.allClasses && !classIds.length) return { ok: false, errors: { allClasses: 'Choose the classes it applies to, or tick all classes' } };
   return db.transaction(async (tx): Promise<{ ok: true; id: number } | { ok: false; errors: FieldErrors }> => {
     const [y] = await tx.select().from(academicYear).where(eq(academicYear.id, v.academicYearId)).limit(1);
     if (!y) return { ok: false as const, errors: { academicYearId: 'Choose a year' } };
@@ -29,6 +32,7 @@ export async function saveHoliday(db: Db, actor: AuditActor, raw: unknown, id?: 
       ? await tx.update(holiday).set(v).where(eq(holiday.id, id)).returning()
       : await tx.insert(holiday).values(v).returning();
     if (!row) return { ok: false as const, errors: { title: 'This holiday no longer exists' } };
+    await setHolidayClasses(tx, row.id, v.allClasses ? null : classIds);
     await audit(tx, actor, { action: `${id ? 'Updated' : 'Added'} holiday ${row.title}`, page: 'Calendar / holidays', entity: 'holiday', entityId: row.id });
     return { ok: true as const, id: row.id };
   });

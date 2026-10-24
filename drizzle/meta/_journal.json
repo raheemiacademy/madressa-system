@@ -8,6 +8,55 @@
       "when": 1792768635856,
       "tag": "0000_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792786104473,
+      "tag": "0001_people",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792792504218,
+      "tag": "0002_attendance",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792826255986,
+      "tag": "0003_fees",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792840021759,
+      "tag": "0004_communication",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792844988270,
+      "tag": "0005_learning",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792854337560,
+      "tag": "0006_portals",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792869500358,
+      "tag": "0007_ops",
+      "breakpoints": true
     }
   ]
 }

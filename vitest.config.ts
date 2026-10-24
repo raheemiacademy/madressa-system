@@ -12,6 +12,7 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     globalSetup: ['tests/global-setup.ts'],
     fileParallelism: false, // DB tests share one database and reset it between tests
-    testTimeout: 20_000
+    testTimeout: 20_000,
+    hookTimeout: 30_000 // resetting the test database before each test can be slow on a busy machine
   }
 });

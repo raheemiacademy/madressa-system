@@ -22,7 +22,7 @@ export default async function AuditsPage({ searchParams }: { searchParams: Promi
     <section className="ra-card" aria-labelledby="aud-h">
       <div className="ra-card-h"><div><h2 id="aud-h">Audits</h2><div className="ra-note">{total ? `${plural(total, 'key action')} logged, newest first` : 'Key actions by admin staff are logged here'}</div></div></div>
       {rows.length === 0 ? <p className="ra-empty">Nothing here yet.</p> : (
-        <div className="ra-table-wrap">
+        <div className="ra-table-wrap" tabIndex={0}>
           <table className="ra-table">
             <thead><tr><th>Date</th><th>Admin</th><th>Audit</th><th className="opt">Page</th></tr></thead>
             <tbody>

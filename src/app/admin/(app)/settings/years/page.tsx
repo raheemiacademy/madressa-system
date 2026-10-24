@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { db } from '@/db';
 import { formatCalendarDate } from '@/lib/dates';
 import { plural } from '@/lib/text';
@@ -14,9 +15,10 @@ export default async function YearsPage() {
   return (
     <>
       <section className="ra-card" aria-labelledby="years-h">
-        <div className="ra-card-h"><div><h2 id="years-h">Academic years</h2><div className="ra-note">{years.length ? plural(years.length, 'year') : 'Add the first year below'}. The current year is what every page shows by default.</div></div></div>
+        <div className="ra-card-h"><div><h2 id="years-h">Academic years</h2><div className="ra-note">{years.length ? plural(years.length, 'year') : 'Add the first year below'}. The current year is what every page shows by default.</div></div>
+          <Link className="ra-link" href="/admin/fees/structure">Default yearly fees</Link></div>
         {years.length === 0 ? <p className="ra-empty">Nothing here yet.</p> : (
-          <div className="ra-table-wrap">
+          <div className="ra-table-wrap" tabIndex={0}>
             <table className="ra-table">
               <thead><tr><th>Title</th><th>Starts</th><th>Ends</th><th>Status</th><th><span className="sr-only">Actions</span></th></tr></thead>
               <tbody>

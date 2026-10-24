@@ -9,14 +9,16 @@ import { logoutAction } from '@/app/_auth/actions';
 import { crumbFor, isCurrent, NAV } from '../nav';
 import { chooseYear } from './shell-actions';
 import { NotesButton, NotesStrip } from './StickyNotes';
+import { DrillStart } from './fire-drill/DrillStart';
 
 type Props = {
   school: string; logoSrc: string | null; userName: string; userEmail: string;
   years: { id: number; title: string }[]; yearId: number | null; noteColours: string[];
+  drillPlaces: string[]; drillRunning: boolean; notifications: number; unreadMessages: number; areas: ('fees' | 'comm')[];
   children: React.ReactNode;
 };
 
-export function Shell({ school, logoSrc, userName, userEmail, years, yearId, noteColours, children }: Props) {
+export function Shell({ school, logoSrc, userName, userEmail, years, yearId, noteColours, drillPlaces, drillRunning, notifications, unreadMessages, areas, children }: Props) {
   const pathname = usePathname();
   const crumb = crumbFor(pathname);
   return (
@@ -32,7 +34,7 @@ export function Shell({ school, logoSrc, userName, userEmail, years, yearId, not
             <span className="ra-brand-text"><span className="ra-brand-name">{school}</span><span className="ra-brand-sub">School admin</span></span>
           </Link>
           <nav className="ra-nav" aria-label="Sections">
-            {NAV.map((g) => (
+            {NAV.map((g) => ({ ...g, items: g.items.filter((i) => !i.need || areas.includes(i.need)) })).filter((g) => g.items.length).map((g) => (
               <div className="ra-nav-group" key={g.group}>
                 <div className="ra-nav-label">{g.group}</div>
                 {g.items.map((i) => (
@@ -43,6 +45,13 @@ export function Shell({ school, logoSrc, userName, userEmail, years, yearId, not
               </div>
             ))}
           </nav>
+          {drillPlaces.includes('menu') && (
+            <div className="ra-side-foot">
+              <p><strong>Fire drill</strong>Get an instant list of who is on site, for every class.</p>
+              {drillRunning ? <Link className="ra-drill" href="/admin/fire-drill">Drill running: open</Link> : <DrillStart big={false} describedBy="side-drill-hint" />}
+              <p id="side-drill-hint">Press and hold for 2 seconds</p>
+            </div>
+          )}
         </aside>
         <div className="ra-main">
           <header className="ra-top">
@@ -50,10 +59,18 @@ export function Shell({ school, logoSrc, userName, userEmail, years, yearId, not
             <SearchBox />
             <div className="ra-top-actions">
               <YearSwitcher years={years} yearId={yearId} />
+              {drillPlaces.includes('header') && <Link className="ra-btn" href="/admin/fire-drill">Fire drill</Link>}
+              <Link className="ra-icon-btn" href="/admin/register" aria-label={notifications ? `${notifications} ${notifications === 1 ? 'notification' : 'notifications'}: parent notices and holiday requests` : 'Notifications'}>
+                <Icon name="bell" />{notifications > 0 && <span className="ra-badge" aria-hidden="true">{notifications}</span>}
+              </Link>
+              <Link className="ra-icon-btn" href="/admin/messages" aria-label={unreadMessages ? `${unreadMessages} unread ${unreadMessages === 1 ? 'message' : 'messages'}` : 'Messages'}>
+                <Icon name="mail" />{unreadMessages > 0 && <span className="ra-badge" aria-hidden="true">{unreadMessages}</span>}
+              </Link>
               <NotesButton colours={noteColours} />
               <AccountMenu name={userName} email={userEmail} />
             </div>
           </header>
+          {drillRunning && !pathname.startsWith('/admin/fire-drill') && <div className="ra-banner ra-alert" role="alert" style={{ margin: '12px 28px 0' }}><div><b>A fire drill is running.</b></div><Link className="ra-link" href="/admin/fire-drill">Open roll call</Link></div>}
           <NotesStrip />
           <main id="main" tabIndex={-1} className="ra-content">{children}</main>
         </div>

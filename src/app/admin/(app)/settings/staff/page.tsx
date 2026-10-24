@@ -20,7 +20,7 @@ export default async function StaffPage() {
         <div><h2 id="staff-h">Admin staff</h2><div className="ra-note">{plural(rows.length, 'staff member')}</div></div>
         <Link className="ra-btn primary" href="/admin/settings/staff/new"><Icon name="plus" />Add staff</Link>
       </div>
-      <div className="ra-table-wrap">
+      <div className="ra-table-wrap" tabIndex={0}>
         <table className="ra-table">
           <thead><tr><th>Name</th><th className="opt">Rank</th><th>Access</th><th className="opt">DBS expiry</th><th className="opt">Last login</th><th><span className="sr-only">Actions</span></th></tr></thead>
           <tbody>
