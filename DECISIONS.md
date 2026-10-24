@@ -344,3 +344,39 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
 - **Teacher-portal register taking** (teachers with the Register privilege) is Phase 8. Until then only admin staff (Can edit level) take registers. That check, plus the per-class Register privilege, will be enforced on the server.
 - **Dashboard attendance tiles and chart** are Phase 7. The Register page shows the same weekly trend chart now.
 - **Admin mobile `AdminDrill` screen** with its bottom tab bar is Phase 8. On phones the web drill page and the compact hold button in the nav follow the narrow-screen rules.
+
+---
+
+## 10. Phase 4 record (Fees, §2; Fees settings and Payment gateways, §4)
+
+**Dependencies:** none added. Stripe and GoCardless webhook signatures are checked with Node's built-in HMAC, so the `stripe` and `gocardless-nodejs` SDKs (both approved) wait for Phase 8, when the parent portal creates checkouts and mandates. No call to any real payment service is made.
+
+**Decisions**
+- **Money** is integer pence everywhere. Percentages are basis points (12.5% = 1250) and round half up to the penny. An adjustment never takes an invoice below £0.
+- **Received means cleared.** Only Cleared payments count as received. Pending and Processing are shown separately and count as "spoken for" when recording more payments, so an invoice can't be paid twice while a bank transfer clears. Bounced, Failed and Reversed count as nothing.
+- **Invoice status:** Paid (cleared ≥ amount), Overdue (past its due date with a balance) or Balance (still to pay, not yet due).
+- **Fee structures:** each class uses its own structure, otherwise the year's default. Ad hoc structures are applied to single students. A fee period issues *Number of invoices* invoices, one every *interval* from its start date, each for *Amount per invoice*. Each invoice covers up to the next one's start, and the last one runs to the period end. "Period start" moves each invoice's period to the first chosen weekday on or after it is issued. The "Nth day" due rules count from the period start. A period is refused if its invoices would be issued after its end date.
+- **Idempotent generation:** every generated invoice has a unique key (period, invoice number, student; contribution and student; admission and student). Re-running Generate never duplicates, and a deleted invoice is not generated again. **Force Generate** brings deleted ones back with today's amounts. It needs the school name typed, and it's audited. Options: up to today or the full year, and active (Current) students only. A student is billed for an invoice if they are in the class on that invoice's period start, so late joiners pay from when they join. Editing a structure only affects invoices generated afterwards; Modify Invoices changes existing ones.
+- **Adjustments:** one standing adjustment per student: deduct or add £ or %, or Free (no fees invoices at all). It's applied at generation. Sibling discount sets give the 2nd, 3rd… *current* child (eldest by date of birth first) that position's discount. A child beyond the last position gets the last one. "Assign Adjustments Now" never overwrites a manual adjustment.
+- **Payments:** Add Fees records a payment against one invoice, or splits it oldest-due-first across a student's or a whole family's invoices. It refuses more than is owed. The receipt number is the payment ID (R123). "Move Here" only moves a payment between the same student's invoices.
+- **Deleting:** a single invoice can only be deleted when it has no payments. Bulk delete covers a date range and optional student IDs. It needs Can delete plus the school name typed, refuses while payments exist unless "Also delete payments" is ticked, and is audited with every invoice ID. Invoices are kept as deleted (so generation respects them); payments are removed.
+- **Permissions:** every fees page, export and action needs Access Fees Area. Deleting also needs Can delete. Fee options on student forms (admission fee, delete unpaid invoices on leaving) need Access Fees Area too. The Fees menu link and fees row actions are hidden from staff without it, and the server refuses them anyway (tested).
+- **Webhooks** (`/api/webhooks/stripe`, `/api/webhooks/gocardless`): the signature is checked on the raw body (Stripe within 5 minutes). Each event ID is processed once (`gateway_event`), and only its type is stored, never the payload. With no secret configured, the endpoints answer 404.
+- **Gateway secrets** live in environment variables (`STRIPE_*`, `GOCARDLESS_*`, documented in `.env.example`) or encrypted in Settings → Payment gateways. The environment wins. "Compare rates" is left to each provider's own pricing page.
+- **Contacts on invoices:** generated invoices are addressed to the student's primary contact. Choosing another contact on an invoice doesn't copy their name or address (as the inventory says). The annual report "by contacts" uses the billing contact, else the primary contact.
+- **Deleting a student** permanently also removes their invoices and payments (the typed-name delete from Phase 2). An academic year with classes or invoices can no longer be deleted.
+
+**Interpretations (tell me if any are wrong)**
+- Monthly Fees shows invoices **dated** in the month.
+- Outstanding/Reminders: *Overdue* = past due, *Active* = due within 7 days or past, *Upcoming* = not yet due.
+- Diagnose checks for: payments on deleted invoices, overpaid invoices, invoices due before they're issued, £0 non-fee invoices, future-dated payments, possible duplicates (same type, period and amount), and fees billed for periods after a student left. It lists them with links and changes nothing.
+- "Default yearly fees" (§3) is the year's default structure. The New Year Wizard's new step 4 copies last year's structures, moved on a year, onto classes with the same name.
+
+**Phase 4 gaps (each lands in the phase named)**
+- **Emails wait for the mail queue (Phase 5):** sending receipts (Send Selected, Quick Send, "send as attachment"), reminder emails with the editable template and the optional direct-debit link, and the fee emails to parents. Send Receipts can already mark receipts as sent manually or "no email". Reminders prepares the list and downloads it as CSV.
+- **"Download PDF fees history" and receipts** are print layouts until real PDFs (question 13).
+- **Paying online** (Stripe checkout, GoCardless mandate setup, bank transfer details and reference shown to parents, "force direct-debit setup") is in the parent portal, Phase 8. The webhooks that update those payments and mandates are built and tested now.
+- **Invoice type "Products"** is ready, but products themselves are Phase 6 (§17).
+- **Admin mobile `AdminFees` screen** with its bottom tab bar is Phase 8. On phones the fees pages follow the narrow-screen rules.
+
+**Questions still open:** 3 (PayFast: not built until you decide), 13 (real PDFs), 14 (Portal Login).

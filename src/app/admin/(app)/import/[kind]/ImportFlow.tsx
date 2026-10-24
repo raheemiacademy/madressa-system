@@ -4,8 +4,11 @@ import { useActionState, useState, useTransition } from 'react';
 import type { ImportKind } from '@/server/people/imports';
 import { commitImport, previewImport, type ImportState } from './actions';
 
-export function ImportFlow({ kind, extra }: { kind: ImportKind; extra?: React.ReactNode }) {
-  const [state, preview, pending] = useActionState<ImportState, FormData>(previewImport.bind(null, kind), undefined);
+type Actions = { preview: (p: ImportState, fd: FormData) => Promise<ImportState>; commit: (rows: Record<string, string>[]) => Promise<ImportState> };
+
+/** Upload → preview → import. Fees import passes its own actions; the people imports use the defaults. */
+export function ImportFlow({ kind, extra, actions }: { kind: ImportKind | 'fees'; extra?: React.ReactNode; actions?: Actions }) {
+  const [state, preview, pending] = useActionState<ImportState, FormData>(actions?.preview ?? previewImport.bind(null, kind as ImportKind), undefined);
   const [done, setDone] = useState<ImportState>();
   const [saving, start] = useTransition();
   const good = state?.results?.filter((r) => r.ok).length ?? 0;
@@ -35,7 +38,7 @@ export function ImportFlow({ kind, extra }: { kind: ImportKind; extra?: React.Re
             ))}</tbody>
           </table></div>
           <div className="ra-toolbar">
-            <button className="ra-btn primary" disabled={!good || saving} onClick={() => start(async () => setDone(await commitImport(kind, state.rows!)))}>
+            <button className="ra-btn primary" disabled={!good || saving} onClick={() => start(async () => setDone(await (actions ? actions.commit(state.rows!) : commitImport(kind as ImportKind, state.rows!))))}>
               {saving ? 'Importing…' : `3. Import ${good === 1 ? '1 row' : `${good} rows`}`}</button>
           </div>
         </section>

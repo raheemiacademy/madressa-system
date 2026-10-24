@@ -7,6 +7,8 @@ import { Icon } from '@/components/Icon';
 import { pct1, summarise } from '@/lib/attendance';
 import { plural } from '@/lib/text';
 import { codeMap, marksBetween, registerStatus } from '@/server/attendance/registers';
+import { formatPence } from '@/lib/money';
+import { annualTotal, periodsOf, structureByClass } from '@/server/fees/structures';
 import { todayIso } from '@/server/people/common';
 import { requireAdmin } from '@/server/next/actor';
 import { adminCan } from '@/server/permissions';
@@ -30,6 +32,10 @@ export default async function Classes({ searchParams }: { searchParams: Promise<
     marksBetween(db, `${today.slice(0, 7)}-01`, today), codeMap(db)
   ]);
   const genders = new Map(teachers.map((t) => [t.id, t.gender]));
+  const canFees = adminCan(admin.staff, 'fees');
+  const fees = canFees && year ? await structureByClass(db, year.id) : new Map();
+  const periods = await periodsOf(db, [...new Set([...fees.values()].map((f) => f.structure?.id).filter((x): x is number => !!x))]);
+  const perYear = (classId: number) => { const s = fees.get(classId)?.structure; return s ? formatPence(annualTotal(periods.filter((p) => p.structureId === s.id))) : 'Not billed'; };
   const rows = classes.filter((c) => !q || `${c.c.name} ${c.teacher ?? ''} ${c.yearGroup ?? ''}`.toLowerCase().includes(q)).sort((a, b) =>
     sort === 'name' ? a.c.name.localeCompare(b.c.name) : sort === 'size' ? b.students - a.students
       : sort === 'gender' ? (genders.get(a.c.mainTeacherId ?? 0) ?? 'zz').localeCompare(genders.get(b.c.mainTeacherId ?? 0) ?? 'zz') || a.c.name.localeCompare(b.c.name)
@@ -71,6 +77,7 @@ export default async function Classes({ searchParams }: { searchParams: Promise<
                 <div className="ra-class-row"><span>Main teacher</span><span className={r.teacher ? undefined : 'ra-warn'}>{r.teacher ?? 'Not assigned'}</span></div>
                 <div className="ra-class-row"><span>Students</span><span className={over ? 'ra-warn' : undefined}>{cap ? `${r.students} of ${cap}${over ? ` · ${r.students - cap} over` : ''}` : `${plural(r.students, 'student')} · no capacity set`}</span></div>
                 <div className="ra-class-row"><span>Attendance this month</span><span>{pct1(summarise(marks.filter((m) => m.classId === r.c.id), codes).standardPct)}</span></div>
+                {canFees && <div className="ra-class-row"><span>Fee per year</span><span>{perYear(r.c.id)}</span></div>}
                 <div className={`ra-bar${over ? ' over' : ''}`} role="img" aria-label={cap ? `${r.students} of ${cap} places filled` : 'No capacity set'}><i style={{ width: `${cap ? Math.min(100, (r.students / cap) * 100) : 0}%` }} /></div>
               </article>
             );

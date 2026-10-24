@@ -74,6 +74,20 @@ export const TABS: Tab[] = [
     ]
   },
   {
+    key: 'gateways', title: 'Payment gateways', group: 'Finance', description: 'Online payments for parents: GoCardless direct debit and Stripe card payments. Keys set as environment variables take precedence over these.',
+    fields: [
+      yes('gocardlessEnabled', 'Offer GoCardless direct debit'),
+      { type: 'select', name: 'gocardlessEnvironment', label: 'GoCardless environment', default: 'sandbox', options: opts(['sandbox', 'Sandbox (testing)'], ['live', 'Live']) },
+      { type: 'secret', name: 'gocardlessAccessToken', label: 'GoCardless access token' },
+      { type: 'secret', name: 'gocardlessWebhookSecret', label: 'GoCardless webhook secret', help: 'Point GoCardless webhooks at this site’s address followed by /api/webhooks/gocardless' },
+      yes('forceDirectDebit', 'Ask parents to set up a direct debit before they can use the portal'),
+      yes('stripeEnabled', 'Offer card payments with Stripe'),
+      { type: 'text', name: 'stripePublishableKey', label: 'Stripe publishable key', max: 200, pattern: /^(pk_(test|live)_[A-Za-z0-9]+)?$/, patternMessage: 'Starts with pk_test_ or pk_live_.' },
+      { type: 'secret', name: 'stripeSecretKey', label: 'Stripe secret key' },
+      { type: 'secret', name: 'stripeWebhookSecret', label: 'Stripe webhook signing secret', help: 'Point Stripe webhooks at this site’s address followed by /api/webhooks/stripe' }
+    ]
+  },
+  {
     key: 'fire', title: 'Fire drills', group: 'School', description: 'How fire drills start and who is told.',
     fields: [
       yes('processWithoutConfirmation', 'Process attendance without confirmation'),

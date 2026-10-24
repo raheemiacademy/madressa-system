@@ -102,7 +102,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
           <StudentsTable
             rows={list.rows.map((r) => ({ id: r.id, name: `${r.firstName} ${r.surname}`, gender: r.gender, classes: r.classes, age: r.age, yearGroup: r.yearGroup, status: r.status, hasMedical: r.hasMedical }))}
             classes={classes.map((c) => ({ value: String(c.c.id), label: c.c.name }))} statuses={[...STUDENT_STATUSES]}
-            canEdit={canEdit} canDelete={adminCan(admin.staff, 'delete')} filtered={filtered} />
+            canEdit={canEdit} canDelete={adminCan(admin.staff, 'delete')} canFees={adminCan(admin.staff, 'fees')} filtered={filtered} />
           {pages > 1 && (
             <nav className="ra-pager" aria-label="Pages">
               {f.page > 1 ? <Link className="ra-btn" href={qs({ page: f.page - 1 })}>Previous</Link> : <span />}

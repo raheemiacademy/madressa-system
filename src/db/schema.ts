@@ -565,3 +565,170 @@ export const fireDrill = pgTable('fire_drill', {
   safeClassIds: integer('safe_class_ids').array().notNull().default(sql`'{}'::int[]`),
   report: jsonb('report')
 }, (t) => [uniqueIndex('fire_drill_one_running').on(sql`(true)`).where(sql`${t.endedAt} is null`)]);
+
+/* ───────────── Phase 4: fees (§2) and payment gateways (§4) ───────────── */
+
+export const INVOICE_TYPES = ['Fees', 'Admission Fees', 'Contribution', 'Donation', 'Products'] as const;
+export const PAYMENT_STATUSES = ['Pending', 'Cleared', 'Bounced', 'Failed', 'Reversed', 'Processing'] as const;
+export const PAYMENT_METHODS = ['Cash', 'Card', 'Cheque', 'Bank Transfer', 'Direct Debit', 'Online', 'Other'] as const;
+export const RECEIPT_STATES = ['unsent', 'sent', 'manual', 'no_email'] as const;
+export const INTERVAL_UNITS = ['days', 'weeks', 'months'] as const;
+export const DUE_RULES = ['start', 'end', '2', '3', '5', '7', '14', '21'] as const;
+export const invoiceTypeEnum = pgEnum('invoice_type', INVOICE_TYPES);
+export const paymentStatusEnum = pgEnum('payment_status', PAYMENT_STATUSES);
+export const paymentMethodEnum = pgEnum('payment_method', PAYMENT_METHODS);
+export const receiptStateEnum = pgEnum('receipt_state', RECEIPT_STATES);
+export const intervalUnitEnum = pgEnum('interval_unit', INTERVAL_UNITS);
+
+// One structure per class per year, plus one default per year; ad hoc structures are applied to single students.
+export const feeStructure = pgTable('fee_structure', {
+  id: serial('id').primaryKey(),
+  academicYearId: integer('academic_year_id').notNull().references(() => academicYear.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  isDefault: boolean('is_default').notNull().default(false),
+  isAdHoc: boolean('is_ad_hoc').notNull().default(false),
+  createdAt: createdAt()
+}, (t) => [uniqueIndex('fee_structure_one_default').on(t.academicYearId).where(sql`${t.isDefault}`), check('fee_structure_kind', sql`not (${t.isDefault} and ${t.isAdHoc})`)]);
+
+export const feeStructureClass = pgTable('fee_structure_class', {
+  classId: integer('class_id').primaryKey().references(() => schoolClass.id, { onDelete: 'cascade' }),
+  structureId: integer('structure_id').notNull().references(() => feeStructure.id, { onDelete: 'cascade' })
+});
+
+// A fee period issues `invoiceCount` invoices, one every `intervalCount intervalUnit` from `startsOn`, each for `amountPence`.
+export const feePeriod = pgTable('fee_period', {
+  id: serial('id').primaryKey(),
+  structureId: integer('structure_id').notNull().references(() => feeStructure.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  startsOn: date('starts_on', { mode: 'string' }).notNull(),
+  endsOn: date('ends_on', { mode: 'string' }).notNull(),
+  invoiceCount: smallint('invoice_count').notNull().default(1),
+  intervalCount: smallint('interval_count').notNull().default(1),
+  intervalUnit: intervalUnitEnum('interval_unit').notNull().default('months'),
+  amountPence: integer('amount_pence').notNull(),
+  startWeekday: smallint('start_weekday'), // null = the day it is issued; 0 = the first Sunday on or after, … 6 = Saturday
+  dueRule: text('due_rule').notNull().default('start'),
+  sortOrder: integer('sort_order').notNull().default(0)
+}, (t) => [
+  check('fee_period_dates', sql`${t.endsOn} >= ${t.startsOn}`),
+  check('fee_period_counts', sql`${t.invoiceCount} between 1 and 60 and ${t.intervalCount} between 1 and 366`),
+  check('fee_period_amount', sql`${t.amountPence} >= 0`),
+  check('fee_period_weekday', sql`${t.startWeekday} is null or ${t.startWeekday} between 0 and 6`),
+  check('fee_period_due', sql`${t.dueRule} in ('start', 'end', '2', '3', '5', '7', '14', '21')`)
+]);
+
+// One-off charges (§2 Contributions); each creates Contribution invoices.
+export const contribution = pgTable('contribution', {
+  id: serial('id').primaryKey(),
+  academicYearId: integer('academic_year_id').notNull().references(() => academicYear.id, { onDelete: 'cascade' }),
+  description: text('description').notNull(),
+  amountPence: integer('amount_pence').notNull(),
+  invoiceDate: date('invoice_date', { mode: 'string' }).notNull(),
+  dueDate: date('due_date', { mode: 'string' }).notNull(),
+  audience: text('audience').notNull(),
+  createdBy: integer('created_by').references(() => loginIdentity.id, { onDelete: 'set null' }),
+  createdAt: createdAt()
+}, (t) => [check('contribution_amount', sql`${t.amountPence} > 0`)]);
+
+export const invoice = pgTable('invoice', {
+  id: serial('id').primaryKey(),
+  type: invoiceTypeEnum('type').notNull().default('Fees'),
+  studentId: integer('student_id').notNull().references(() => student.id, { onDelete: 'cascade' }),
+  academicYearId: integer('academic_year_id').notNull().references(() => academicYear.id),
+  billingContactId: integer('billing_contact_id').references(() => contact.id, { onDelete: 'set null' }),
+  billingName: text('billing_name'),
+  billingAddress: text('billing_address'),
+  billingPostcode: text('billing_postcode'),
+  billingNotes: text('billing_notes'),
+  invoiceDate: date('invoice_date', { mode: 'string' }).notNull(),
+  periodFrom: date('period_from', { mode: 'string' }),
+  periodTo: date('period_to', { mode: 'string' }),
+  dueDate: date('due_date', { mode: 'string' }).notNull(),
+  amountPence: integer('amount_pence').notNull(),
+  description: text('description'),
+  // Set on generated invoices so re-running generation never creates the same invoice twice.
+  generationKey: text('generation_key').unique(),
+  periodId: integer('period_id').references(() => feePeriod.id, { onDelete: 'set null' }),
+  contributionId: integer('contribution_id').references(() => contribution.id, { onDelete: 'set null' }),
+  createdBy: integer('created_by').references(() => loginIdentity.id, { onDelete: 'set null' }),
+  createdAt: createdAt(),
+  updatedAt: tz('updated_at').notNull().defaultNow(),
+  deletedAt: tz('deleted_at')
+}, (t) => [
+  index('invoice_student_idx').on(t.studentId),
+  index('invoice_due_idx').on(t.dueDate),
+  index('invoice_year_idx').on(t.academicYearId),
+  check('invoice_amount', sql`${t.amountPence} >= 0`),
+  check('invoice_period', sql`${t.periodTo} is null or ${t.periodFrom} is null or ${t.periodTo} >= ${t.periodFrom}`)
+]);
+
+export const payment = pgTable('payment', {
+  id: serial('id').primaryKey(),
+  invoiceId: integer('invoice_id').notNull().references(() => invoice.id, { onDelete: 'cascade' }),
+  amountPence: integer('amount_pence').notNull(),
+  receivedOn: date('received_on', { mode: 'string' }).notNull(),
+  method: paymentMethodEnum('method').notNull(),
+  status: paymentStatusEnum('status').notNull().default('Cleared'),
+  reference: text('reference'),
+  note: text('note'),
+  receiptState: receiptStateEnum('receipt_state').notNull().default('unsent'),
+  receiptSentAt: tz('receipt_sent_at'),
+  gatewayProvider: text('gateway_provider'), // stripe | gocardless
+  gatewayPaymentId: text('gateway_payment_id'),
+  checkoutGroup: uuid('checkout_group'), // payments split across invoices from one transaction
+  createdBy: integer('created_by').references(() => loginIdentity.id, { onDelete: 'set null' }),
+  createdAt: createdAt(),
+  updatedAt: tz('updated_at').notNull().defaultNow()
+}, (t) => [
+  index('payment_invoice_idx').on(t.invoiceId),
+  index('payment_received_idx').on(t.receivedOn),
+  index('payment_gateway_idx').on(t.gatewayProvider, t.gatewayPaymentId),
+  check('payment_amount', sql`${t.amountPence} > 0`)
+]);
+
+// Standing per-student adjustment applied when fees invoices are generated. amount is pence, or basis points when unit = 'percent'.
+export const feeAdjustment = pgTable('fee_adjustment', {
+  studentId: integer('student_id').primaryKey().references(() => student.id, { onDelete: 'cascade' }),
+  kind: text('kind').notNull(), // deduct | add | free
+  amount: integer('amount').notNull().default(0),
+  unit: text('unit').notNull().default('pence'), // pence | percent
+  source: text('source').notNull().default('manual'), // manual | sibling
+  updatedAt: tz('updated_at').notNull().defaultNow()
+}, (t) => [
+  check('fee_adjustment_kind', sql`${t.kind} in ('deduct', 'add', 'free') and ${t.unit} in ('pence', 'percent') and ${t.amount} >= 0`),
+  check('fee_adjustment_pct', sql`${t.unit} <> 'percent' or ${t.amount} <= 10000`)
+]);
+
+export const siblingDiscountSet = pgTable('sibling_discount_set', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  createdAt: createdAt()
+});
+export const siblingDiscountRule = pgTable('sibling_discount_rule', {
+  setId: integer('set_id').notNull().references(() => siblingDiscountSet.id, { onDelete: 'cascade' }),
+  position: smallint('position').notNull(), // 2 = second child …
+  kind: text('kind').notNull(), // deduct | add
+  amount: integer('amount').notNull(),
+  unit: text('unit').notNull() // pence | percent
+}, (t) => [
+  primaryKey({ columns: [t.setId, t.position] }),
+  check('sibling_rule_values', sql`${t.position} between 2 and 20 and ${t.kind} in ('deduct', 'add') and ${t.unit} in ('pence', 'percent') and ${t.amount} >= 0 and (${t.unit} <> 'percent' or ${t.amount} <= 10000)`)
+]);
+
+export const directDebitMandate = pgTable('direct_debit_mandate', {
+  id: serial('id').primaryKey(),
+  contactId: integer('contact_id').references(() => contact.id, { onDelete: 'cascade' }),
+  provider: text('provider').notNull(), // gocardless
+  mandateId: text('mandate_id').notNull(),
+  status: text('status').notNull(),
+  createdAt: createdAt(),
+  updatedAt: tz('updated_at').notNull().defaultNow()
+}, (t) => [uniqueIndex('direct_debit_mandate_uq').on(t.provider, t.mandateId)]);
+
+// Webhook idempotency: each provider event is processed once. Only the type is kept, not the payload.
+export const gatewayEvent = pgTable('gateway_event', {
+  provider: text('provider').notNull(),
+  eventId: text('event_id').notNull(),
+  type: text('type').notNull(),
+  receivedAt: tz('received_at').notNull().defaultNow()
+}, (t) => [primaryKey({ columns: [t.provider, t.eventId] })]);

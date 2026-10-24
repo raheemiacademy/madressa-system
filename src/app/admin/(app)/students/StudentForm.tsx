@@ -15,8 +15,8 @@ export type StudentValues = {
   address: string; postcode: string; status: string; startDate: string; leftDate: string; classId: string; medicalNotes: string; notes: string; photo: string | null;
 };
 
-export function StudentForm({ s, contacts, classes, statuses, genders, contactTypes, fields, answers }: {
-  s: StudentValues; contacts: ContactRow[]; classes: Opt[]; statuses: string[]; genders: string[]; contactTypes: string[]; fields: CF[]; answers: Record<number, unknown>;
+export function StudentForm({ s, contacts, classes, statuses, genders, contactTypes, fields, answers, canFees }: {
+  s: StudentValues; contacts: ContactRow[]; classes: Opt[]; statuses: string[]; genders: string[]; contactTypes: string[]; fields: CF[]; answers: Record<number, unknown>; canFees: boolean;
 }) {
   return (
     <Form action={saveStudentAction.bind(null, s.id)} submit={s.id ? 'Save changes' : 'Add student'}>
@@ -31,6 +31,8 @@ export function StudentForm({ s, contacts, classes, statuses, genders, contactTy
         <TextField name="startDate" label="Start date" type="date" defaultValue={s.startDate} />
         <TextField name="leftDate" label="Finish (left) date" type="date" defaultValue={s.leftDate} help="Filled with today when you choose a leaving status." />
         <Check name="deleteRegister" label="If leaving: delete register entries after the left date" />
+        {canFees && <Check name="deleteInvoices" label="If leaving: delete unpaid invoices after the left date" />}
+        {canFees && <Check name="admissionFee" label="Create an admission fee invoice" />}
       </div>
       <fieldset className="ra-fieldset"><legend>Contact details and address</legend>
         <div className="ra-fields">

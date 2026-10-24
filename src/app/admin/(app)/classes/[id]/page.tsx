@@ -8,6 +8,9 @@ import { Check, Checks, SelectField, TextField } from '@/components/Fields';
 import { ActionButton, Form } from '@/components/Form';
 import { Icon } from '@/components/Icon';
 import { formatCalendarDate } from '@/lib/dates';
+import { formatPence } from '@/lib/money';
+import { annualTotal, listStructures, periodsOf, structureByClass } from '@/server/fees/structures';
+import { classStructureAction } from '../../fees/actions';
 import { plural } from '@/lib/text';
 import { requireAdmin } from '@/server/next/actor';
 import { adminCan } from '@/server/permissions';
@@ -33,6 +36,9 @@ export default async function ClassPage({ params }: { params: Promise<{ id: stri
     listRooms(db), listSubjects(db)
   ]);
   const canEdit = adminCan(admin.staff, 'edit');
+  const canFees = adminCan(admin.staff, 'fees');
+  const [fees, structures] = canFees ? await Promise.all([structureByClass(db, c.academicYearId).then((m) => m.get(id)), listStructures(db, c.academicYearId)]) : [undefined, []];
+  const perYear = fees?.structure ? annualTotal(await periodsOf(db, [fees.structure.id])) : null;
   const cap = c.capacity ?? 0;
   return (
     <div className="ra-page">
@@ -93,6 +99,17 @@ export default async function ClassPage({ params }: { params: Promise<{ id: stri
               </details>
             )}
           </section>
+
+          {canFees && (
+            <section className="ra-card" aria-labelledby="fee-h">
+              <div className="ra-card-h"><div><h2 id="fee-h">Fees</h2><div className="ra-note">{fees?.structure ? `${fees.structure.name}${fees.own ? '' : ' (default)'}: ${formatPence(perYear ?? 0)} per student per year` : 'No fees structure applies: this class isn’t billed.'}</div></div>
+                <Link className="ra-link" href="/admin/fees/structure">Fees structure</Link></div>
+              <Form action={classStructureAction.bind(null, id)} card={false} savebar={false} submit="Save fees">
+                <SelectField name="structureId" label="This class uses" defaultValue={fees?.own && fees.structure ? String(fees.structure.id) : ''}
+                  options={[{ value: '', label: 'The default structure' }, ...structures.filter((s) => !s.isDefault && !s.isAdHoc).map((s) => ({ value: String(s.id), label: `Its own fees: ${s.name}` }))]} />
+              </Form>
+            </section>
+          )}
 
           <section className="ra-card" aria-labelledby="tt-h">
             <div className="ra-card-h"><div><h2 id="tt-h">Timetable</h2><div className="ra-note">Sessions each week. Sessions that take a register appear in Registers.</div></div><Link className="ra-link" href="/admin/classes/timetable#copy">Apply a template</Link></div>

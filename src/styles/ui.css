@@ -352,3 +352,14 @@ button.ra-mk { cursor: pointer; }
 }
 /* A filter bar that is also a card lays its fields out in a row. */
 .ra-card.ra-toolbar { flex-direction: row; align-items: flex-end; }
+
+/* Fees (Phase 4) */
+.ra-list { margin: 0; padding-left: 1.1rem; display: grid; gap: 6px; }
+.ra-picklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 300px; overflow: auto; }
+.ra-picklist .ra-btn { width: 100%; justify-content: flex-start; text-align: left; white-space: normal; }
+.ra-inv-sum { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--color-fg-muted); }
+.ra-inv-sum b { color: var(--color-fg); font-weight: 600; }
+.ra-move summary { cursor: pointer; }
+.ra-period { border: 1px solid var(--color-border-line); border-radius: var(--ra-r); padding: 12px; display: grid; gap: 8px; }
+.ra-receipt { max-width: 640px; }
+.ra-receipt th { color: var(--color-fg-muted); font-weight: 500; }

@@ -4,6 +4,9 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from '../src/db/schema';
 import { hashPassword } from '../src/server/auth';
+import { createContribution, generateInvoices } from '../src/server/fees/generate';
+import { saveSet, setAdjustments } from '../src/server/fees/adjustments';
+import { saveStructure } from '../src/server/fees/structures';
 
 const url = process.argv.includes('--test') ? process.env.DATABASE_URL_TEST : process.env.DATABASE_URL;
 const password = process.env.SEED_ADMIN_PASSWORD;
@@ -100,6 +103,31 @@ if (!anySession && year) {
   await db.insert(schema.absenceNotice).values({ studentId: firstKid!.id, contactId: parent?.contactId, date: today, kind: 'absent', reason: 'Dentist appointment' });
   const [req] = await db.insert(schema.holidayRequest).values({ contactId: parent?.contactId, startsOn: `${today.slice(0, 4)}-12-14`, endsOn: `${today.slice(0, 4)}-12-17`, request: 'Family visit abroad for a wedding.' }).returning();
   await db.insert(schema.holidayRequestStudent).values({ requestId: req!.id, studentId: firstKid!.id });
+}
+// Fees: a default monthly structure, Test Class C's own fees, an ad hoc exam fee, invoices to date and a few payments.
+const [anyStructure] = await db.select({ id: schema.feeStructure.id }).from(schema.feeStructure).limit(1);
+if (!anyStructure && year) {
+  const [admin] = await db.select().from(loginIdentity).where(eq(loginIdentity.email, 'admin@example.org'));
+  const actor = { identityId: admin!.id, name: 'Seed' };
+  const classes = await db.select().from(schema.schoolClass).where(eq(schema.schoolClass.academicYearId, year.id));
+  const monthly = (amount: string) => ({ name: 'Monthly', startsOn: year.startsOn, endsOn: year.endsOn, invoiceCount: '10', intervalCount: '1', intervalUnit: 'months', amount, startWeekday: '', dueRule: '7' });
+  await saveStructure(db, actor, year.id, { name: 'Standard fees', kind: 'default', periods: [monthly('25')] });
+  await saveStructure(db, actor, year.id, { name: 'Seniors fees', kind: 'class', classIds: [String(classes.find((c) => c.name === 'Test Class C')!.id)], periods: [monthly('30')] });
+  await saveStructure(db, actor, year.id, { name: 'Exam entry fee', kind: 'adhoc', periods: [{ ...monthly('15'), name: 'Exam entry', invoiceCount: '1', dueRule: '14' }] });
+  const kids = await db.select().from(schema.student).where(eq(schema.student.status, 'Current')).orderBy(schema.student.id);
+  await setAdjustments(db, actor, { studentIds: [kids[4]!.id], kind: 'deduct', amount: '10', unit: 'percent' });
+  await saveSet(db, actor, { title: 'Family discount', rules: [{ position: '2', kind: 'deduct', amount: '10', unit: 'percent' }, { position: '3', kind: 'deduct', amount: '15', unit: 'percent' }] });
+  await generateInvoices(db, actor, year.id, { scope: 'today' });
+  await createContribution(db, actor, year.id, { audience: 'classes', classIds: [String(classes.find((c) => c.name === 'Test Class A')!.id)], invoiceDate: year.startsOn, dueDate: '2026-10-31', description: 'Sample museum trip', amount: '12.50' });
+  const invoices = await db.select().from(schema.invoice).orderBy(schema.invoice.dueDate, schema.invoice.id);
+  for (const [i, inv] of invoices.filter((x) => x.periodFrom === year.startsOn).entries()) {
+    if (i % 5 === 4) continue; // a few left unpaid, so overdue
+    const method = i % 3 === 0 ? 'Bank Transfer' : i % 3 === 1 ? 'Cash' : 'Card';
+    await db.insert(schema.payment).values({ invoiceId: inv.id, amountPence: inv.amountPence, receivedOn: '2026-09-05', method, status: 'Cleared', reference: method === 'Bank Transfer' ? `SAMPLE-FEES-S${inv.studentId}` : null, createdBy: admin!.id });
+  }
+  const oct = invoices.filter((x) => x.periodFrom === '2026-10-01');
+  if (oct[0]) await db.insert(schema.payment).values({ invoiceId: oct[0].id, amountPence: oct[0].amountPence, receivedOn: '2026-10-03', method: 'Bank Transfer', status: 'Pending', reference: `SAMPLE-FEES-S${oct[0].studentId}`, createdBy: admin!.id });
+  if (oct[1]) await db.insert(schema.payment).values({ invoiceId: oct[1].id, amountPence: oct[1].amountPence, receivedOn: '2026-10-08', method: 'Direct Debit', status: 'Bounced', createdBy: admin!.id });
 }
 await client.end();
 console.log('Seeded fictional sample data: admin@example.org (super) and clerk@example.org (can edit)');

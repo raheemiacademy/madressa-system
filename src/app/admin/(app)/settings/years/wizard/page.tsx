@@ -6,7 +6,7 @@ import { Check, SelectField } from '@/components/Fields';
 import { Form } from '@/components/Form';
 import { listYears } from '@/server/academic-years';
 import { requireAdmin } from '@/server/next/actor';
-import { copyClassesAction, migrateStudentsAction } from '../../people-actions';
+import { copyClassesAction, copyFeesAction, migrateStudentsAction } from '../../people-actions';
 
 export const metadata = { title: 'New year wizard' };
 
@@ -49,6 +49,10 @@ export default async function Wizard({ searchParams }: { searchParams: Promise<{
                 ))}
               </div>
             )}
+          </Form>
+          <Form action={copyFeesAction} submit="Copy fees structures">
+            <div className="ra-card-h"><div><h2>Step 4: default yearly fees</h2><div className="ra-note">Copies {from.title}’s fees structures into {to.title}, with their periods moved on by a year and linked to classes of the same name. Copy classes first.</div></div></div>
+            <input type="hidden" name="fromYearId" value={from.id} /><input type="hidden" name="toYearId" value={to.id} />
           </Form>
         </>
       )}

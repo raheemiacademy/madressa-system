@@ -1,12 +1,16 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { and, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { fileObject, student, studentFile } from '@/db/schema';
 import { formObject, type FormState } from '@/lib/validate';
-import { actorOf, requireAdmin } from '@/server/next/actor';
+import { actorOf, requireAdmin, type AdminActor } from '@/server/next/actor';
+import { adminCan } from '@/server/permissions';
+import { resolveYear } from '@/server/academic-years';
+import { createAdmissionFees } from '@/server/fees/generate';
 import { addHistory, deleteHistory, moveStudents } from '@/server/people/classes';
 import { linkContact, setContactBlocked, setLinkFlags, unlinkContact } from '@/server/people/contacts';
 import { deleteNote, saveNote, setConsent } from '@/server/people/extras';
@@ -18,11 +22,20 @@ import { removeStored, storeAttachment, storeUpload } from '@/server/storage';
 
 const done = (path = '/admin/students') => revalidatePath(path, 'layout');
 const ids = (fd: FormData, name = 'ids') => fd.getAll(name).map(Number).filter((n) => Number.isInteger(n) && n > 0);
+// Fee options on student forms need Access Fees Area as well as Can edit.
+const feesRefused = (a: AdminActor, fd: FormData) => (fd.get('deleteInvoices') === 'on' || fd.get('admissionFee') === 'on' || fd.get('action') === 'admission') && !adminCan(a.staff, 'fees');
+const yearId = async () => (await resolveYear(db, Number((await cookies()).get('year_id')?.value) || null)).year?.id ?? null;
 
 export async function saveStudentAction(id: number | undefined, _p: FormState, fd: FormData): Promise<FormState> {
   const a = await requireAdmin('edit');
+  if (feesRefused(a, fd)) return { message: 'Fee options need the Access Fees Area level.' };
   const r = await saveStudent(db, actorOf(a), formObject(fd), contactLinksFromForm(fd), fd, id);
   if (!r.ok) return { errors: r.errors, message: 'Check the highlighted fields.' };
+  if (fd.get('admissionFee') === 'on') {
+    const y = await yearId();
+    const fee = y ? await createAdmissionFees(db, actorOf(a), [r.id], y) : { ok: false as const, error: 'Add an academic year first.' };
+    if (!fee.ok) return { message: `The student was saved, but the admission fee wasn’t: ${fee.error}` };
+  }
   const photo = fd.get('photo');
   if (photo instanceof File && photo.size) {
     const up = await storeUpload(db, photo, 'image', 'student-photo', a.identityId);
@@ -37,6 +50,14 @@ export async function bulkAction(_p: FormState, fd: FormData): Promise<FormState
   const a = await requireAdmin('edit');
   const chosen = ids(fd);
   if (!chosen.length) return { message: 'Tick at least one student first.' };
+  if (feesRefused(a, fd)) return { message: 'Fee actions need the Access Fees Area level.' };
+  if (fd.get('action') === 'admission') {
+    const y = await yearId();
+    const fee = y ? await createAdmissionFees(db, actorOf(a), chosen, y) : { ok: false as const, error: 'Add an academic year first.' };
+    if (!fee.ok) return { message: fee.error };
+    done();
+    return { ok: true, message: fee.n ? `Created ${fee.n === 1 ? '1 admission fee invoice' : `${fee.n} admission fee invoices`}.` : 'They already have admission fee invoices.' };
+  }
   const r = await bulkUpdate(db, actorOf(a), chosen, formObject(fd));
   if (!r.ok) return { message: r.error };
   done();

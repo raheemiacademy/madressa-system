@@ -5,6 +5,7 @@ import { db } from '@/db';
 import { formObject, type FormState } from '@/lib/validate';
 import { actorOf, requireAdmin } from '@/server/next/actor';
 import { copyClassesToYear, migrateStudents } from '@/server/people/classes';
+import { copyStructures } from '@/server/fees/structures';
 import { deleteField, saveField } from '@/server/people/custom-fields';
 import { deleteYearGroup, saveYearGroup } from '@/server/people/year-groups';
 
@@ -43,6 +44,15 @@ export async function copyClassesAction(_p: FormState, fd: FormData): Promise<Fo
   const n = await copyClassesToYear(db, actorOf(a), from, to, { timings: fd.get('timings') === 'on', teachers: fd.get('teachers') === 'on' });
   done();
   return { ok: true, message: n ? `Copied ${n === 1 ? '1 class' : `${n} classes`}.` : 'No new classes to copy: they already exist in the new year.' };
+}
+
+export async function copyFeesAction(_p: FormState, fd: FormData): Promise<FormState> {
+  const a = await requireAdmin('super');
+  const from = Number(fd.get('fromYearId')), to = Number(fd.get('toYearId'));
+  if (!from || !to || from === to) return { message: 'Choose two different years.' };
+  const n = await copyStructures(db, actorOf(a), from, to);
+  done();
+  return { ok: true, message: n ? `Copied ${n === 1 ? '1 fees structure' : `${n} fees structures`}.` : 'No structures to copy: the new year already has them.' };
 }
 
 export async function migrateStudentsAction(_p: FormState, fd: FormData): Promise<FormState> {

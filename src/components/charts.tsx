@@ -2,6 +2,7 @@
 
 import * as d3 from 'd3';
 import { useEffect, useRef, useState } from 'react';
+import { formatPence } from '@/lib/money';
 
 // Ported from design-reference/dashboard/index.html (attendanceChart). Colours come from CSS variables.
 const css = (el: Element, name: string) => getComputedStyle(el).getPropertyValue(name).trim();
@@ -136,6 +137,49 @@ export function MonthChart({ data }: { data: MonthRow[] }) {
         <svg ref={svg} width="100%" height={H} viewBox={`0 0 ${W} ${H}`} role="img"
           aria-label={`Sessions by month: ${data.map((r) => `${r.month} ${r.present} present, ${r.late} late, ${r.authorised} authorised and ${r.unauthorised} unauthorised absences`).join('; ')}`} />
       </div>
+    </div>
+  );
+}
+
+/** Fees dashboard: invoiced vs received per month (pence), grouped bars. Ported from the design's feesMonthlyChart. */
+export function FeesChart({ data }: { data: { month: string; invoiced: number; received: number }[] }) {
+  const box = useRef<HTMLDivElement>(null);
+  const svg = useRef<SVGSVGElement>(null);
+  const W = useWidth(box);
+  const [tip, setTip] = useState<{ x: number; y: number; title: string; lines: string[] } | null>(null);
+  const H = 240;
+  const any = data.some((d) => d.invoiced || d.received);
+  useEffect(() => {
+    const el = svg.current;
+    if (!el || !any) return;
+    const s = d3.select(el);
+    s.selectAll('*').remove();
+    const rows = data.map((r) => ({ m: new Date(`${r.month}-01T00:00:00Z`), inv: r.invoiced / 100, rec: r.received / 100 }));
+    const lav = css(el, '--ra-lav'), indigo = css(el, '--ra-indigo');
+    const y = d3.scaleLinear([0, Math.max(1, d3.max(rows, (r) => Math.max(r.inv, r.rec)) ?? 1)], [H - 26, 10]).nice();
+    const yt = y.ticks(4);
+    const comp = (v: number) => `£${Intl.NumberFormat('en-GB', { notation: 'compact', maximumFractionDigits: 1 }).format(v)}`;
+    const ml = 48, mf = d3.utcFormat('%b');
+    const xb = d3.scaleBand(rows.map((r) => mf(r.m)), [ml, W - 4]).padding(0.28);
+    const inner = d3.scaleBand(['inv', 'rec'], [0, xb.bandwidth()]).padding(0.12);
+    s.append('g').selectAll('line').data(yt).join('line').attr('x1', ml).attr('x2', W - 4).attr('y1', (d) => y(d)).attr('y2', (d) => y(d)).attr('stroke', 'var(--ra-chart-grid)');
+    s.append('g').selectAll('text').data(yt).join('text').attr('x', ml - 8).attr('y', (d) => y(d) + 4).attr('text-anchor', 'end').text(comp);
+    rows.forEach((r, i) => {
+      const x0 = xb(mf(r.m))!, bw = Math.min(32, inner.bandwidth());
+      const show = () => setTip({ x: Math.min(W - 170, x0 + xb.bandwidth()), y: 10, title: d3.utcFormat('%B %Y')(r.m), lines: [`Invoiced ${formatPence(data[i]!.invoiced)}`, `Received ${formatPence(data[i]!.received)}`] });
+      ([['inv', r.inv, lav], ['rec', r.rec, indigo]] as const).forEach(([k, v, c]) => {
+        s.append('rect').attr('x', x0 + inner(k)! + (inner.bandwidth() - bw) / 2).attr('y', y(v)).attr('width', bw).attr('height', Math.max(0, y(0) - y(v))).attr('rx', 4).attr('fill', c)
+          .on('mousemove', show).on('mouseleave', () => setTip(null));
+      });
+      s.append('text').attr('x', x0 + xb.bandwidth() / 2).attr('y', H - 6).attr('text-anchor', 'middle').text(mf(r.m));
+    });
+  }, [data, W, any]);
+  if (!any) return <div className="ra-chart"><p className="ra-empty">No invoices in the last six months.</p></div>;
+  return (
+    <div ref={box} className="ra-chart" style={{ minHeight: H }}>
+      <svg ref={svg} width="100%" height={H} viewBox={`0 0 ${W} ${H}`} role="img"
+        aria-label={`Invoiced and received by month: ${data.map((r) => `${d3.utcFormat('%B')(new Date(`${r.month}-01T00:00:00Z`))} ${formatPence(r.invoiced)} invoiced, ${formatPence(r.received)} received`).join('; ')}`} />
+      <Tip tip={tip} />
     </div>
   );
 }

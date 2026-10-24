@@ -9,6 +9,8 @@ import { encrypt } from '../crypto';
 import { readTab } from '../settings';
 import { listFields, parseAnswer, saveAnswers, type CustomFieldDef } from './custom-fields';
 import { todayIso } from './common';
+import { currentYear } from '../academic-years';
+import { createAdmissionFees } from '../fees/generate';
 
 /** "YYYY-MM-DDTHH:mm" entered in UK time → instant. */
 const ukLocal = (s: string) => {
@@ -98,6 +100,7 @@ export async function submitApplication(db: Db, kind: 'child' | 'adult', fd: For
       }).returning();
       if (chosen.length) await tx.insert(studentApplicationGroup).values(chosen.map((groupId) => ({ studentId: s!.id, groupId })));
       await saveAnswers(tx, s!.id, values);
+      await admissionOnApply(tx, [s!.id], 'Adult application form');
       await audit(tx, { identityId: null, name: 'Adult application form' }, { action: `New adult application: ${s!.firstName} ${s!.surname}`, page: 'Registration', entity: 'student', entityId: s!.id });
     });
     return { ok: true, count: 1 };
@@ -126,6 +129,7 @@ export async function submitApplication(db: Db, kind: 'child' | 'adult', fd: For
   await db.transaction(async (tx) => {
     const [parent] = await tx.insert(contact).values({ name: p.data.name, email: p.data.email || null, mobile: p.data.mobile || null, tel: p.data.tel || null, address: p.data.address || null, postcode: p.data.postcode || null }).returning();
     const [emergency] = ec.name ? await tx.insert(contact).values({ name: ec.name, mobile: ec.phone || null }).returning() : [];
+    const ids: number[] = [];
     for (const k of kids) {
       const d = k.data!;
       const [s] = await tx.insert(student).values({
@@ -136,10 +140,19 @@ export async function submitApplication(db: Db, kind: 'child' | 'adult', fd: For
       if (emergency) await tx.insert(studentContact).values({ studentId: s!.id, contactId: emergency.id, type: 'Emergency', relation: ec.relation || null, portalAccess: false });
       if (k.groups.length) await tx.insert(studentApplicationGroup).values(k.groups.map((groupId) => ({ studentId: s!.id, groupId })));
       await saveAnswers(tx, s!.id, k.values);
+      ids.push(s!.id);
     }
+    await admissionOnApply(tx, ids, 'Application form');
     await audit(tx, { identityId: null, name: 'Application form' }, { action: `New application for ${kids.length === 1 ? '1 child' : `${kids.length} children`} from ${p.data.name}`, page: 'Registration', entity: 'contact', entityId: parent!.id });
   });
   return { ok: true, count: kids.length };
+}
+
+/** Fees settings: "create an admission fee invoice when an application form is submitted" (skipped if no fee or year is set). */
+async function admissionOnApply(tx: DbOrTx, ids: number[], name: string) {
+  if (!(await readTab(tx, 'fees')).admissionInvoiceOnApplication) return;
+  const year = await currentYear(tx);
+  if (year) await createAdmissionFees(tx, { identityId: null, name }, ids, year.id);
 }
 
 export const groupNamesFor = (db: DbOrTx, studentIds: number[]) => studentIds.length

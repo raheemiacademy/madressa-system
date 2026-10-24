@@ -10,6 +10,7 @@ import { decrypt, encrypt } from '../crypto';
 import { ageOn, catchFieldFail, FieldFail, isLeftStatus, optEmail, todayIso, type Actor } from './common';
 import { answersFromForm, listFields, saveAnswers } from './custom-fields';
 import { syncPortalLogin } from './logins';
+import { dropUnpaidAfter } from '../fees/invoices';
 
 export type StudentStatus = (typeof STUDENT_STATUSES)[number];
 
@@ -27,7 +28,8 @@ export const studentInput = z.object({
   // number = put in that class, 'none' = remove from classes (waiting list), absent = leave classes alone
   classId: z.union([z.literal(''), z.literal('none'), z.coerce.number().int().positive()]).optional().transform((v) => (v === '' ? undefined : v)),
   medicalNotes: optionalText(5000), notes: optionalText(5000),
-  deleteRegister: checkbox
+  deleteRegister: checkbox,
+  deleteInvoices: checkbox
 }).refine((v) => !v.dob || v.dob <= todayIso(), { path: ['dob'], message: 'Date of birth can’t be in the future' })
   .refine((v) => !v.leftDate || !v.startDate || v.leftDate >= v.startDate, { path: ['leftDate'], message: 'Left date can’t be before the start date' });
 
@@ -84,7 +86,7 @@ export async function saveStudent(db: Db, actor: Actor, raw: unknown, links: unk
   Object.assign(errors, cf.errors);
   if (Object.keys(errors).length) return { ok: false, errors };
 
-  const { password, classId, medicalNotes, deleteRegister, ...v } = p.data;
+  const { password, classId, medicalNotes, deleteRegister, deleteInvoices, ...v } = p.data;
   const today = todayIso();
   if (isLeftStatus(v.status) && !v.leftDate) v.leftDate = today;
 
@@ -106,6 +108,7 @@ export async function saveStudent(db: Db, actor: Actor, raw: unknown, links: unk
     // Class: the form holds one class; changing it closes the old assignment and opens the new one.
     const open = await tx.select({ classId: classAssignment.classId }).from(classAssignment).where(and(eq(classAssignment.studentId, sid), isNull(classAssignment.toDate)));
     const dropped = isLeftStatus(v.status) && deleteRegister ? await dropMarksAfter(tx, [sid], v.leftDate!) : 0;
+    const unbilled = isLeftStatus(v.status) && deleteInvoices ? await dropUnpaidAfter(tx, [sid], v.leftDate!) : 0;
     if (isLeftStatus(v.status)) await closeAssignments(tx, sid, v.leftDate!);
     else if (typeof classId === 'number' && !open.some((o) => o.classId === classId)) {
       if (open[0]) await tx.update(classAssignment).set({ toDate: sql`greatest(${classAssignment.fromDate}, ${today}::date)` })
@@ -117,7 +120,7 @@ export async function saveStudent(db: Db, actor: Actor, raw: unknown, links: unk
     await saveAnswers(tx, sid, cf.values);
     const left = prev && !isLeftStatus(prev.status) && isLeftStatus(v.status);
     await audit(tx, actor, {
-      action: `${id ? 'Updated' : 'Added'} student ${row!.firstName} ${row!.surname}${left ? ` (marked ${v.status})` : ''}${dropped ? `, deleted ${dropped === 1 ? '1 register entry' : `${dropped} register entries`} after ${v.leftDate}` : ''}`,
+      action: `${id ? 'Updated' : 'Added'} student ${row!.firstName} ${row!.surname}${left ? ` (marked ${v.status})` : ''}${dropped ? `, deleted ${dropped === 1 ? '1 register entry' : `${dropped} register entries`} after ${v.leftDate}` : ''}${unbilled ? `, deleted ${unbilled === 1 ? '1 unpaid invoice' : `${unbilled} unpaid invoices`} after ${v.leftDate}` : ''}`,
       page: 'Students', entity: 'student', entityId: sid
     });
     return { ok: true, id: sid };
@@ -218,7 +221,7 @@ export const bulkInput = z.discriminatedUnion('action', [
   z.object({ action: z.literal('accept') }),
   z.object({ action: z.literal('reject') }),
   z.object({ action: z.literal('activate'), classId: z.coerce.number().int().positive('Choose a class'), date: isoDate }),
-  z.object({ action: z.literal('status'), status: z.enum(STUDENT_STATUSES), leftDate: optionalIsoDate, deleteRegister: checkbox })
+  z.object({ action: z.literal('status'), status: z.enum(STUDENT_STATUSES), leftDate: optionalIsoDate, deleteRegister: checkbox, deleteInvoices: checkbox })
 ]);
 
 /** §5 Manage Students bulk actions (except permanent delete, which needs the typed school name). */
@@ -247,7 +250,8 @@ export async function bulkUpdate(db: Db, actor: Actor, ids: number[], raw: unkno
       await tx.update(student).set({ status: a.status, leftDate, updatedAt: new Date() }).where(inArray(student.id, ids));
       if (isLeftStatus(a.status)) for (const id of ids) await closeAssignments(tx, id, leftDate!);
       const dropped = isLeftStatus(a.status) && a.deleteRegister ? await dropMarksAfter(tx, ids, leftDate!) : 0;
-      label = `Set status to ${a.status}${dropped ? ` (deleted ${dropped === 1 ? '1 register entry' : `${dropped} register entries`} after ${leftDate})` : ''}`;
+      const unbilled = isLeftStatus(a.status) && a.deleteInvoices ? await dropUnpaidAfter(tx, ids, leftDate!) : 0;
+      label = `Set status to ${a.status}${dropped ? ` (deleted ${dropped === 1 ? '1 register entry' : `${dropped} register entries`} after ${leftDate})` : ''}${unbilled ? ` (deleted ${unbilled === 1 ? '1 unpaid invoice' : `${unbilled} unpaid invoices`} after ${leftDate})` : ''}`;
     }
     await audit(tx, actor, { action: `${label} for ${ids.length === 1 ? '1 student' : `${ids.length} students`}`, page: 'Manage students', entity: 'student', details: { ids } });
     return { ok: true as const, n: ids.length };

@@ -1,10 +1,11 @@
 import type { IconName } from '@/components/Icon';
 
-export type NavItem = { href: string; label: string; icon: IconName };
+export type NavItem = { href: string; label: string; icon: IconName; fees?: boolean };
 // Same groups and order as the design's sidebar; each module's link is added in the phase that builds it.
 export const NAV: { group: string; items: NavItem[] }[] = [
   { group: 'Overview', items: [{ href: '/admin', label: 'Dashboard', icon: 'home' }] },
   { group: 'School', items: [{ href: '/admin/students', label: 'Students', icon: 'users' }, { href: '/admin/classes', label: 'Classes', icon: 'grid' }, { href: '/admin/teachers', label: 'Teachers', icon: 'teacher' }, { href: '/admin/register', label: 'Register', icon: 'check' }, { href: '/admin/teacher-logs', label: 'Teacher logs', icon: 'clock' }] },
+  { group: 'Finance', items: [{ href: '/admin/fees', label: 'Fees', icon: 'pound', fees: true }] },
   { group: 'System', items: [{ href: '/admin/settings', label: 'Settings', icon: 'cog' }, { href: '/admin/tools/sticky-notes', label: 'Sticky notes', icon: 'note' }] }
 ];
 

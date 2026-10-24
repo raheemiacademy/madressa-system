@@ -10,8 +10,8 @@ import { bulkAction, deleteStudentsAction } from './actions';
 
 type Row = { id: number; name: string; gender: string; classes: string | null; age: number | null; yearGroup: string | null; status: string; hasMedical: boolean };
 
-export function StudentsTable({ rows, classes, statuses, canEdit, canDelete, filtered }: {
-  rows: Row[]; classes: { value: string; label: string }[]; statuses: string[]; canEdit: boolean; canDelete: boolean; filtered: boolean;
+export function StudentsTable({ rows, classes, statuses, canEdit, canDelete, canFees, filtered }: {
+  rows: Row[]; classes: { value: string; label: string }[]; statuses: string[]; canEdit: boolean; canDelete: boolean; canFees: boolean; filtered: boolean;
 }) {
   const [sel, setSel] = useState<number[]>([]);
   const [action, setAction] = useState('accept');
@@ -42,6 +42,8 @@ export function StudentsTable({ rows, classes, statuses, canEdit, canDelete, fil
                     <Link href={`/admin/students/${r.id}`} aria-label={`Profile of ${r.name}`}><Icon name="eye" /></Link>
                     <Link href={`/admin/students/${r.id}/history`} aria-label={`Class history of ${r.name}`}><Icon name="clock" /></Link>
                     <Link href={`/admin/register/student/${r.id}`} aria-label={`Register of ${r.name}`}><Icon name="check" /></Link>
+                    {canFees && <Link href={`/admin/fees/student/${r.id}`} aria-label={`Fees of ${r.name}`}><Icon name="pound" /></Link>}
+                    {canFees && <Link href={`/admin/fees/student/${r.id}?view=history`} aria-label={`Fees history of ${r.name}`}><Icon name="receipt" /></Link>}
                   </span></td>
                 </tr>
               ))}
@@ -55,9 +57,9 @@ export function StudentsTable({ rows, classes, statuses, canEdit, canDelete, fil
             {hidden}
             <div className="ra-fields">
               <SelectField name="action" label={`With ${sel.length === 1 ? '1 selected student' : `${sel.length} selected students`}`} value={action} onChange={(e) => setAction(e.target.value)}
-                options={[{ value: 'accept', label: 'Move to Accepted' }, { value: 'activate', label: 'Move to a class and activate' }, { value: 'reject', label: 'Move to Rejected' }, { value: 'status', label: 'Set status and left date' }]} />
+                options={[{ value: 'accept', label: 'Move to Accepted' }, { value: 'activate', label: 'Move to a class and activate' }, { value: 'reject', label: 'Move to Rejected' }, { value: 'status', label: 'Set status and left date' }, ...(canFees ? [{ value: 'admission', label: 'Create admission fees' }] : [])]} />
               {action === 'activate' && <><SelectField name="classId" label="Class" options={[{ value: '', label: 'Choose a class' }, ...classes]} /><TextField name="date" label="Start date" type="date" /></>}
-              {action === 'status' && <><SelectField name="status" label="Status" options={statuses.map((s) => ({ value: s, label: s }))} /><TextField name="leftDate" label="Left date" type="date" help="Filled with today for leaving statuses if blank." /><Check name="deleteRegister" label="If leaving: delete register entries after the left date" /></>}
+              {action === 'status' && <><SelectField name="status" label="Status" options={statuses.map((s) => ({ value: s, label: s }))} /><TextField name="leftDate" label="Left date" type="date" help="Filled with today for leaving statuses if blank." /><Check name="deleteRegister" label="If leaving: delete register entries after the left date" />{canFees && <Check name="deleteInvoices" label="If leaving: delete unpaid invoices after the left date" />}</>}
             </div>
           </Form>
           {canDelete && (

@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { db } from '@/db';
 import { resolveYear } from '@/server/academic-years';
 import { requireAdmin } from '@/server/next/actor';
+import { adminCan } from '@/server/permissions';
 import { getProfile } from '@/server/profile';
 import { readTab } from '@/server/settings';
 import { Shell } from './Shell';
@@ -18,7 +19,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const logoSrc = prefs.logoInSideMenu ? (profile?.logoFileId ? `/files/${profile.logoFileId}` : profile?.logoUrl ?? null) : null;
   return (
     <Shell school={profile?.name ?? 'School'} logoSrc={logoSrc} userName={admin.name} userEmail={admin.email}
-      years={years.map((y) => ({ id: y.id, title: y.title }))} yearId={year?.id ?? null} noteColours={prefs.stickyNoteColours as string[]} drillPlaces={fire.buttonPlaces as string[]} drillRunning={!!drill} notifications={notices + requests}>
+      years={years.map((y) => ({ id: y.id, title: y.title }))} yearId={year?.id ?? null} noteColours={prefs.stickyNoteColours as string[]} drillPlaces={fire.buttonPlaces as string[]} drillRunning={!!drill} notifications={notices + requests} canFees={adminCan(admin.staff, 'fees')}>
       {children}
     </Shell>
   );

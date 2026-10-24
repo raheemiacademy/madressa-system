@@ -1,13 +1,15 @@
-import { inArray, or, sql } from 'drizzle-orm';
+import { eq, inArray, or, sql } from 'drizzle-orm';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { db } from '@/db';
-import { student, walkHomeConsent } from '@/db/schema';
+import { invoice, student, walkHomeConsent } from '@/db/schema';
 import { Chip } from '@/components/Chip';
 import { TextArea, TextField } from '@/components/Fields';
 import { ActionButton, Form } from '@/components/Form';
 import { Icon } from '@/components/Icon';
 import { formatCalendarDate, formatInstant } from '@/lib/dates';
+import { formatPence } from '@/lib/money';
+import { invoiceRows, totals } from '@/server/fees/invoices';
 import { requireAdmin } from '@/server/next/actor';
 import { adminCan } from '@/server/permissions';
 import { ageOn, todayIso } from '@/server/people/common';
@@ -37,6 +39,8 @@ export default async function StudentProfile({ params }: { params: Promise<{ id:
   const sibRows = sibIds.length ? await db.select({ id: student.id, firstName: student.firstName, surname: student.surname, status: student.status }).from(student).where(or(inArray(student.id, sibIds))) : [];
   const canEdit = adminCan(admin.staff, 'edit');
   const canDelete = adminCan(admin.staff, 'delete');
+  const canFees = adminCan(admin.staff, 'fees');
+  const fees = canFees ? totals(await invoiceRows(db, eq(invoice.studentId, id))) : null;
   const age = ageOn(s.dob, todayIso());
   const row = (k: string, v: React.ReactNode) => v ? <><dt>{k}</dt><dd>{v}</dd></> : null;
 
@@ -52,6 +56,8 @@ export default async function StudentProfile({ params }: { params: Promise<{ id:
           {canEdit && <Link className="ra-btn primary" href={`/admin/students/${id}/edit`}><Icon name="edit" />Edit</Link>}
           <Link className="ra-btn" href={`/admin/students/${id}/history`}>Class history</Link>
           <Link className="ra-btn" href={`/admin/students/${id}/notes`}>Notes PDF</Link>
+          <Link className="ra-btn" href={`/admin/register/student/${id}`}>Register</Link>
+          {canFees && <Link className="ra-btn" href={`/admin/fees/student/${id}`}>Fees</Link>}
         </div>
       </div>
 
@@ -103,6 +109,16 @@ export default async function StudentProfile({ params }: { params: Promise<{ id:
             </ul>
           )}
         </section>
+
+        {fees && (
+          <section className="ra-card ra-c6" aria-labelledby="fee-h">
+            <div className="ra-card-h"><div><h2 id="fee-h">Fees</h2><div className="ra-note">All years</div></div><Link className="ra-link" href={`/admin/fees/student/${id}?view=history`}>Fees history</Link></div>
+            {fees.due === 0 ? <p className="ra-empty">No invoices yet.</p> : (
+              <dl className="ra-dl"><dt>Invoiced</dt><dd>{formatPence(fees.due)}</dd><dt>Received</dt><dd>{formatPence(fees.received)}</dd>
+                <dt>Outstanding</dt><dd>{formatPence(fees.outstanding)}</dd><dt>Overdue</dt><dd className={fees.overdue ? 'ra-warn' : undefined}>{formatPence(fees.overdue)}</dd></dl>
+            )}
+          </section>
+        )}
 
         <section className="ra-card ra-c6" aria-labelledby="sib-h">
           <div className="ra-card-h"><div><h2 id="sib-h">Siblings</h2></div><Link className="ra-link" href="/admin/students/siblings">Manage siblings</Link></div>

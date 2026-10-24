@@ -1,15 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { signIn } from './sign-in';
 
-const PW = process.env.SEED_ADMIN_PASSWORD!;
-
-async function signIn(page: Page, email = 'admin@example.org', password = PW, portal = 'admin') {
-  await page.goto(`/${portal}/login`);
-  await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Password').fill(password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page).toHaveURL(new RegExp(`/${portal}$`));
-}
 
 test('add a student with a new parent and a class, then find them', async ({ page }) => {
   await signIn(page);

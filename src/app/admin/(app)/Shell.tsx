@@ -14,11 +14,11 @@ import { DrillStart } from './fire-drill/DrillStart';
 type Props = {
   school: string; logoSrc: string | null; userName: string; userEmail: string;
   years: { id: number; title: string }[]; yearId: number | null; noteColours: string[];
-  drillPlaces: string[]; drillRunning: boolean; notifications: number;
+  drillPlaces: string[]; drillRunning: boolean; notifications: number; canFees: boolean;
   children: React.ReactNode;
 };
 
-export function Shell({ school, logoSrc, userName, userEmail, years, yearId, noteColours, drillPlaces, drillRunning, notifications, children }: Props) {
+export function Shell({ school, logoSrc, userName, userEmail, years, yearId, noteColours, drillPlaces, drillRunning, notifications, canFees, children }: Props) {
   const pathname = usePathname();
   const crumb = crumbFor(pathname);
   return (
@@ -34,7 +34,7 @@ export function Shell({ school, logoSrc, userName, userEmail, years, yearId, not
             <span className="ra-brand-text"><span className="ra-brand-name">{school}</span><span className="ra-brand-sub">School admin</span></span>
           </Link>
           <nav className="ra-nav" aria-label="Sections">
-            {NAV.map((g) => (
+            {NAV.map((g) => ({ ...g, items: g.items.filter((i) => canFees || !i.fees) })).filter((g) => g.items.length).map((g) => (
               <div className="ra-nav-group" key={g.group}>
                 <div className="ra-nav-label">{g.group}</div>
                 {g.items.map((i) => (
