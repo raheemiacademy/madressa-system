@@ -1,7 +1,7 @@
 'use client';
 
 import * as d3 from 'd3';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { formatPence } from '@/lib/money';
 
 // Ported from design-reference/dashboard/index.html (attendanceChart). Colours come from CSS variables.
@@ -11,9 +11,11 @@ const dayFmt = d3.utcFormat('%-d %b');
 
 function useWidth(ref: React.RefObject<HTMLDivElement | null>) {
   const [w, setW] = useState(600);
-  useEffect(() => {
+  // Measure before the first draw, so a chart never flashes at the default width on a narrow screen.
+  useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
+    setW(Math.max(260, Math.floor(el.getBoundingClientRect().width)));
     const ro = new ResizeObserver(([e]) => setW(Math.max(260, Math.floor(e!.contentRect.width))));
     ro.observe(el);
     return () => ro.disconnect();
@@ -179,6 +181,50 @@ export function FeesChart({ data }: { data: { month: string; invoiced: number; r
     <div ref={box} className="ra-chart" style={{ minHeight: H }}>
       <svg ref={svg} width="100%" height={H} viewBox={`0 0 ${W} ${H}`} role="img"
         aria-label={`Invoiced and received by month: ${data.map((r) => `${d3.utcFormat('%B')(new Date(`${r.month}-01T00:00:00Z`))} ${formatPence(r.invoiced)} invoiced, ${formatPence(r.received)} received`).join('; ')}`} />
+      <Tip tip={tip} />
+    </div>
+  );
+}
+
+type HBar = { label: string; segs: { name: string; value: number; colour: string }[]; end: string; strong?: boolean; tip: string[] };
+
+/** Horizontal stacked bars, one per row (dashboard "Students by age group" and "Fees by type"). Ported from the design's ageChart/feesTypeChart. */
+export function HBarChart({ rows, label, empty, track = false }: { rows: HBar[]; label: string; empty: string; track?: boolean }) {
+  const box = useRef<HTMLDivElement>(null);
+  const svg = useRef<SVGSVGElement>(null);
+  const W = useWidth(box);
+  const [tip, setTip] = useState<{ x: number; y: number; title: string; lines: string[] } | null>(null);
+  const H = Math.max(160, rows.length * 36 + 12);
+  useEffect(() => {
+    const el = svg.current;
+    if (!el || !rows.length) return;
+    const s = d3.select(el);
+    s.selectAll('*').remove();
+    const textW = (t: string, cls?: string) => { const n = s.append('text').attr('class', cls ?? null).text(t); const w = (n.node() as SVGTextElement).getComputedTextLength(); n.remove(); return w; };
+    const total = (r: HBar) => r.segs.reduce((a, g) => a + g.value, 0);
+    const ml = (d3.max(rows, (r) => textW(r.label)) ?? 0) + 10;
+    const mr = (d3.max(rows, (r) => textW(r.end, 'ra-strong')) ?? 0) + 10;
+    const yb = d3.scaleBand(rows.map((r) => r.label), [6, H - 6]).padding(0.35);
+    const x = d3.scaleLinear([0, Math.max(1, d3.max(rows, total) ?? 1)], [ml, Math.max(ml + 20, W - mr)]);
+    rows.forEach((r) => {
+      const yy = yb(r.label)!, bh = Math.min(22, yb.bandwidth()), off = (yb.bandwidth() - bh) / 2, mid = yy + yb.bandwidth() / 2 + 4;
+      const show = (ev: MouseEvent) => { const [mx, my] = d3.pointer(ev, el); setTip({ x: Math.min(W - 170, mx + 12), y: Math.max(0, my - 50), title: r.label, lines: r.tip }); };
+      s.append('text').attr('x', ml - 8).attr('y', mid).attr('text-anchor', 'end').text(r.label);
+      if (track && total(r)) s.append('rect').attr('x', ml).attr('y', yy + off).attr('height', bh).attr('width', Math.max(2, x(total(r)) - ml)).attr('rx', 4).attr('fill', `color-mix(in srgb, ${css(el, '--ra-lav')} 30%, transparent)`);
+      let acc = 0;
+      for (const g of r.segs) {
+        if (!g.value) continue;
+        s.append('rect').attr('x', x(acc) + (acc ? 1 : 0)).attr('y', yy + off).attr('height', bh).attr('width', Math.max(2, x(acc + g.value) - x(acc) - (acc ? 1 : 0))).attr('rx', 4)
+          .attr('fill', css(el, g.colour)).on('mousemove', show).on('mouseleave', () => setTip(null));
+        acc += g.value;
+      }
+      s.append('text').attr('class', r.strong === false ? null : 'ra-strong').attr('x', x(total(r)) + 6).attr('y', mid).text(r.end);
+    });
+  }, [rows, W, H, track]);
+  if (!rows.length) return <div className="ra-chart"><p className="ra-empty">{empty}</p></div>;
+  return (
+    <div ref={box} className="ra-chart" style={{ minHeight: H }}>
+      <svg ref={svg} width="100%" height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} />
       <Tip tip={tip} />
     </div>
   );

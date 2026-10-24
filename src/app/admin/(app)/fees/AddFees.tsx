@@ -12,10 +12,10 @@ type Options = Awaited<ReturnType<typeof paymentOptionsAction>>;
 const EVENT = 'ra-add-fees';
 
 /** Opens the Add Fees dialog, optionally for one student (and invoice). */
-export function AddFeesButton({ student, invoiceId, label = 'Add fees', className = 'ra-btn primary' }: { student?: Pick; invoiceId?: number; label?: string; className?: string }) {
+export function AddFeesButton({ student, invoiceId, label = 'Add fees', className = 'ra-btn primary', plus = label === 'Add fees' }: { student?: Pick; invoiceId?: number; label?: string; className?: string; plus?: boolean }) {
   return (
     <button type="button" className={className} onClick={() => window.dispatchEvent(new CustomEvent(EVENT, { detail: { student, invoiceId } }))}>
-      {label === 'Add fees' && <Icon name="plus" />}{label}
+      {plus && <Icon name="plus" />}{label}
     </button>
   );
 }

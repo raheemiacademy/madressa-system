@@ -445,14 +445,14 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
 - **Teacher-portal and parent-portal screens** for reading and sending messages are Phase 8. The server functions and route checks are built.
 - **Email delivery tracking and bounce handling** (§3 Logs) are Phase 9.
 
-## 12. Phase 6 record (Learning: §12 Homework, §13 Exams, §16 EOTY reports, §14 Incidents, §15 Merits/Achievements/Certificates/Teams, §17 Products, §18 Events, Forums)
+## 12. Phase 6 record (Learning: §13 Homework, §15 Exams, §16 EOTY reports, §9 Incidents, §18 Merits/Achievements, §17 Products, §8 Events, §14 Forums)
 
 **Dependencies added** (on the approved list): `pdf-lib`, for certificates. Every other PDF (reports, homework year report) uses the Phase 5 Chromium route.
 
 **Decisions**
 - **Navigation:** a new **Learning** group: Homework, Exams & reports, Events & trips, Incidents, Merits & shop, Forums. Products sits under "Merits & shop", because the shop sells for money or merits.
-- **Homework** (§12): set for a class, from a template or from scratch. Optional files (PDF or image) and an optional "lock after the deadline". Primary contacts are emailed when it's set, with an optional BCC from Settings → Homework. Ticking students done, the incomplete report, reminders (with a "send me a test" option), the year report (print, PDF or email to families) and storage usage are all here. **Parent uploads** of finished work arrive with the parent portal (Phase 8).
-- **Exams** (§13):
+- **Homework** (§13): set for a class, from a template or from scratch. Optional files (PDF or image) and an optional "lock after the deadline". Primary contacts are emailed when it's set, with an optional BCC from Settings → Homework. Ticking students done, the incomplete report, reminders (with a "send me a test" option), the year report (print, PDF or email to families) and storage usage are all here. **Parent uploads** of finished work arrive with the parent portal (Phase 8).
+- **Exams** (§15):
   - Each exam has papers, and each paper is marked out of its maximum. Marks are kept to one decimal place (stored in tenths). Absent is its own state, not zero.
   - Positions count ties (two students on 87 are both 1st, and the next is 3rd).
   - Status is Open, Closed or Locked. A locked exam refuses result changes on the server, not just in the form.
@@ -464,22 +464,22 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
   - Paragraph templates (5 levels × 3 areas) fill in `{FIRST_NAME}`, `{HE_SHE}` and the like. **When no gender is recorded, the first name is used instead of he/she**, so the text never reads "they works".
   - Paragraphs can be backed up and restored as a file. "Restore defaults" brings back the built-in text.
   - The comments grid, overview, all-comments, and the generated reports (print or PDF per class) are admin pages. **Teachers writing comments** in their own portal is Phase 8; the server functions already check their class privileges.
-- **Incidents** (§14):
+- **Incidents** (§9):
   - Severities are **Low, Medium, High, Serious**.
   - An incident involves students, a teacher or "other". It can email and text the primary contacts, and can be included in the EOTY report.
   - Templates prefill the form. The 12-month report and CSV export are by severity and class.
-- **Merits** (§15):
+- **Merits** (§18):
   - **Sanctions are merits with negative points**, so one total covers both.
   - Merits can go to students or teachers. Totals are by class or person.
   - Achievements fire at a points target (sanction targets count down).
   - Certificate templates place text by **millimetres on an A4-landscape basis**, scaled for other sizes and orientations. Certificates are issued in bulk and downloaded as PDFs (pdf-lib).
   - Teams and competitions total their members' points.
 - **Products** (§17): stock, and sales by invoice or by merits. Paying by invoice raises a **Products** invoice. A contact buying for themselves is invoiced against their **first linked student**, because every invoice belongs to a student. Paying by merits checks the balance first. A sale can be marked delivered.
-- **Events** (§18):
+- **Events** (§8):
   - Each event has timeslots with capacity, consents (required or optional) and prices (required or optional).
   - An opt-in without a required consent is refused on the server.
   - With auto-invoice, one **Contribution** invoice is raised per student and event; re-running never adds a second (idempotency key `ev{event}-s{student}`). Withdrawing removes the opt-in and cancels its invoice, unless a payment has been made against it; then the invoice is kept for the office to handle.
-- **Forums:**
+- **Forums** (§14):
   - Categories and topics. A locked topic takes replies from admins only.
   - Removed posts stay in the record as "Removed by …".
   - Posting by **teachers and parents** arrives with their portals (Phase 8).
@@ -491,3 +491,39 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
 - **Student Diary / Daily Progress Tracker** (§12) still waits for the fields you want (FUTURE.md).
 - **Quiz questions and online quiz-taking** are left out, as agreed (header fields only).
 - **Portal sides** of homework, EOTY comments, events opt-in and forums are Phase 8. The server rules are built and tested.
+
+## 13. Phase 7 record (Dashboard, §1)
+
+**No new dependencies.** The charts reuse `d3`, which was already in use.
+
+**Decisions**
+- **What's on it** (as `dashboard/index.html`):
+  - a greeting with a one-line summary of the day and quick actions;
+  - banners for today's parent absence notices and pending holiday requests, hidden when there are none;
+  - KPI tiles;
+  - weekly attendance;
+  - students by age group;
+  - unread messages;
+  - teacher sign-in;
+  - recent payments and fees by type.
+- **Each panel loads on its own.** It shows a skeleton while loading and "Failed to load" if its query fails; the rest of the page still works.
+- **Fees figures need Access Fees Area.** For staff without it, the fees parts are left out: the fees part of the summary, the Fees outstanding tile, Recent payments, Fees by type and Record payment. They are not queried, not just hidden.
+- **"Since last week" means:**
+  - **Students:** joiners minus leavers in the last 7 days, by start and left dates.
+  - **Attendance:** the same weekday one week earlier. If either day has no register, the tile says so instead of showing a change.
+  - **Fees outstanding:** worked out again from the invoices and cleared payments that had been recorded 7 days ago, for the selected year. Upcoming invoices are included, as on the Fees dashboard. A change of 0 shows as "No change".
+- **Parents on portal:** parent contacts of current students who have signed in to the parent portal since the selected year began, out of all parent contacts of current students.
+- **Teachers signed in:** everyone due in today by their working hours, plus anyone else who logged today. A teacher marked absent is listed but not counted.
+- **Students by age group:**
+  - Uses the Year & Age Groups settings and each student's age today.
+  - Students with no date of birth go under "No age group".
+  - Students with no recorded gender get their own "Not recorded" segment, so the totals are right. The design shows only boys and girls.
+- **Weekly attendance** runs from the start of the selected year. The design says "this term", but terms aren't recorded anywhere in the inventory.
+- **Unread messages:** the four newest unread office conversations this admin can see (the same rank rules as the inbox), plus "N more" when there are more.
+- **Quick actions:** Add student (needs Can edit), Record payment (needs Access Fees Area; opens the same Add Fees dialog), Take register, New message.
+- **The tile animation plays on the first view of a session only.** A session cookie, `ra_dash_seen`, remembers this. It's functional only: no tracking, and it's cleared when the browser closes.
+- **Shell fix:** at phone width the school-name link in the top bar had no accessible name. The name is now visually hidden but still read out. It was found by the new phone-width axe check.
+- **Chart fix:** charts now measure their box before the first draw. Before, they could draw once at a default width and look tiny on phones until they redrew.
+
+**Phase 7 gaps**
+- **The IBEAMS news/updates feed** ("Auto-refresh daily") is not built. It's in the "your own versions of the IBEAMS services" item in FUTURE.md.

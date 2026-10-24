@@ -217,7 +217,9 @@ fieldset.ra-fieldset legend { font-size: 13px; font-weight: 500; padding: 0 4px;
   .ra-shell { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
   .ra-side { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding: 8px 12px; gap: 6px; align-items: center; overscroll-behavior-x: contain; scrollbar-width: none; height: auto; position: static; padding-top: calc(8px + env(safe-area-inset-top, 0px)); }
   .ra-brand { padding: 0 8px 0 0; }
-  .ra-brand-text, .ra-nav-label, .ra-side-foot { display: none; }
+  .ra-nav-label, .ra-side-foot { display: none; }
+  /* Visually hidden, so the brand link still has a name for screen readers */
+  .ra-brand-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .ra-nav-group { flex-direction: row; }
   .ra-nav-btn { white-space: nowrap; }
   .ra-nav-btn[aria-current="page"]::before { left: 12px; right: 12px; top: auto; bottom: 2px; width: auto; height: 2px; border-radius: 2px; }
@@ -235,8 +237,16 @@ fieldset.ra-fieldset legend { font-size: 13px; font-weight: 500; padding: 0 4px;
 :is(.ra-btn, .ra-filter, .ra-link, .ra-icon-btn, .ra-acts button, .ra-acts a):active { transform: scale(0.97); }
 .ra-banner { transition: opacity 220ms var(--ra-ease-out), transform 220ms var(--ra-ease-out); }
 @starting-style { .ra-banner { opacity: 0; transform: translateY(-4px); } }
+:is(.ra-btn, .ra-filter, .ra-link, .ra-icon-btn, .ra-acts button, .ra-acts a, .ra-quick > *):active { transform: scale(0.97); }
+/* Dashboard tiles: rise + fade with a stagger, first view of the session only */
+.ra-anim { animation: ra-rise 280ms var(--ra-ease-out) both; animation-delay: calc(min(var(--i, 0), 8) * 40ms); }
+@keyframes ra-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes ra-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ra-pulse { 50% { opacity: .55; } }
 @media (prefers-reduced-motion: reduce) {
   :is(.ra-btn, .ra-filter, .ra-link, .ra-icon-btn, .ra-acts button, .ra-acts a):active { transform: none; }
+  .ra-anim { animation: ra-fade 200ms ease both; animation-delay: 0ms; }
+  .ra-skel { animation: none; }
   .ra-banner { transition: opacity 200ms ease; }
   @starting-style { .ra-banner { transform: none; } }
 }
@@ -393,3 +403,15 @@ button.ra-mk { cursor: pointer; }
 /* Learning (Phase 6) */
 .ra-report { gap: 12px; }
 .ra-report th { color: var(--color-fg-muted); font-weight: 500; }
+
+/* Dashboard (Phase 7) */
+.ra-quick { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+.ra-quick > * { all: unset; box-sizing: border-box; cursor: pointer; min-height: var(--ra-ctl); padding: 0 14px; color: var(--ra-on-ink); background: color-mix(in srgb, var(--ra-on-ink) 8%, transparent); border: 1px solid color-mix(in srgb, var(--ra-on-ink) 16%, transparent); border-radius: 999px; font-size: 13px; font-weight: 500; display: inline-flex; gap: 8px; align-items: center; transition: background-color .15s ease, transform 160ms var(--ra-ease-out); }
+@media (hover: hover) { .ra-quick > *:hover { background: color-mix(in srgb, var(--ra-on-ink) 16%, transparent); } }
+.ra-quick > *:focus-visible { box-shadow: 0 0 0 2px var(--ra-sky); }
+.ra-quick svg { width: 16px; height: 16px; color: var(--ra-sky); }
+.ra-kpi-ic, .ra-banner-ic { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 20%, transparent); color: var(--color-fg); flex: none; }
+.ra-banner-ic { width: 32px; height: 32px; background: color-mix(in srgb, var(--c) 22%, transparent); }
+.ra-banner > .ra-banner-ic { flex: none; }
+.ra-kpi-ic svg, .ra-banner-ic svg { width: 16px; height: 16px; }
+.ra-skel { border-radius: var(--ra-r-sm); background: color-mix(in srgb, var(--ra-lav) 18%, transparent); animation: ra-pulse 1.4s ease-in-out infinite; }
