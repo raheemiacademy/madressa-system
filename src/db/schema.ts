@@ -150,7 +150,7 @@ export const holiday = pgTable('holiday', {
   createdAt: createdAt()
 }, (t) => [check('holiday_dates', sql`${t.endsOn} >= ${t.startsOn}`)]);
 
-// §1/§19 Sticky notes
+// §1/§19 Sticky notes: removed from the app at the school's request (24/10/2026). The table is kept so existing notes aren't deleted without asking.
 export const stickyNote = pgTable('sticky_note', {
   id: serial('id').primaryKey(),
   pagePath: text('page_path').notNull(),
@@ -1298,4 +1298,13 @@ export const calendarFeed = pgTable('calendar_feed', {
   token: text('token').notNull(),
   createdAt: createdAt()
 }, (t) => [check('calendar_feed_one', sql`${t.id} = 1`)]);
+
+// Onboarding: the "Set up your madrasah" checklist. Steps tick themselves off from real data; this keeps only what can't be derived.
+export const onboarding = pgTable('onboarding', {
+  id: integer('id').primaryKey().default(1),
+  skipped: text('skipped').array().notNull().default(sql`'{}'::text[]`),
+  hiddenAt: tz('hidden_at'),
+  invitedAt: tz('invited_at'),
+  updatedAt: tz('updated_at').notNull().defaultNow()
+}, (t) => [check('onboarding_one', sql`${t.id} = 1`)]);
 

@@ -7,7 +7,7 @@ test('system page: status, checklist and a working calendar feed', async ({ page
   await page.goto('/admin/tools/system');
   await expect(page.getByRole('heading', { level: 1, name: 'System' })).toBeVisible();
   await expect(page.getByText('Automation services', { exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Setup checklist' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Go-live checklist' })).toBeVisible();
   const feed = (await page.locator('code').filter({ hasText: '/calendar/' }).textContent())!;
   const ics = await page.request.get(new URL(feed).pathname);
   expect(ics.headers()['content-type']).toContain('text/calendar');

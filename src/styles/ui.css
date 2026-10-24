@@ -187,11 +187,6 @@ fieldset.ra-fieldset legend { font-size: 13px; font-weight: 500; padding: 0 4px;
 .ra-dialog::backdrop { background: color-mix(in srgb, var(--ra-ink) 55%, transparent); }
 .ra-dialog h2 { margin: 0 0 6px; font-size: 1.125rem; font-weight: 600; }
 
-/* Sticky notes */
-.ra-notes { display: flex; flex-wrap: wrap; gap: 10px; }
-.ra-note-card { --c: var(--ra-lav); background: color-mix(in srgb, var(--c) 28%, var(--color-panel)); border: 1px solid color-mix(in srgb, var(--c) 50%, var(--color-border-line)); border-radius: 12px; padding: 10px 12px; width: min(100%, 260px); font-size: 14px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; display: flex; flex-direction: column; gap: 6px; }
-.ra-note-card footer { display: flex; gap: 6px; align-items: center; justify-content: space-between; font-size: 12px; color: var(--color-fg-muted); white-space: normal; }
-
 /* Calendar */
 .ra-cal { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 16px; }
 .ra-cal table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; }
@@ -496,3 +491,30 @@ html:has(.rp) { overscroll-behavior: none; }
 .rp-back svg { width: 22px; height: 22px; }
 @media (hover: hover) and (pointer: fine) { .rp-row:hover, .rp-list > li > a:hover { background: color-mix(in srgb, var(--ra-lav) 14%, var(--color-panel)); } }
 @media (prefers-reduced-motion: reduce) { .tap:active { transform: none; } }
+
+/* Onboarding: the "Set up your madrasah" checklist, the welcome and the step banner */
+.ra-setup { border-color: color-mix(in srgb, var(--ra-indigo) 35%, var(--color-border-line)); }
+.ra-setup-bar { height: 8px; border-radius: 4px; background: var(--ra-tint); overflow: hidden; margin: 2px 0 12px; }
+.ra-setup-bar span { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--ra-indigo), var(--ra-violet)); transition: width 400ms var(--ra-ease-out); }
+.ra-setup-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.ra-setup-steps > li { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 10px 8px; border-radius: var(--ra-r); }
+.ra-setup-steps > li[data-state="next"] { background: color-mix(in srgb, var(--ra-indigo) 8%, var(--color-panel)); }
+.ra-setup-num { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: 600; font-size: 14px; border: 2px solid var(--color-border-line); color: var(--color-fg-muted); }
+.ra-setup-num svg { width: 16px; height: 16px; }
+li[data-state="next"] .ra-setup-num { border-color: var(--ra-primary); color: var(--ra-accent-text); }
+li[data-state="done"] .ra-setup-num { border-color: transparent; background: var(--color-ok); color: var(--ra-on-ink); }
+li[data-state="skipped"] .ra-setup-num { border-style: dashed; }
+.ra-setup-title { font-weight: 600; padding-top: 5px; overflow-wrap: anywhere; }
+li[data-state="done"] .ra-setup-title, li[data-state="skipped"] .ra-setup-title { font-weight: 500; color: var(--color-fg-muted); }
+.ra-setup-why { margin: 4px 0 10px; font-size: 14px; color: var(--color-fg-muted); max-width: 70ch; }
+li[data-state="todo"] .ra-setup-why { margin-bottom: 0; }
+.ra-setup-side { padding-top: 5px; white-space: nowrap; }
+.ra-welcome { width: min(560px, calc(100vw - 32px)); }
+.ra-welcome-mark { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; color: var(--ra-on-ink); background: linear-gradient(135deg, var(--ra-indigo), var(--ra-violet)); margin-bottom: 12px; }
+.ra-welcome-mark svg { width: 24px; height: 24px; }
+.ra-welcome h2 { font-family: var(--font-serif), Georgia, serif; font-weight: 400; font-size: 1.6rem; }
+.ra-welcome ol { margin: 0 0 12px; padding-left: 22px; display: grid; gap: 4px; }
+.ra-welcome p { margin: 0 0 12px; line-height: 1.5; }
+.ra-setup-banner { margin: 12px 28px 0; }
+@media (max-width: 860px) { .ra-setup-banner { margin: 12px 16px 0; } .ra-setup-steps > li { grid-template-columns: 32px minmax(0, 1fr); } .ra-setup-side { grid-column: 2; padding-top: 0; } }
+@media (prefers-reduced-motion: reduce) { .ra-setup-bar span { transition: none; } }

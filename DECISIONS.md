@@ -658,3 +658,30 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
 **Phase 9 gaps**
 - **Real hosting** (question 11) waits until the project is complete: a UK-region server and database, plus an S3 bucket set with the variables above. Until then, backups and uploads on the preview don't survive a deploy.
 - **Restoring from a backup file kept elsewhere** (uploading one) isn't built: the inventory lists restoring from the list only.
+
+## 16. Changes after Phase 9
+
+- **Sticky notes removed (your request, 24/10/2026).** The inventory lists them (§1, §19), but you asked for them to go. The header button, the notes shown on pages, Tools → Sticky notes and the "Sticky note colours" preference are all gone. The `sticky_note` table and any notes in it are kept, because dropping it would delete data. It can be removed in a later migration if you say so.
+- **A real madrasah starts empty (24/10/2026).** The server loads the fictional sample school only when `SEED_SAMPLE_DATA=1`; only the demo preview sets it.
+- **First admin: `/admin/setup`.**
+  - On a brand-new installation, signing in sends you to the setup page. It asks for the madrasah's name, your name, email and password, and a setup code.
+  - The setup code is `SETUP_CODE`, chosen by whoever installs it, so a stranger who finds a new site first can't claim it.
+  - Setup makes the school and a Super admin, signs them in, and opens the dashboard with a welcome. Once any admin exists, the page sends people to sign in.
+- **Onboarding: "Set up your madrasah"**, modelled on how school systems (and well-run apps generally) do it: school, then year, then classes, then import students with a preview, with a checklist that stays on the dashboard and shows progress.
+  - **The first sign-in shows a welcome pop-up** listing the steps, with "Start with step 1" or "Look around first".
+  - **The checklist sits at the top of the dashboard** (Super admins only), with a progress bar and one highlighted next step:
+    1. Madrasah details.
+    2. School year and holidays.
+    3. Classes and teachers.
+    4. Students and parents (import, or add one by one).
+    5. Fees (optional, can be skipped).
+    6. Invite parents and teachers (optional, can be skipped).
+  - **Steps tick themselves off from real data**, so there's nothing to "mark done", and nothing is lost if someone sets things up another way. Students come 4th because the import puts them into this year's classes, which must exist first.
+  - **Every page a step opens shows "Setup step N of 6"** with a way back. The checklist can be hidden ("Hide for now"), and brought back from System. When everything's done, it says so and can be closed.
+- **Step 6 fills a gap:** imported parents had no portal login, so they couldn't sign in. "Invite parents and teachers" (on System → Portals):
+  - gives every active teacher, and every parent of a current student who has an email, a login;
+  - emails those without a password a one-time link to choose one.
+
+  It's safe to run again: people who already have a password aren't emailed. It's audited.
+- **The System page's ops checklist is now called "Go-live checklist"**, so it isn't confused with the setup steps.
+

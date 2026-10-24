@@ -72,20 +72,13 @@ test('year switcher changes which year’s holidays are shown', async ({ page })
   await expect(page.getByRole('heading', { name: 'Holidays in 2026/27' })).toBeVisible();
 });
 
-test('“/” focuses search, and a sticky note can be added to a page', async ({ page }) => {
+test('“/” focuses search', async ({ page }) => {
   await signIn(page);
   await page.keyboard.press('/');
   await expect(page.getByRole('searchbox', { name: /Search students/ })).toBeFocused();
   await page.keyboard.type('Nobody Called This');
   await page.keyboard.press('Enter');
   await expect(page.getByRole('status')).toHaveText('No students, contacts or teachers match “Nobody Called This”.');
-  await page.goto('/admin');
-  await page.getByRole('button', { name: 'Add a sticky note' }).click();
-  await page.getByRole('textbox', { name: 'Note' }).fill('Order more register books');
-  await page.getByRole('button', { name: 'Add note' }).click();
-  await expect(page.getByRole('region', { name: 'Sticky notes on this page' })).toContainText('Order more register books');
-  await page.goto('/admin/tools/sticky-notes');
-  await expect(page.getByText('1 note across the admin pages')).toBeVisible();
 });
 
 test('a new staff member can sign in with only the access they were given', async ({ page, browser }) => {
@@ -116,7 +109,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.goto('/admin/login');
     await axe(page);
     await signIn(page);
-    for (const path of ['/admin', '/admin/settings/profile', '/admin/settings/years', '/admin/settings/holidays', '/admin/settings/staff', '/admin/settings/staff/new', '/admin/settings/audits', '/admin/settings/parentPortal', '/admin/settings/local', '/admin/tools/sticky-notes', '/admin/search?q=x']) {
+    for (const path of ['/admin', '/admin/settings/profile', '/admin/settings/years', '/admin/settings/holidays', '/admin/settings/staff', '/admin/settings/staff/new', '/admin/settings/audits', '/admin/settings/parentPortal', '/admin/settings/local', '/admin/search?q=x']) {
       await page.goto(path);
       await axe(page);
     }
