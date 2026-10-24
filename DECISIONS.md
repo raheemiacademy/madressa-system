@@ -685,3 +685,15 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
   It's safe to run again: people who already have a password aren't emailed. It's audited.
 - **The System page's ops checklist is now called "Go-live checklist"**, so it isn't confused with the setup steps.
 
+
+## 17. Next round (25/10/2026)
+
+- **WhatsApp in place of text messages (your request).** Paid SMS is switched off for now. Communication → WhatsApp picks who (the same groups as texts: current students' primary contacts, chosen classes, teachers, the waiting list, parents without a portal login, all contacts) and a message, optionally from a template, with `{NAME}` filled per person.
+  - **Click-to-send, as you chose.** Each person gets a `wa.me` button that opens WhatsApp (the app on a phone, WhatsApp Web on a computer) with the message written. The admin presses send. The system sends nothing and needs no WhatsApp Business account, so no new dependency, cost or third-party data processor.
+  - The incident page has "Tell the parents on WhatsApp", using the system incident template. The incident form's "text the primary contacts" box is gone.
+  - SMS templates are now "Message templates" and feed WhatsApp. The SMS code, routes and data stay, so texts can come back by unhiding them.
+- **Import from any spreadsheet (smart matching now, AI later, as you chose).** Uploading a file whose headings aren't the template's adds a "Match your columns" step. The system guesses from the heading words (for example "Mobile", "Parent name", "DOB" or "Full name", which is split at the last space); the admin checks and corrects the guesses, then sees the usual preview. Matching runs on the server, and only known fields are accepted.
+  - Brothers and sisters imported with the same parent email now share one parent record instead of making duplicates.
+  - "Moving from another system" (`/admin/import/guide`) explains exporting from IBEAMS, Excel, Google Sheets and paper records, in order: classes, then students.
+- **Hidden for later (your request):** text messages, the online payment gateways (Stripe/GoCardless: families pay by cash or bank transfer), the student portal, and the Student Diary. Their Settings tabs, menu items and links are hidden. The routes and data are kept, so nothing is lost. They're listed in FUTURE.md.
+- **What's new (`/admin/whats-new`, your request).** Each update gets a plain-language entry in `src/lib/releases.ts` (New / Better / Fixed / Removed), newest first. The dashboard shows "New update" to each admin until they open the page; `admin_staff.seen_release` (migration 0009) remembers this. Updates are installed by whoever hosts the system, so there's no "update" button; the page says which version is running. The System page shows the same version. A new madrasah's first admin starts with the current release marked as seen.

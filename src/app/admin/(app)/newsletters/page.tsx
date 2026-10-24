@@ -12,11 +12,11 @@ export const metadata = { title: 'Newsletters' };
 
 export default async function Newsletters() {
   const admin = await requireAdmin();
-  if (!adminCan(admin.staff, 'marketing')) redirect(adminCan(admin.staff, 'sms') ? '/admin/sms' : '/admin/no-access');
+  if (!adminCan(admin.staff, 'marketing')) redirect(adminCan(admin.staff, 'sms') ? '/admin/whatsapp' : '/admin/no-access');
   const rows = await listNewsletters(db);
   return (
     <div className="ra-page">
-      <div className="ra-page-h"><div><h1>Newsletters &amp; SMS</h1><p>Email newsletters and text messages to parents, teachers and staff</p></div>
+      <div className="ra-page-h"><div><h1>Newsletters</h1><p>Email newsletters to parents, teachers and staff</p></div>
         <div className="ra-toolbar"><Link className="ra-btn primary" href="/admin/newsletters/new"><Icon name="plus" />New newsletter</Link></div></div>
       <CommTabs admin={admin} current="/admin/newsletters" />
       <section className="ra-card" aria-label="Newsletters">

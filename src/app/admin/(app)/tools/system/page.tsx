@@ -23,7 +23,7 @@ export default async function System() {
   const done = s.checklist.filter((c) => c.done).length;
   return (
     <div className="ra-page">
-      <div className="ra-page-h"><div><h1>System</h1><p>Version {s.version} ({s.commit}) · how the background services are doing</p></div></div>
+      <div className="ra-page-h"><div><h1>System</h1><p>Version {s.version} ({s.commit}) · <Link href="/admin/whats-new">What’s new</Link> · how the background services are doing</p></div></div>
       <OpsNav current="/admin/tools/system" />
       <div className="ra-kpis">
         <div className="ra-kpi" style={{ ['--c' as string]: s.worker.running ? 'var(--color-ok)' : 'var(--color-bad)' }}>

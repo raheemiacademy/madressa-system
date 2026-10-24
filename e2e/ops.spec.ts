@@ -15,6 +15,20 @@ test('system page: status, checklist and a working calendar feed', async ({ page
   expect((await page.request.get('/calendar/not-the-real-address-at-all.ics')).status()).toBe(404);
 });
 
+test('What’s new: the dashboard says there’s an update until the page is opened', async ({ page }) => {
+  await signIn(page, 'clerk@example.org'); // nobody else opens What's new as the clerk, so the banner is still there
+  const banner = page.getByRole('status').filter({ hasText: 'New update:' });
+  await expect(banner).toBeVisible();
+  await banner.getByRole('link', { name: 'See what’s new' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'What’s new' })).toBeVisible();
+  await expect(page.getByText(/^You’re on version \d/)).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2 }).first()).toContainText('New');
+  await page.goto('/admin');
+  await expect(page.getByRole('status').filter({ hasText: 'New update:' })).toHaveCount(0);
+  await page.goto('/admin/whats-new');
+  await expect(page.getByRole('heading', { level: 2 }).first()).not.toContainText('New');
+});
+
 test('backups: make one now; deleting needs the school name', async ({ page }) => {
   await signIn(page);
   await page.goto('/admin/tools/backups');
@@ -72,7 +86,7 @@ for (const scheme of ['light', 'dark'] as const) {
   test(`system tools pass axe in ${scheme} theme`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme });
     await signIn(page);
-    for (const path of ['/admin/tools/system', '/admin/tools/backups', '/admin/tools/logs', '/admin/tools/email', '/admin/tools/api', '/admin/tools/portals', '/admin/docs']) {
+    for (const path of ['/admin/tools/system', '/admin/tools/backups', '/admin/tools/logs', '/admin/tools/email', '/admin/tools/api', '/admin/tools/portals', '/admin/docs', '/admin/whats-new']) {
       await page.goto(path);
       const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
       expect(r.violations.map((x) => `${path} ${x.id}: ${x.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);

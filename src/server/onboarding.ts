@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { Db, DbOrTx } from '@/db';
 import { academicYear, adminStaff, contact, feeStructure, loginIdentity, onboarding, schoolClass, schoolProfile, student, studentContact, teacher } from '@/db/schema';
 import { STEPS, type StepKey } from '@/lib/onboarding-steps';
+import { LATEST } from '@/lib/releases';
 import { zodErrors } from '@/lib/validate';
 import { audit, type AuditActor } from './audit';
 import { createSession, hashPassword, hitRateLimit, passwordProblem, sha256 } from './auth';
@@ -47,7 +48,7 @@ export async function setUpSchool(db: Db, raw: unknown, meta: { ip?: string | nu
   return db.transaction(async (tx) => {
     if (!(await needsFirstAdmin(tx))) return { ok: false as const, error: 'This madrasah has already been set up. Sign in instead.' };
     await tx.insert(schoolProfile).values({ id: 1, name: v.school }).onConflictDoUpdate({ target: schoolProfile.id, set: { name: v.school, updatedAt: new Date() } });
-    const [s] = await tx.insert(adminStaff).values({ name: v.name, email: v.email, rank: 'Head Administrator', isSuper: true }).returning();
+    const [s] = await tx.insert(adminStaff).values({ name: v.name, email: v.email, rank: 'Head Administrator', isSuper: true, seenRelease: LATEST.version }).returning();
     const [i] = await tx.insert(loginIdentity).values({ portal: 'admin', email: v.email, passwordHash: hash, adminStaffId: s!.id, emailVerifiedAt: new Date(), lastLoginAt: new Date() }).returning();
     await tx.insert(onboarding).values({ id: 1 }).onConflictDoNothing();
     await audit(tx, { identityId: i!.id, name: v.name }, { action: `Set up ${v.school} and created the first admin account`, page: 'Setup', entity: 'admin_staff', entityId: s!.id });

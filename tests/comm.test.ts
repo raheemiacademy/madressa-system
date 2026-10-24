@@ -10,6 +10,7 @@ import { recipients, saveNewsletter, sendNewsletter } from '@/server/comm/newsle
 import { sendReceipts, studentLeftEmails } from '@/server/comm/notify';
 import { csvRecipients, groupRecipients, normaliseNumber, processSmsQueue, queueSms, smsOutbox, whatsappLink } from '@/server/comm/sms';
 import { fill, getTemplate, render, saveTemplate } from '@/server/comm/templates';
+import { whatsappList } from '@/server/comm/whatsapp';
 import { syncPortalLogin } from '@/server/people/logins';
 import { requestPasswordLink, redeemPasswordLink } from '@/server/password-links';
 import { db, makeStaff, resetDb } from './helpers';
@@ -134,6 +135,18 @@ describe('newsletters and SMS', () => {
     const [m] = await db.select().from(mailQueue);
     expect(m!.html).toContain('Hello Parent Comm');
     expect(m!.html).not.toContain('onerror');
+  });
+
+  it('lists WhatsApp recipients once each with the message filled in, counting numbers it can.t use', async () => {
+    const f = await family();
+    const [noMobile] = await db.insert(contact).values({ name: 'Bad Number', email: 'badnumber@example.org', mobile: '12' }).returning();
+    await db.insert(studentContact).values({ studentId: f.kid.id, contactId: noMobile!.id, type: 'Parent', isPrimary: true });
+    const r = await whatsappList(db, 'currentPrimary', 'Salaam {NAME}, from {SCHOOL_NAME}');
+    expect(r.unusable).toBe(1);
+    expect(r.people).toHaveLength(1);
+    expect(r.people[0]).toMatchObject({ name: 'Parent Comm', number: '447700900111' });
+    expect(r.people[0]!.text).toMatch(/^Salaam Parent, from /);
+    expect((await whatsappList(db, 'teachers', 'Hi {NAME}')).people.map((p) => p.text)).toEqual(['Hi Teacher']);
   });
 
   it('normalises numbers, builds WhatsApp links, queues and sends texts with the log driver', async () => {

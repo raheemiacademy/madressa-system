@@ -6,9 +6,11 @@ import { db } from '@/db';
 import { resolveYear } from '@/server/academic-years';
 import { actorOf, requireAdmin } from '@/server/next/actor';
 import { parseCsv, parseXlsx } from '@/server/people/csv';
+import { applyMapping, guessMapping, targetsFor, usesTemplate } from '@/server/people/column-match';
 import { checkRows, commitRows, quickAddRows, type ImportKind, type RowResult } from '@/server/people/imports';
 
-export type ImportState = { rows?: Record<string, string>[]; results?: RowResult[]; done?: string; error?: string } | undefined;
+export type ImportState = { rows?: Record<string, string>[]; results?: RowResult[]; done?: string; error?: string;
+  match?: { headers: string[]; raw: Record<string, string>[]; mapping: Record<string, string> } } | undefined;
 const KINDS: ImportKind[] = ['students', 'contacts', 'teachers', 'classes'];
 
 async function yearId() {
@@ -19,7 +21,7 @@ async function yearId() {
 export async function previewImport(kind: ImportKind, _p: ImportState, fd: FormData): Promise<ImportState> {
   await requireAdmin('edit');
   if (!KINDS.includes(kind)) return { error: 'Unknown import' };
-  let parsed: { rows: Record<string, string>[]; error?: string };
+  let parsed: { rows: Record<string, string>[]; headers?: string[]; error?: string };
   const file = fd.get('file');
   const pasted = String(fd.get('paste') ?? '').trim();
   const quick = String(fd.get('quick') ?? '').trim();
@@ -28,10 +30,24 @@ export async function previewImport(kind: ImportKind, _p: ImportState, fd: FormD
   else if (file instanceof File && file.size) {
     if (file.size > 5 * 1024 * 1024) return { error: 'Use a file under 5 MB.' };
     parsed = /\.xlsx$/i.test(file.name) ? await parseXlsx(await file.arrayBuffer()) : parseCsv(await file.text());
-  } else return { error: kind === 'classes' ? 'Choose a file, paste rows, or type class names.' : 'Choose a CSV file or paste rows.' };
+  } else return { error: kind === 'classes' ? 'Choose a file, paste rows, or type class names.' : 'Choose a CSV or Excel file, or paste rows.' };
   if (parsed.error) return { error: parsed.error };
   if (!parsed.rows.length) return { error: 'No rows found under the header row.' };
+  // Their own layout: ask them to check how the columns are matched before anything is checked.
+  const headers = parsed.headers?.length ? parsed.headers : Object.keys(parsed.rows[0]!);
+  if (!usesTemplate(kind, headers)) return { match: { headers, raw: parsed.rows, mapping: guessMapping(kind, headers) } };
   return { rows: parsed.rows, results: await checkRows(db, kind, parsed.rows, await yearId()) };
+}
+
+/** Step 1b (own layout): rename their columns as matched, then check every row as usual. */
+export async function previewMatched(kind: ImportKind, raw: Record<string, string>[], mapping: Record<string, string>): Promise<ImportState> {
+  await requireAdmin('edit');
+  if (!KINDS.includes(kind) || !Array.isArray(raw) || raw.length > 5000) return { error: 'Nothing to check' };
+  const allowed = new Set(targetsFor(kind).map((t) => t.value));
+  const clean = Object.fromEntries(Object.entries(mapping).filter(([, to]) => allowed.has(to)));
+  const rows = applyMapping(raw, clean);
+  if (!Object.values(clean).some(Boolean)) return { error: 'Match at least one column.' };
+  return { rows, results: await checkRows(db, kind, rows, await yearId()) };
 }
 
 /** Step 2: re-validate the same rows on the server and write the good ones. */

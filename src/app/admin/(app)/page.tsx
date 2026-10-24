@@ -9,6 +9,7 @@ import { Icon, type IconName } from '@/components/Icon';
 import { formatCalendarDate, formatInstant, greeting } from '@/lib/dates';
 import { formatPence } from '@/lib/money';
 import { STEPS } from '@/lib/onboarding-steps';
+import { LATEST } from '@/lib/releases';
 import { formatChange, initials, plural } from '@/lib/text';
 import { resolveYear } from '@/server/academic-years';
 import { weeklyTrend } from '@/server/attendance/registers';
@@ -79,6 +80,11 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       <SeenOnce />
       {setup && sp.welcome === '1' && <Welcome school={(await getProfile(db))?.name ?? 'Your madrasah'} name={admin.name.split(/\s+/)[0]!} firstHref={STEPS[0].href} />}
       {setup && !setup.hidden && <SetupChecklist p={setup} />}
+      {admin.staff.seenRelease !== LATEST.version && sp.welcome !== '1' && (
+        <div className="ra-banner" role="status" style={{ ['--c' as string]: 'var(--ra-violet)' }}>
+          <div><b>New update: {LATEST.title}.</b> {LATEST.summary}</div><Link className="ra-link" href="/admin/whats-new">See what’s new</Link>
+        </div>
+      )}
       <div className={`ra-hero${anim}`}>
         <div className="ra-hero-date">{formatInstant(now, 'EEEE d MMMM', tz)}</div>
         <h1>{greeting(now, tz)}, {admin.name.split(/\s+/)[0]}</h1>

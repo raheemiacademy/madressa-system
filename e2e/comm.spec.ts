@@ -40,6 +40,26 @@ test('newsletter: write, preview, send a test, and see it on the mail queue', as
   await expect(page.getByRole('cell', { name: '[Test] Sample autumn newsletter' })).toBeVisible();
 });
 
+test('WhatsApp: each parent gets an Open WhatsApp button with the message, and opened rows tick off', async ({ page }) => {
+  await signIn(page);
+  await page.goto('/admin/whatsapp');
+  await page.getByLabel('Who').selectOption('currentPrimary');
+  await page.getByRole('button', { name: 'Show the list' }).click();
+  const message = page.getByRole('textbox', { name: 'Message' });
+  await expect(message).toHaveValue('Salaam {NAME}, ');
+  await message.fill('Salaam {NAME}, class is cancelled today.');
+  await page.getByRole('button', { name: 'Show the list' }).click();
+  const list = page.getByRole('list', { name: /^WhatsApp/ });
+  const first = list.getByRole('link').first();
+  await expect(first).toHaveAttribute('href', /^https:\/\/wa\.me\/44\d+\?text=Salaam%20\w+%2C%20class%20is%20cancelled%20today\.$/);
+  await expect(page.getByText(/^0 of \d+ opened in WhatsApp$/)).toBeVisible();
+  const popup = page.waitForEvent('popup');
+  await first.click();
+  await (await popup).close(); // wa.me opens in a new tab
+  await expect(page.getByText(/^1 of \d+ opened in WhatsApp$/)).toBeVisible();
+  await expect(list.getByRole('link', { name: /\(opened\)$/ })).toHaveCount(1);
+});
+
 test('SMS: queue texts to a group and see them in the logs; templates editor previews', async ({ page }) => {
   await signIn(page);
   await page.goto('/admin/sms');
@@ -96,8 +116,8 @@ test('print layouts download as real PDFs; staff without Marketing or Send SMS a
   const ctx = await browser.newContext();
   const c = await ctx.newPage();
   await signIn(c, 'clerk@example.org');
-  await expect(c.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Newsletters & SMS' })).toHaveCount(0);
-  for (const p of ['/admin/newsletters', '/admin/newsletters/new', '/admin/sms', '/admin/sms/logs', '/admin/settings/mail-queue', '/admin/settings/templates']) {
+  await expect(c.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'WhatsApp' })).toHaveCount(0);
+  for (const p of ['/admin/whatsapp', '/admin/newsletters', '/admin/newsletters/new', '/admin/sms', '/admin/sms/logs', '/admin/settings/mail-queue', '/admin/settings/templates']) {
     await c.goto(p);
     await expect(c, p).toHaveURL(/\/admin\/no-access$/);
   }
@@ -111,7 +131,7 @@ for (const scheme of ['light', 'dark'] as const) {
     test.setTimeout(120_000);
     await page.emulateMedia({ colorScheme: scheme });
     await signIn(page);
-    for (const path of ['/admin/messages', '/admin/messages/new', '/admin/messages/delete', '/admin/newsletters', '/admin/newsletters/new', '/admin/newsletters/files', '/admin/sms', '/admin/sms/templates',
+    for (const path of ['/admin/messages', '/admin/messages/new', '/admin/messages/delete', '/admin/newsletters', '/admin/newsletters/new', '/admin/newsletters/files', '/admin/sms', '/admin/sms/templates', '/admin/whatsapp?group=currentPrimary',
       '/admin/sms/logs', '/admin/settings/mail-queue', '/admin/settings/templates', '/admin/settings/templates/fees.reminder', '/admin/settings/sms', '/admin/contacts/1', '/admin/teachers/1',
       '/teacher/set-password', '/teacher/login']) {
       await page.goto(path);

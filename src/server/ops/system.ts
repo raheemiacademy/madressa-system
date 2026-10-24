@@ -3,6 +3,7 @@ import { and, asc, desc, eq, gte, isNull, lt, sql } from 'drizzle-orm';
 import type { Db, DbOrTx } from '@/db';
 import { academicYear, adminStaff, apiKey, backup, calendarFeed, classAssignment, contact, event, holiday, jobRun, loginIdentity, mailQueue, schoolClass, student, workerHeartbeat } from '@/db/schema';
 import { formatInstant } from '@/lib/dates';
+import { LATEST } from '@/lib/releases';
 import { audit, type AuditActor } from '../audit';
 import { getProfile } from '../profile';
 import { readTab } from '../settings';
@@ -13,20 +14,20 @@ import { log } from './logs';
 
 /** "Check Automation Services Status": the worker beats every pass (15 seconds), so two minutes of silence means it's stopped. */
 export async function systemStatus(db: DbOrTx, now = new Date()) {
-  const [[beat], [daily], queue, [lastBackup], profile, [year], mail, gateways, [supers]] = await Promise.all([
+  const [[beat], [daily], queue, [lastBackup], profile, [year], mail, [supers]] = await Promise.all([
     db.select().from(workerHeartbeat).where(eq(workerHeartbeat.process, 'worker')),
     db.select().from(jobRun).where(eq(jobRun.key, 'daily')),
     db.select({ status: mailQueue.status, n: sql<number>`count(*)::int` }).from(mailQueue).groupBy(mailQueue.status),
     db.select().from(backup).orderBy(desc(backup.createdAt)).limit(1),
     getProfile(db),
     db.select().from(academicYear).where(eq(academicYear.isCurrent, true)),
-    readTab(db, 'mail'), readTab(db, 'gateways'),
+    readTab(db, 'mail'),
     db.select({ n: sql<number>`count(*)::int` }).from(adminStaff).where(and(eq(adminStaff.isSuper, true), isNull(adminStaff.deletedAt)))
   ]);
   const count = (s: string) => queue.find((q) => q.status === s)?.n ?? 0;
   const running = !!beat && now.getTime() - beat.lastBeat.getTime() < 2 * 60_000;
   return {
-    version: process.env.npm_package_version ?? '0.1.0', commit: (process.env.RENDER_GIT_COMMIT ?? process.env.GIT_COMMIT ?? '').slice(0, 7) || 'local',
+    version: LATEST.version, commit: (process.env.RENDER_GIT_COMMIT ?? process.env.GIT_COMMIT ?? '').slice(0, 7) || 'local',
     worker: { running, lastBeat: beat?.lastBeat ?? null }, lastDaily: daily?.lastRunOn ?? null,
     mail: { queued: count('queued'), failed: count('failed'), sent: count('sent'), driver: process.env.EMAIL_DRIVER === 'smtp' ? 'Sending for real (SMTP)' : 'Test mode: logged, not sent' },
     sms: process.env.SMS_DRIVER && process.env.SMS_DRIVER !== 'log' ? `Sending with ${process.env.SMS_DRIVER}` : 'Test mode: logged, not sent',
@@ -40,7 +41,6 @@ export async function systemStatus(db: DbOrTx, now = new Date()) {
       { label: 'Backups switched on (encryption key set)', done: backupsConfigured(), href: '/admin/tools/backups' },
       { label: 'A backup in the last two days', done: !!lastBackup && now.getTime() - lastBackup.createdAt.getTime() < 2 * 86_400_000, href: '/admin/tools/backups' },
       { label: 'Files kept off the server (S3 storage)', done: process.env.STORAGE_DRIVER === 's3', href: '/admin/tools/system' },
-      { label: 'Online payments set up', done: !!gateways.stripeEnabled || !!gateways.gocardlessEnabled, href: '/admin/settings/gateways' },
       { label: 'At least two super admins', done: (supers?.n ?? 0) >= 2, href: '/admin/settings/staff' }
     ]
   };

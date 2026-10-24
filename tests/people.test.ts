@@ -9,6 +9,7 @@ import { ageOn } from '@/server/people/common';
 import { conflicts, copyAddressToStudents, massAssign, saveContact } from '@/server/people/contacts';
 import { csvDate, csvIds, parseCsv, toCsv } from '@/server/people/csv';
 import { parseAnswer, saveField, listFields } from '@/server/people/custom-fields';
+import { applyMapping, FULL_NAME, guessMapping, usesTemplate } from '@/server/people/column-match';
 import { checkRows, commitRows } from '@/server/people/imports';
 import { formWindow, submitApplication } from '@/server/people/registration';
 import { globalSearch } from '@/server/people/search';
@@ -285,6 +286,24 @@ describe('imports and exports', () => {
     expect(s).toMatchObject({ firstName: 'Test', dob: '2018-02-01', source: 'import' });
     expect(await openClasses(s!.id)).toHaveLength(1);
     expect(await db.select().from(studentContact)).toHaveLength(1);
+  });
+
+  it('matches their own headings, then links siblings to one parent by email', async () => {
+    const { actor, year } = await setup();
+    const { headers, rows } = parseCsv([
+      'Name,Date of Birth,Mother Name,Mother Mobile,Parent Email,Notes',
+      'Test Ali Khan,01/02/2018,Sample Mum,07700 900123,Mum@Example.org,x',
+      'Test Sara Khan,03/04/2019,Sample Mum,07700 900123,mum@example.org,'
+    ].join('\n'));
+    expect(usesTemplate('students', headers)).toBe(false);
+    const m = guessMapping('students', headers);
+    expect(m).toEqual({ name: FULL_NAME, date_of_birth: 'dob', mother_name: 'contact_name', mother_mobile: 'contact_mobile', parent_email: 'contact_email', notes: 'notes' });
+    const res = await checkRows(db, 'students', applyMapping(rows, m), year.id);
+    expect(res.every((r) => r.ok)).toBe(true);
+    expect(await commitRows(db, actor, 'students', res, year.id)).toMatchObject({ added: 2 });
+    expect((await db.select().from(student)).map((s) => [s.firstName, s.surname])).toEqual([['Test Ali', 'Khan'], ['Test Sara', 'Khan']]);
+    expect(await db.select().from(contact)).toHaveLength(1);
+    expect(await db.select().from(studentContact)).toHaveLength(2);
   });
 
   it('export/import edit updates by ID instead of duplicating', async () => {

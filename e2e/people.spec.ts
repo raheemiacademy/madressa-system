@@ -72,13 +72,32 @@ test('import students from pasted CSV: preview, then only good rows are saved', 
   await signIn(page);
   await page.goto('/admin/import/students');
   await page.getByLabel('Or paste rows (with the heading row)').fill('first_name,surname,dob,class\nImported,Kid One,05/06/2018,Test Class B\nBroken,,31/02/2018,No Such Class');
-  await page.getByRole('button', { name: 'Check rows' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
   await expect(page.getByText('1 ready, 1 with problems.')).toBeVisible();
   await expect(page.getByText(/No class called “No Such Class”/)).toBeVisible();
   await page.getByRole('button', { name: '3. Import 1 row' }).click();
   await expect(page.getByText('Import finished: 1 added, 0 updated, 1 skipped.')).toBeVisible();
   await page.goto('/admin/students?q=kid+one');
   await expect(page.getByRole('link', { name: 'Imported Kid One', exact: true })).toBeVisible();
+});
+
+test('import from their own spreadsheet: match the columns, then preview and import', async ({ page }) => {
+  await signIn(page);
+  await page.goto('/admin/import/students');
+  await page.getByLabel('Or paste rows (with the heading row)').fill('Child Name,Date of Birth,Group,Mother Mobile,Shoe size\nMatched Kid Two,07/08/2018,Test Class B,07700 900777,3');
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByRole('heading', { name: '2. Match your columns' })).toBeVisible();
+  await expect(page.getByLabel('Child Name')).toHaveValue('__full_name');
+  await expect(page.getByLabel('Group')).toHaveValue('class');
+  await expect(page.getByLabel('Shoe size')).toHaveValue('');
+  await page.getByRole('button', { name: 'Check rows' }).click();
+  await expect(page.getByText('1 ready, 0 with problems.')).toBeVisible();
+  await page.getByRole('button', { name: '4. Import 1 row' }).click();
+  await expect(page.getByText('Import finished: 1 added, 0 updated, 0 skipped.')).toBeVisible();
+  await page.goto('/admin/students?q=kid+two');
+  await expect(page.getByRole('link', { name: 'Matched Kid Two', exact: true })).toBeVisible();
+  await page.goto('/admin/import/guide');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
 
 test('public application form creates waiting-list students once opened', async ({ page, browser }) => {
@@ -185,7 +204,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await signIn(page);
     for (const path of ['/admin/students', '/admin/students/new', '/admin/students/2', '/admin/students/2/history', '/admin/students/portal-access', '/admin/students/siblings', '/admin/students/walk-home',
       '/admin/students/registration', '/admin/contacts', '/admin/contacts/2', '/admin/contacts/tools', '/admin/teachers', '/admin/teachers/1', '/admin/teachers/new', '/admin/teachers/hours?teacher=1',
-      '/admin/classes', '/admin/classes/1', '/admin/classes/timetable', '/admin/import/students', '/admin/settings/custom-fields', '/admin/settings/year-groups', '/admin/settings/years/wizard']) {
+      '/admin/classes', '/admin/classes/1', '/admin/classes/timetable', '/admin/import/students', '/admin/import/guide', '/admin/settings/custom-fields', '/admin/settings/year-groups', '/admin/settings/years/wizard']) {
       await page.goto(path);
       const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
       expect(r.violations.map((x) => `${path} ${x.id}: ${x.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);

@@ -28,8 +28,7 @@ export default async function Portals() {
   const base = appUrl();
   const rows: [string, string, boolean, { name: string; at: Date | null }[] | null, string][] = [
     ['Parent portal', '/parent', !parentTab.disabled, parents, '/admin/settings/parentPortal'],
-    ['Teacher portal', '/teacher', true, teachers, '/admin/settings/teacherPortal'],
-    ['Student portal', '/student', false, null, '/admin/settings/studentPortal']
+    ['Teacher portal', '/teacher', true, teachers, '/admin/settings/teacherPortal']
   ];
   return (
     <div className="ra-page">

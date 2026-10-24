@@ -63,6 +63,7 @@ export const adminStaff = pgTable('admin_staff', {
   dbsIssuedOn: date('dbs_issued_on', { mode: 'string' }),
   dbsExpiresOn: date('dbs_expires_on', { mode: 'string' }),
   isSuper: boolean('is_super').notNull().default(false),
+  seenRelease: text('seen_release'), // the newest "What's new" release this person has opened
   canEdit: boolean('can_edit').notNull().default(false),
   canDelete: boolean('can_delete').notNull().default(false),
   feesAccess: boolean('fees_access').notNull().default(false),

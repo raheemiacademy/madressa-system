@@ -10,8 +10,8 @@ type Tpl = { id: number; name: string; severity: string; title: string; report: 
 export type IncidentValues = { kind: string; classId: string; studentId: string; teacherId: string; staffId: string; severity: string; occurredAt: string; title: string; report: string; action: string; inEoty: boolean; onPortal: boolean };
 
 /** §9 Add incident: who (a class then a student, or a teacher, or staff), an optional template, and what happened. */
-export function IncidentForm({ id, v, classes, rosters, teachers, staff, severities, templates, canSms }: {
-  id: number | null; v: IncidentValues; classes: Opt[]; rosters: Record<string, Opt[]>; teachers: Opt[]; staff: Opt[]; severities: readonly string[]; templates: Tpl[]; canSms: boolean;
+export function IncidentForm({ id, v, classes, rosters, teachers, staff, severities, templates }: {
+  id: number | null; v: IncidentValues; classes: Opt[]; rosters: Record<string, Opt[]>; teachers: Opt[]; staff: Opt[]; severities: readonly string[]; templates: Tpl[];
 }) {
   const [kind, setKind] = useState(v.kind);
   const [classId, setClassId] = useState(v.classId || classes[0]?.value || '');
@@ -41,7 +41,6 @@ export function IncidentForm({ id, v, classes, rosters, teachers, staff, severit
         <Check name="inEoty" label="Include in the end-of-term report" defaultChecked={f.inEoty} />
         <Check name="onPortal" label="Show on the parent portal" defaultChecked={f.onPortal} />
         {kind === 'student' && <Check name="emailContacts" label="Email the primary contacts" />}
-        {kind === 'student' && canSms && <Check name="smsContacts" label="Text the primary contacts" />}
       </div>
     </Form>
   );

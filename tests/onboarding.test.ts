@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { sql } from '@/db';
 import { academicYear, adminStaff, classTeacher, contact, feeStructure, loginIdentity, mailQueue, onboarding, schoolClass, schoolProfile, session, student, studentContact, teacher } from '@/db/schema';
+import { LATEST } from '@/lib/releases';
 import { hideChecklist, invitePortalUsers, needsFirstAdmin, setUpSchool, setupProgress, skipStep } from '@/server/onboarding';
 import { db, makeStaff, resetDb } from './helpers';
 
@@ -22,7 +23,7 @@ describe('first admin', () => {
     expect(r).toMatchObject({ ok: true, token: expect.any(String) });
     expect((await db.select().from(schoolProfile))[0]!.name).toBe('Sample Madrasah');
     const [s] = await db.select().from(adminStaff);
-    expect(s).toMatchObject({ name: 'Sample Founder', email: 'founder@example.org', isSuper: true });
+    expect(s).toMatchObject({ name: 'Sample Founder', email: 'founder@example.org', isSuper: true, seenRelease: LATEST.version }); // no "new update" banner on day one
     expect((await db.select().from(loginIdentity))[0]).toMatchObject({ portal: 'admin', adminStaffId: s!.id, emailVerifiedAt: expect.any(Date) });
     expect(await db.select().from(session)).toHaveLength(1);
     expect(await needsFirstAdmin(db)).toBe(false);

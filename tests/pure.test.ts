@@ -5,6 +5,16 @@ import { formatPence, parsePounds, penceToInput } from '@/lib/money';
 import { safeNext } from '@/lib/safe-next';
 import { initials, plural } from '@/lib/text';
 import { adminCan } from '@/server/permissions';
+import { LATEST, RELEASES } from '@/lib/releases';
+
+describe('What’s new releases', () => {
+  it('is newest first, with unique versions and a change in each', () => {
+    expect(LATEST).toBe(RELEASES[0]);
+    expect(new Set(RELEASES.map((r) => r.version)).size).toBe(RELEASES.length);
+    expect(RELEASES.map((r) => r.date)).toEqual([...RELEASES.map((r) => r.date)].sort().reverse());
+    for (const r of RELEASES) expect(r.changes.length).toBeGreaterThan(0);
+  });
+});
 
 describe('money (integer pence)', () => {
   it.each([

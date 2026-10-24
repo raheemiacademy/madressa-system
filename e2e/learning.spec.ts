@@ -76,6 +76,9 @@ test('events: required consent, then an opt-in raises an invoice; incidents and 
   await page.getByRole('textbox', { name: 'Report' }).fill('Slipped on a wet floor.');
   await page.getByRole('button', { name: 'Record incident' }).click();
   await expect(page.getByRole('link', { name: 'Sample slip in corridor' })).toBeVisible();
+  await page.getByRole('link', { name: 'Minor injury' }).first().click();
+  await expect(page.getByRole('heading', { name: 'Tell the parents on WhatsApp' })).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Main contacts' }).getByRole('link').first()).toHaveAttribute('href', /^https:\/\/wa\.me\/44\d+\?text=/);
 
   await page.goto('/admin/forums');
   await page.getByRole('link', { name: 'General' }).click();

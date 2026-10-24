@@ -12,6 +12,7 @@ import { saveNewsletter } from '../src/server/comm/newsletters';
 import { saveHomework } from '../src/server/learning/homework';
 import { saveExam, saveGradeSystem, saveResults, saveTest, examResults, STANDARD_GRADES } from '../src/server/learning/exams';
 import { saveReport, saveEntries } from '../src/server/learning/eoty';
+import { formatInstant } from '../src/lib/dates';
 import { saveIncident, saveIncidentTemplate } from '../src/server/learning/incidents';
 import { awardMerits, saveMerit } from '../src/server/learning/merits';
 import { saveProduct } from '../src/server/learning/products';
@@ -88,7 +89,7 @@ if (!anyStudent && year) {
 // Attendance: the last eight Monday registers, a few teacher logs, a parent notice and a holiday request.
 const [anySession] = await db.select({ id: schema.registerSession.id }).from(schema.registerSession).limit(1);
 if (!anySession && year) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = formatInstant(new Date(), 'yyyy-MM-dd'); // London's date: UTC's is a day behind just after midnight in summer time
   const mondays: string[] = [];
   for (let d = new Date(`${today}T12:00:00Z`); mondays.length < 8; d.setUTCDate(d.getUTCDate() - 1)) {
     const iso = d.toISOString().slice(0, 10);
