@@ -66,6 +66,26 @@ export const TEMPLATES: Record<string, Def> = {
     subject: 'Set your {PORTAL} password for {SCHOOL_NAME}',
     body: '<p>Dear {NAME},</p><p>Use this link to confirm your email and choose your password for the {SCHOOL_NAME} {PORTAL}:</p><p><a href="{LINK}">{LINK}</a></p><p>The link works once and expires in {HOURS} hours. If you didn’t ask for it, you can ignore this email.</p>'
   },
+  'homework.new': {
+    group: 'Homework', name: 'New homework', vars: [...common, 'CONTACT_NAME', 'STUDENT_NAME', 'CLASS_NAME', 'TITLE', 'DEADLINE', 'INSTRUCTIONS'],
+    subject: 'Homework for {STUDENT_NAME}: {TITLE}',
+    body: '<p>Dear {CONTACT_NAME},</p><p>New homework has been set for {STUDENT_NAME} in {CLASS_NAME}: <strong>{TITLE}</strong>, due {DEADLINE}.</p><p>{INSTRUCTIONS}</p>'
+  },
+  'homework.reminder': {
+    group: 'Homework', name: 'Homework not completed', vars: [...common, 'CONTACT_NAME', 'STUDENT_NAME', 'TITLE', 'DEADLINE'],
+    subject: 'Homework reminder: {TITLE}',
+    body: '<p>Dear {CONTACT_NAME},</p><p>Our records show {STUDENT_NAME} hasn’t completed <strong>{TITLE}</strong>, which was due {DEADLINE}. Please encourage them to finish it.</p>'
+  },
+  'homework.year-report': {
+    group: 'Homework', name: 'Homework year report', vars: [...common, 'CONTACT_NAME', 'STUDENT_NAME', 'TOTAL', 'COMPLETED', 'INCOMPLETE', 'PERCENT'],
+    subject: 'Homework this year: {STUDENT_NAME}',
+    body: '<p>Dear {CONTACT_NAME},</p><p>This year {STUDENT_NAME} completed {COMPLETED} of {TOTAL} homework tasks ({PERCENT}). {INCOMPLETE} were not completed.</p>'
+  },
+  'incidents.notify': {
+    group: 'Incidents', name: 'Incident report to contacts', vars: [...common, 'CONTACT_NAME', 'STUDENT_NAME', 'TITLE', 'SEVERITY', 'WHEN', 'REPORT', 'ACTION'],
+    subject: 'Incident report: {STUDENT_NAME}',
+    body: '<p>Dear {CONTACT_NAME},</p><p>We’re writing about an incident involving {STUDENT_NAME} on {WHEN}.</p><p><strong>{TITLE}</strong> ({SEVERITY})</p><p>{REPORT}</p><p>Action taken: {ACTION}</p><p>Please contact the office if you have any questions.</p>'
+  },
   'student.left': {
     group: 'Student', name: 'Student left', vars: [...common, 'CONTACT_NAME', 'STUDENT_NAME', 'LEFT_DATE', 'STATUS'],
     subject: '{STUDENT_NAME} has left {SCHOOL_NAME}',

@@ -878,3 +878,346 @@ export const authToken = pgTable('auth_token', {
   usedAt: tz('used_at'),
   createdAt: createdAt()
 });
+
+/* ───────────── Phase 6: learning (§8 events, §9 incidents, §13 homework, §14 forums, §15 exams, §16 EOTY, §17 products, §18 merits) ───────────── */
+
+// §13 Homework. A row per student it's set for; completedAt null = not done yet.
+export const homeworkTemplate = pgTable('homework_template', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  instructions: text('instructions').notNull().default('')
+});
+export const homework = pgTable('homework', {
+  id: serial('id').primaryKey(),
+  academicYearId: integer('academic_year_id').notNull().references(() => academicYear.id, { onDelete: 'cascade' }),
+  classId: integer('class_id').notNull().references(() => schoolClass.id, { onDelete: 'cascade' }),
+  teacherId: integer('teacher_id').references(() => teacher.id, { onDelete: 'set null' }),
+  title: text('title').notNull(),
+  instructions: text('instructions').notNull().default(''),
+  deadlineAt: tz('deadline_at').notNull(),
+  lockAfterDeadline: boolean('lock_after_deadline').notNull().default(false),
+  allowUploads: boolean('allow_uploads').notNull().default(false),
+  active: boolean('active').notNull().default(true),
+  locked: boolean('locked').notNull().default(false),
+  fileId: uuid('file_id').references(() => fileObject.id, { onDelete: 'set null' }),
+  createdBy: integer('created_by').references(() => loginIdentity.id, { onDelete: 'set null' }),
+  createdAt: createdAt()
+}, (t) => [index('homework_class_idx').on(t.classId), index('homework_deadline_idx').on(t.deadlineAt)]);
+export const homeworkStudent = pgTable('homework_student', {
+  homeworkId: integer('homework_id').notNull().references(() => homework.id, { onDelete: 'cascade' }),
+  studentId: integer('student_id').notNull().references(() => student.id, { onDelete: 'cascade' }),
+  completedAt: tz('completed_at'),
+  note: text('note'),
+  uploadFileId: uuid('upload_file_id').references(() => fileObject.id, { onDelete: 'set null' })
+}, (t) => [primaryKey({ columns: [t.homeworkId, t.studentId] }), index('homework_student_student_idx').on(t.studentId)]);
+
+// §15 Grades: rows of "at least this % → grade".
+export const gradeSystem = pgTable('grade_system', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull().unique(),
+  isDefault: boolean('is_default').notNull().default(false)
+});
+export const gradeBand = pgTable('grade_band', {
+  systemId: integer('system_id').notNull().references(() => gradeSystem.id, { onDelete: 'cascade' }),
+  minPct: smallint('min_pct').notNull(),
+  grade: text('grade').notNull()
+}, (t) => [primaryKey({ columns: [t.systemId, t.minPct] }), check('grade_band_pct', sql`${t.minPct} between 0 and 100`)]);
+
+// §15 Exams (official exams feed EOTY reports; progressive tests don't). Tests are the subject papers.
+export const EXAM_STATUSES = ['open', 'closed', 'locked'] as const;
+export const exam = pgTable('exam', {
+  id: serial('id').primaryKey(),
+  academicYearId: integer('academic_year_id').notNull().references(() => academicYear.id, { onDelete: 'cascade' }),
+  classId: integer('class_id').notNull().references(() => schoolClass.id, { onDelete: 'cascade' }),
+  official: boolean('official').notNull().default(true),
+  title: text('title').notNull(),
+  date: date('date', { mode: 'string' }).notNull(),
+  status: text('status').notNull().default('open'),
+  gradeSystemId: integer('grade_system_id').references(() => gradeSystem.id, { onDelete: 'set null' }),
+  addedByTeacher: boolean('added_by_teacher').notNull().default(false),
+  createdBy: integer('created_by').references(() => loginIdentity.id, { onDelete: 'set null' }),
+  createdAt: createdAt()
+}, (t) => [check('exam_status', sql`${t.status} in ('open', 'closed', 'locked')`)]);
+export const examTest = pgTable('exam_test', {
+  id: serial('id').primaryKey(),
+  examId: integer('exam_id').notNull().references(() => exam.id, { onDelete: 'cascade' }),
+  subjectId: integer('subject_id').references(() => subject.id, { onDelete: 'set null' }),
+  name: text('name').notNull(),
+  maxMarks: smallint('max_marks').notNull(),
+  sortOrder: smallint('sort_order').notNull().default(0)
+}, (t) => [check('exam_test_max', sql`${t.maxMarks} between 1 and 1000`)]);
+// Marks are stored in tenths so half marks are exact (45.5 → 455).
+export const examResult = pgTable('exam_result', {
+  testId: integer('test_id').notNull().references(() => examTest.id, { onDelete: 'cascade' }),
+  studentId: integer('student_id').notNull().references(() => student.id, { onDelete: 'cascade' }),
+  markTenths: integer('mark_tenths'), // null with absent = didn't sit it
+  absent: boolean('absent').notNull().default(false),
+  updatedAt: tz('updated_at').notNull().defaultNow()
+}, (t) => [primaryKey({ columns: [t.testId, t.studentId] }), check('exam_result_mark', sql`${t.markTenths} is null or ${t.markTenths} >= 0`)]);
+export const semester = pgTable('semester', {
+  id: serial('id').primaryKey(),
+  academicYearId: integer('academic_year_id').notNull().references(() => academicYear.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  classIds: integer('class_ids').array().notNull().default(sql`'{}'::int[]`),
+  examIds: integer('exam_ids').array().notNull().default(sql`'{}'::int[]`)
+});
+export const quiz = pgTable('quiz', {
+  id: serial('id').primaryKey(),
+  subjectId: integer('subject_id').references(() => subject.id, { onDelete: 'set null' }),
+  title: text('title').notNull(),
+  startsAt: tz('starts_at').notNull(),
+  endsAt: tz('ends_at').notNull(),
+  teacherId: integer('teacher_id').references(() => teacher.id, { onDelete: 'set null' }),
+  classIds: integer('class_ids').array().notNull().default(sql`'{}'::int[]`),
+  status: text('status').notNull().default('draft') // draft | open | closed
+}, (t) => [check('quiz_times', sql`${t.endsAt} > ${t.startsAt}`), check('quiz_status', sql`${t.status} in ('draft', 'open', 'closed')`)]);
+
+// §16 End-of-term/year reports.
+export const eotyReport = pgTable('eoty_report', {
+  id: serial('id').primaryKey(),
+  academicYearId: integer('academic_year_id').notNull().references(() => academicYear.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  termStart: date('term_start', { mode: 'string' }).notNull(),
+  termEnd: date('term_end', { mode: 'string' }).notNull(),
+  semesterId: integer('semester_id').references(() => semester.id, { onDelete: 'set null' }),
+  includeExams: boolean('include_exams').notNull().default(true),
+  includePositions: boolean('include_positions').notNull().default(false),
+  includeAttendance: boolean('include_attendance').notNull().default(true),
+  includeHomework: boolean('include_homework').notNull().default(true),
+  scoring: boolean('scoring').notNull().default(true),
+  scoreLabels: text('score_labels').array().notNull().default(sql`'{Needs support,Developing,Good,Very good,Excellent}'::text[]`),
+  questions: text('questions').array().notNull().default(sql`'{Behaviour,Progress,Effort}'::text[]`),
+  active: boolean('active').notNull().default(true),
+  teachersCanDownload: boolean('teachers_can_download').notNull().default(false),
+  createdAt: createdAt()
+}, (t) => [check('eoty_dates', sql`${t.termEnd} >= ${t.termStart}`)]);
+// One per student per report: scores for each question (1–5, by position) and the teacher's comment.
+export const eotyEntry = pgTable('eoty_entry', {
+  reportId: integer('report_id').notNull().references(() => eotyReport.id, { onDelete: 'cascade' }),
+  studentId: integer('student_id').notNull().references(() => student.id, { onDelete: 'cascade' }),
+  scores: smallint('scores').array().notNull().default(sql`'{}'::smallint[]`),
+  comment: text('comment'),
+  writtenBy: text('written_by'),
+  updatedAt: tz('updated_at').notNull().defaultNow()
+}, (t) => [primaryKey({ columns: [t.reportId, t.studentId] })]);
+// Paragraph templates (Behaviour, Progress, Effort × five levels). Built-in text in code; a row overrides it.
+export const eotyParagraph = pgTable('eoty_paragraph', {
+  area: text('area').notNull(),
+  level: smallint('level').notNull(),
+  body: text('body').notNull()
+}, (t) => [primaryKey({ columns: [t.area, t.level] }), check('eoty_paragraph_level', sql`${t.level} between 1 and 5`)]);
+
+// §9 Incidents for students, teachers or staff.
+export const INCIDENT_SEVERITIES = ['Low', 'Medium', 'High', 'Serious'] as const;
+export const incidentTemplate = pgTable('incident_template', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  severity: text('severity').notNull().default('Low'),
+  title: text('title').notNull().default(''),
+  report: text('report').notNull().default(''),
+  action: text('action').notNull().default(''),
+  inEoty: boolean('in_eoty').notNull().default(false),
+  onPortal: boolean('on_portal').notNull().default(false)
+});
+export const incident = pgTable('incident', {
+  id: serial('id').primaryKey(),
+  kind: text('kind').notNull(), // student | teacher | staff
+  studentId: integer('student_id').references(() => student.id, { onDelete: 'cascade' }),
+  classId: integer('class_id').references(() => schoolClass.id, { onDelete: 'set null' }),
+  teacherId: integer('teacher_id').references(() => teacher.id, { onDelete: 'cascade' }),
+  staffId: integer('staff_id').references(() => adminStaff.id, { onDelete: 'cascade' }),
+  severity: text('severity').notNull(),
+  occurredAt: tz('occurred_at').notNull(),
+  title: text('title').notNull(),
+  report: text('report').notNull(),
+  action: text('action'),
+  inEoty: boolean('in_eoty').notNull().default(false),
+  onPortal: boolean('on_portal').notNull().default(false),
+  emailed: boolean('emailed').notNull().default(false),
+  texted: boolean('texted').notNull().default(false),
+  createdBy: integer('created_by').references(() => loginIdentity.id, { onDelete: 'set null' }),
+  createdAt: createdAt()
+}, (t) => [
+  index('incident_occurred_idx').on(t.occurredAt),
+  check('incident_kind', sql`(${t.kind} = 'student' and ${t.studentId} is not null) or (${t.kind} = 'teacher' and ${t.teacherId} is not null) or (${t.kind} = 'staff' and ${t.staffId} is not null)`)
+]);
+
+// §18 Merits, achievements, certificates and teams.
+export const merit = pgTable('merit', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  points: smallint('points').notNull().default(1), // negative for sanctions
+  forStudents: boolean('for_students').notNull().default(true),
+  forTeachers: boolean('for_teachers').notNull().default(false),
+  enabled: boolean('enabled').notNull().default(true),
+  official: boolean('official').notNull().default(false)
+});
+export const meritAward = pgTable('merit_award', {
+  id: serial('id').primaryKey(),
+  meritId: integer('merit_id').notNull().references(() => merit.id, { onDelete: 'cascade' }),
+  studentId: integer('student_id').references(() => student.id, { onDelete: 'cascade' }),
+  teacherId: integer('teacher_id').references(() => teacher.id, { onDelete: 'cascade' }),
+  classId: integer('class_id').references(() => schoolClass.id, { onDelete: 'set null' }),
+  points: smallint('points').notNull(),
+  comment: text('comment'),
+  awardedOn: date('awarded_on', { mode: 'string' }).notNull(),
+  awardedBy: text('awarded_by').notNull(),
+  createdAt: createdAt()
+}, (t) => [index('merit_award_student_idx').on(t.studentId), check('merit_award_who', sql`(${t.studentId} is null) <> (${t.teacherId} is null)`)]);
+export const certificateTemplate = pgTable('certificate_template', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  fileId: uuid('file_id').references(() => fileObject.id, { onDelete: 'set null' }), // uploaded background PDF
+  size: text('size').notNull().default('A4'), // A4 | A5 | A6
+  orientation: text('orientation').notNull().default('landscape'),
+  // Where each item is printed: millimetres from the bottom-left, and font size in points.
+  layout: jsonb('layout').$type<Record<'name' | 'achievement' | 'badge' | 'address' | 'date', { x: number; y: number; size: number }>>().notNull()
+});
+export const BADGES = ['none', 'bronze', 'silver', 'gold'] as const;
+export const achievement = pgTable('achievement', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  sanction: boolean('sanction').notNull().default(false),
+  meritId: integer('merit_id').references(() => merit.id, { onDelete: 'set null' }), // collect this merit … or null = total points
+  target: integer('target').notNull(),
+  badge: text('badge').notNull().default('none'),
+  certificateTemplateId: integer('certificate_template_id').references(() => certificateTemplate.id, { onDelete: 'set null' }),
+  forStudents: boolean('for_students').notNull().default(true),
+  forTeachers: boolean('for_teachers').notNull().default(false),
+  enabled: boolean('enabled').notNull().default(true)
+}, (t) => [check('achievement_target', sql`${t.target} > 0`)]);
+export const certificate = pgTable('certificate', {
+  id: serial('id').primaryKey(),
+  templateId: integer('template_id').references(() => certificateTemplate.id, { onDelete: 'set null' }),
+  studentId: integer('student_id').notNull().references(() => student.id, { onDelete: 'cascade' }),
+  achievementId: integer('achievement_id').references(() => achievement.id, { onDelete: 'set null' }),
+  badge: text('badge').notNull().default('none'),
+  forText: text('for_text').notNull(),
+  issuedOn: date('issued_on', { mode: 'string' }).notNull(),
+  onPortal: boolean('on_portal').notNull().default(true),
+  issuedBy: text('issued_by').notNull(),
+  createdAt: createdAt()
+});
+export const meritTeam = pgTable('merit_team', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  colour: text('colour').notNull().default('lav'),
+  classIds: integer('class_ids').array().notNull().default(sql`'{}'::int[]`),
+  studentIds: integer('student_ids').array().notNull().default(sql`'{}'::int[]`)
+});
+export const teamCompetition = pgTable('team_competition', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  startsOn: date('starts_on', { mode: 'string' }).notNull(),
+  endsOn: date('ends_on', { mode: 'string' }).notNull()
+}, (t) => [check('team_competition_dates', sql`${t.endsOn} >= ${t.startsOn}`)]);
+
+// §17 Products (shop). stock null = unlimited. A sale either invoices the family (Products invoice) or spends merits.
+export const product = pgTable('product', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  imageFileId: uuid('image_file_id').references(() => fileObject.id, { onDelete: 'set null' }),
+  pricePence: integer('price_pence').notNull().default(0),
+  originalPricePence: integer('original_price_pence'),
+  meritPrice: integer('merit_price'),
+  stock: integer('stock'),
+  active: boolean('active').notNull().default(true)
+}, (t) => [check('product_prices', sql`${t.pricePence} >= 0 and (${t.meritPrice} is null or ${t.meritPrice} > 0) and (${t.stock} is null or ${t.stock} >= 0)`)]);
+export const productSale = pgTable('product_sale', {
+  id: serial('id').primaryKey(),
+  productId: integer('product_id').notNull().references(() => product.id, { onDelete: 'restrict' }),
+  studentId: integer('student_id').references(() => student.id, { onDelete: 'set null' }),
+  contactId: integer('contact_id').references(() => contact.id, { onDelete: 'set null' }),
+  classId: integer('class_id').references(() => schoolClass.id, { onDelete: 'set null' }),
+  qty: integer('qty').notNull(),
+  totalPence: integer('total_pence').notNull().default(0),
+  meritsSpent: integer('merits_spent').notNull().default(0),
+  invoiceId: integer('invoice_id').references(() => invoice.id, { onDelete: 'set null' }),
+  soldOn: date('sold_on', { mode: 'string' }).notNull(),
+  deliveredAt: tz('delivered_at'),
+  createdBy: integer('created_by').references(() => loginIdentity.id, { onDelete: 'set null' }),
+  createdAt: createdAt()
+}, (t) => [check('product_sale_qty', sql`${t.qty} > 0 and ${t.totalPence} >= 0 and ${t.meritsSpent} >= 0`)]);
+
+// §8 Events and trips. Parents opt in from the portal (Phase 8); staff can record an opt-in now.
+export const event = pgTable('event', {
+  id: serial('id').primaryKey(),
+  academicYearId: integer('academic_year_id').notNull().references(() => academicYear.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  date: date('date', { mode: 'string' }).notNull(),
+  time: time('time'),
+  durationMinutes: integer('duration_minutes').notNull().default(0),
+  optInDeadline: date('opt_in_deadline', { mode: 'string' }),
+  paymentDeadline: date('payment_deadline', { mode: 'string' }),
+  description: text('description'),
+  terms: text('terms'),
+  classIds: integer('class_ids').array().notNull().default(sql`'{}'::int[]`), // empty = every class
+  autoInvoice: boolean('auto_invoice').notNull().default(true),
+  active: boolean('active').notNull().default(true),
+  createdAt: createdAt()
+}, (t) => [check('event_duration', sql`${t.durationMinutes} >= 0`)]);
+export const eventTimeslot = pgTable('event_timeslot', {
+  id: serial('id').primaryKey(),
+  eventId: integer('event_id').notNull().references(() => event.id, { onDelete: 'cascade' }),
+  date: date('date', { mode: 'string' }).notNull(),
+  fromTime: time('from_time').notNull(),
+  toTime: time('to_time').notNull()
+});
+export const eventConsent = pgTable('event_consent', {
+  id: serial('id').primaryKey(),
+  eventId: integer('event_id').notNull().references(() => event.id, { onDelete: 'cascade' }),
+  text: text('text').notNull(),
+  required: boolean('required').notNull().default(true)
+});
+export const eventPrice = pgTable('event_price', {
+  id: serial('id').primaryKey(),
+  eventId: integer('event_id').notNull().references(() => event.id, { onDelete: 'cascade' }),
+  description: text('description').notNull(),
+  pricePence: integer('price_pence').notNull(),
+  required: boolean('required').notNull().default(true)
+}, (t) => [check('event_price_amount', sql`${t.pricePence} >= 0`)]);
+export const eventOptIn = pgTable('event_opt_in', {
+  eventId: integer('event_id').notNull().references(() => event.id, { onDelete: 'cascade' }),
+  studentId: integer('student_id').notNull().references(() => student.id, { onDelete: 'cascade' }),
+  contactId: integer('contact_id').references(() => contact.id, { onDelete: 'set null' }),
+  timeslotId: integer('timeslot_id').references(() => eventTimeslot.id, { onDelete: 'set null' }),
+  consentIds: integer('consent_ids').array().notNull().default(sql`'{}'::int[]`),
+  priceIds: integer('price_ids').array().notNull().default(sql`'{}'::int[]`),
+  totalPence: integer('total_pence').notNull().default(0),
+  invoiceId: integer('invoice_id').references(() => invoice.id, { onDelete: 'set null' }),
+  source: text('source').notNull().default('admin'), // admin | portal
+  createdAt: createdAt()
+}, (t) => [primaryKey({ columns: [t.eventId, t.studentId] })]);
+
+// §14 Forums. Categories are visible to the chosen classes (none = everyone); posts come from the portals.
+export const forumCategory = pgTable('forum_category', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  classIds: integer('class_ids').array().notNull().default(sql`'{}'::int[]`)
+});
+export const forumTopic = pgTable('forum_topic', {
+  id: serial('id').primaryKey(),
+  categoryId: integer('category_id').notNull().references(() => forumCategory.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  authorKind: partyKindEnum('author_kind').notNull(),
+  authorId: integer('author_id').notNull(),
+  authorName: text('author_name').notNull(),
+  locked: boolean('locked').notNull().default(false),
+  createdAt: createdAt(),
+  lastPostAt: tz('last_post_at').notNull().defaultNow()
+});
+export const forumPost = pgTable('forum_post', {
+  id: serial('id').primaryKey(),
+  topicId: integer('topic_id').notNull().references(() => forumTopic.id, { onDelete: 'cascade' }),
+  authorKind: partyKindEnum('author_kind').notNull(),
+  authorId: integer('author_id').notNull(),
+  authorName: text('author_name').notNull(),
+  body: text('body').notNull(),
+  createdAt: createdAt(),
+  deletedAt: tz('deleted_at'),
+  deletedBy: text('deleted_by')
+}, (t) => [index('forum_post_topic_idx').on(t.topicId)]);

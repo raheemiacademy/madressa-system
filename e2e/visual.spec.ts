@@ -7,7 +7,8 @@ const PAGES = [['dashboard', '/admin'], ['settings-profile', '/admin/settings/pr
   ['students', '/admin/students'], ['student', '/admin/students/2'], ['classes', '/admin/classes'], ['class', '/admin/classes/1'], ['teachers', '/admin/teachers'], ['contacts', '/admin/contacts'], ['apply', '/apply'],
   ['register', '/admin/register'], ['daily', '/admin/register/daily'], ['take', '/admin/register/take?class=1'], ['record', '/admin/register/student/3'], ['tlogs', '/admin/teacher-logs'], ['drill', '/admin/fire-drill'],
   ['fees', '/admin/fees'], ['fees-student', '/admin/fees/student/2'], ['fees-structure', '/admin/fees/structure/1'], ['fees-annual', '/admin/fees/annual'],
-  ['messages', '/admin/messages?t=1'], ['compose', '/admin/messages/new'], ['newsletter', '/admin/newsletters/1'], ['sms', '/admin/sms'], ['template', '/admin/settings/templates/fees.receipt'], ['set-password', '/teacher/set-password']];
+  ['messages', '/admin/messages?t=1'], ['compose', '/admin/messages/new'], ['newsletter', '/admin/newsletters/1'], ['sms', '/admin/sms'], ['template', '/admin/settings/templates/fees.receipt'], ['set-password', '/teacher/set-password'],
+  ['homework', '/admin/homework'], ['results', '/admin/exams/1/results'], ['eoty', '/admin/reports/1/print?class=1'], ['merits', '/admin/merits'], ['shop', '/admin/products'], ['event', '/admin/events/1'], ['incidents', '/admin/incidents']];
 
 test('visual capture', async ({ page }) => {
   test.setTimeout(180_000);

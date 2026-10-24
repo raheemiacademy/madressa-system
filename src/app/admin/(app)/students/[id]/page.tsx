@@ -10,6 +10,8 @@ import { Icon } from '@/components/Icon';
 import { formatCalendarDate, formatInstant } from '@/lib/dates';
 import { formatPence } from '@/lib/money';
 import { invoiceRows, totals } from '@/server/fees/invoices';
+import { listAwards, listCertificates, studentTotals } from '@/server/learning/merits';
+import { listIncidents } from '@/server/learning/incidents';
 import { requireAdmin } from '@/server/next/actor';
 import { adminCan } from '@/server/permissions';
 import { ageOn, todayIso } from '@/server/people/common';
@@ -41,6 +43,7 @@ export default async function StudentProfile({ params }: { params: Promise<{ id:
   const canDelete = adminCan(admin.staff, 'delete');
   const canFees = adminCan(admin.staff, 'fees');
   const fees = canFees ? totals(await invoiceRows(db, eq(invoice.studentId, id))) : null;
+  const [[meritTotal], awards, certs, incidents] = await Promise.all([studentTotals(db, [id]), listAwards(db, { studentId: id }), listCertificates(db, id), listIncidents(db, { studentId: id }, 5)]);
   const age = ageOn(s.dob, todayIso());
   const row = (k: string, v: React.ReactNode) => v ? <><dt>{k}</dt><dd>{v}</dd></> : null;
 
@@ -119,6 +122,17 @@ export default async function StudentProfile({ params }: { params: Promise<{ id:
             )}
           </section>
         )}
+
+        <section className="ra-card ra-c6" aria-labelledby="mer-h">
+          <div className="ra-card-h"><div><h2 id="mer-h">Merits</h2><div className="ra-note">{meritTotal ? `${meritTotal.points} points · ${meritTotal.balance} to spend in the shop` : 'No merits yet'}</div></div><Link className="ra-link" href="/admin/merits">Award merits</Link></div>
+          {awards.length > 0 && <ul className="ra-list">{awards.slice(0, 5).map((a) => <li key={a.a.id}>{formatCalendarDate(a.a.awardedOn)}: {a.meritName} ({a.a.points > 0 ? '+' : ''}{a.a.points}){a.a.comment ? <span className="ra-muted"> · {a.a.comment}</span> : null}</li>)}</ul>}
+          {certs.length > 0 && <><h3 style={{ fontSize: 14, margin: '6px 0 0' }}>Certificates</h3><ul className="ra-list">{certs.map((c) => <li key={c.c.id}>{formatCalendarDate(c.c.issuedOn)}: {c.c.forText} · <a className="ra-link" href={`/admin/merits/certificates/${c.c.id}/pdf`}>PDF</a></li>)}</ul></>}
+        </section>
+
+        <section className="ra-card ra-c6" aria-labelledby="inc-h">
+          <div className="ra-card-h"><div><h2 id="inc-h">Incidents</h2></div><Link className="ra-link" href={`/admin/incidents/new?student=${id}`}>Record incident</Link></div>
+          {incidents.length === 0 ? <p className="ra-empty">No incidents recorded.</p> : <ul className="ra-list">{incidents.map((i) => <li key={i.i.id}><Link href={`/admin/incidents/${i.i.id}`}>{i.i.title}</Link> <span className="ra-muted">{formatInstant(i.i.occurredAt, 'dd/MM/yyyy')} · {i.i.severity}</span></li>)}</ul>}
+        </section>
 
         <section className="ra-card ra-c6" aria-labelledby="sib-h">
           <div className="ra-card-h"><div><h2 id="sib-h">Siblings</h2></div><Link className="ra-link" href="/admin/students/siblings">Manage siblings</Link></div>

@@ -1,4 +1,4 @@
-import { TZDate } from '@date-fns/tz';
+import { ukLocal } from '@/lib/dates';
 import { asc, eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Db, DbOrTx } from '@/db';
@@ -12,13 +12,6 @@ import { todayIso } from './common';
 import { currentYear } from '../academic-years';
 import { createAdmissionFees } from '../fees/generate';
 
-/** "YYYY-MM-DDTHH:mm" entered in UK time → instant. */
-const ukLocal = (s: string) => {
-  const [d, t] = s.split('T') as [string, string];
-  const [y, m, day] = d.split('-').map(Number) as [number, number, number];
-  const [h, min] = t.split(':').map(Number) as [number, number];
-  return new TZDate(y, m - 1, day, h, min, 'Europe/London');
-};
 
 export function formWindow(settings: Record<string, unknown>, now = new Date()): 'open' | 'disabled' | 'not-yet' | 'closed' {
   if (!settings.enabled) return 'disabled';

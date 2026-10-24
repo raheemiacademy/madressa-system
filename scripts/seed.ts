@@ -9,6 +9,14 @@ import { saveSet, setAdjustments } from '../src/server/fees/adjustments';
 import { saveStructure } from '../src/server/fees/structures';
 import { compose, startFromPortal } from '../src/server/comm/messages';
 import { saveNewsletter } from '../src/server/comm/newsletters';
+import { saveHomework } from '../src/server/learning/homework';
+import { saveExam, saveGradeSystem, saveResults, saveTest, examResults, STANDARD_GRADES } from '../src/server/learning/exams';
+import { saveReport, saveEntries } from '../src/server/learning/eoty';
+import { saveIncident, saveIncidentTemplate } from '../src/server/learning/incidents';
+import { awardMerits, saveMerit } from '../src/server/learning/merits';
+import { saveProduct } from '../src/server/learning/products';
+import { saveEvent } from '../src/server/learning/events';
+import { post, saveCategory } from '../src/server/learning/forums';
 
 const url = process.argv.includes('--test') ? process.env.DATABASE_URL_TEST : process.env.DATABASE_URL;
 const password = process.env.SEED_ADMIN_PASSWORD;
@@ -141,6 +149,44 @@ if (!anyThread && year) {
   if (parent) await startFromPortal(db, { kind: 'contact', id: parent.id, name: parent.name }, { kind: 'admin', id: 0 }, 'Away next Monday', 'Salaam, Test Student 001 will be away next Monday for a family event. Thank you.');
   if (t1) await compose(db, { identityId: idn!.id, name: admin!.name, staffId: admin!.id }, { teacherIds: [String(t1.id)], subject: 'Register reminder', body: 'Please remember to take the register at the start of class.' });
   await saveNewsletter(db, { identityId: idn!.id, name: admin!.name }, { subject: 'Sample term newsletter', audience: 'parents', style: 'modern', body: '<p>Dear {NAME},</p><p>Welcome back to a new term at Sample Academy.</p>', signature: 'The office team' });
+}
+// Learning: merits, homework, an exam with results, a report, an incident, a shop item, a trip and a forum.
+const [anyMerit] = await db.select({ id: schema.merit.id }).from(schema.merit).limit(1);
+if (!anyMerit && year) {
+  const [admin] = await db.select().from(adminStaff).where(eq(adminStaff.email, 'admin@example.org'));
+  const [idn] = await db.select().from(loginIdentity).where(eq(loginIdentity.adminStaffId, admin!.id));
+  const actor = { identityId: idn!.id, name: admin!.name };
+  const classes = await db.select().from(schema.schoolClass).where(eq(schema.schoolClass.academicYearId, year.id));
+  const classA = classes.find((c) => c.name === 'Test Class A')!;
+  const kidsA = await db.select({ id: schema.classAssignment.studentId }).from(schema.classAssignment).where(eq(schema.classAssignment.classId, classA.id));
+  await saveMerit(db, actor, { name: 'Star of the week', points: '5', forStudents: 'on', enabled: 'on', official: 'on' });
+  await saveMerit(db, actor, { name: 'Helpful', points: '2', forStudents: 'on', forTeachers: 'on', enabled: 'on' });
+  await saveMerit(db, actor, { name: 'Homework missed', points: '-1', forStudents: 'on', enabled: 'on' });
+  const merits = await db.select().from(schema.merit);
+  await awardMerits(db, actor, { meritId: String(merits[0]!.id), studentIds: kidsA.slice(0, 2).map((k) => String(k.id)), awardedOn: year.startsOn, comment: 'Excellent recitation' });
+  await awardMerits(db, actor, { meritId: String(merits[1]!.id), studentIds: kidsA.slice(1, 4).map((k) => String(k.id)), awardedOn: year.startsOn });
+  await saveHomework(db, actor, { classId: String(classA.id), title: 'Learn the next five verses', deadline: `${year.startsOn}T17:00`, instructions: 'Practise with a parent each evening.' });
+  await saveGradeSystem(db, actor, { name: 'Standard', isDefault: true, bands: STANDARD_GRADES.map(([minPct, grade]) => ({ minPct, grade })) });
+  const ex = await saveExam(db, actor, { classId: String(classA.id), official: 'official', title: 'Autumn assessment', date: '2026-10-05' });
+  if (ex.ok) {
+    await saveTest(db, actor, ex.id, { name: 'Quran', maxMarks: '50' });
+    await saveTest(db, actor, ex.id, { name: 'Islamic studies', maxMarks: '50' });
+    const r = (await examResults(db, ex.id))!;
+    const cells: Record<string, string> = {};
+    r.rows.forEach((row, i) => r.tests.forEach((t, j) => { cells[`${t.t.id}:${row.student.id}`] = String(30 + ((i * 7 + j * 5) % 20)); }));
+    await saveResults(db, actor, ex.id, cells);
+  }
+  const rep = await saveReport(db, actor, year.id, { title: 'Autumn term report', termStart: year.startsOn, termEnd: '2026-12-18', includeExams: true, includePositions: false, includeAttendance: true, includeHomework: true, scoring: true, active: true, teachersCanDownload: true,
+    scoreLabels: ['Needs support', 'Developing', 'Good', 'Very good', 'Excellent'], questions: ['Behaviour', 'Progress', 'Effort'] });
+  if (rep.ok) await saveEntries(db, actor, rep.id, kidsA.slice(0, 3).map((k, i) => ({ studentId: k.id, scores: [5 - i, 4, 3 + (i % 2)], comment: 'A settled and hard-working start to the year.' })));
+  await saveIncidentTemplate(db, actor, { name: 'Minor injury', severity: 'Low', title: 'Minor injury', report: 'Bumped while playing at break.', action: 'Checked by a first aider.', inEoty: '', onPortal: 'on' });
+  if (kidsA[0]) await saveIncident(db, actor, { kind: 'student', studentId: String(kidsA[0].id), classId: String(classA.id), severity: 'Low', occurredAt: `${year.startsOn}T17:30`, title: 'Minor injury', report: 'Bumped knee during break time.', action: 'Ice pack given; parent informed at pick-up.', onPortal: 'on' });
+  await saveProduct(db, actor, { name: 'Sample notebook', description: 'A5 lined notebook', price: '2.50', meritPrice: '10', stock: '40', active: 'on' }, undefined);
+  await saveEvent(db, actor, year.id, { name: 'Sample museum visit', date: '2026-11-20', time: '09:30', hours: '5', optInDeadline: '2026-11-10', paymentDeadline: '2026-11-13', description: 'A day visit to a sample museum.', autoInvoice: 'on', active: 'on',
+    consents: [{ text: 'I give permission for my child to attend', required: true }, { text: 'Photos may be taken for the school newsletter', required: false }], prices: [{ description: 'Coach and entry', price: '12', required: true }] });
+  await saveCategory(db, actor, { name: 'General', description: 'Questions and news for everyone', classIds: [] });
+  const [cat] = await db.select().from(schema.forumCategory);
+  await post(db, { kind: 'admin', id: admin!.id, name: admin!.name }, { categoryId: cat!.id, title: 'Welcome to the forums' }, 'Salaam, this is the place for questions about classes and events.');
 }
 await client.end();
 console.log('Seeded fictional sample data: admin@example.org (super) and clerk@example.org (can edit)');

@@ -444,3 +444,50 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
 - **Students as message recipients and senders** wait for the student portal, which is on hold (FUTURE.md). Their routes are not offered.
 - **Teacher-portal and parent-portal screens** for reading and sending messages are Phase 8. The server functions and route checks are built.
 - **Email delivery tracking and bounce handling** (§3 Logs) are Phase 9.
+
+## 12. Phase 6 record (Learning: §12 Homework, §13 Exams, §16 EOTY reports, §14 Incidents, §15 Merits/Achievements/Certificates/Teams, §17 Products, §18 Events, Forums)
+
+**Dependencies added** (on the approved list): `pdf-lib`, for certificates. Every other PDF (reports, homework year report) uses the Phase 5 Chromium route.
+
+**Decisions**
+- **Navigation:** a new **Learning** group: Homework, Exams & reports, Events & trips, Incidents, Merits & shop, Forums. Products sits under "Merits & shop", because the shop sells for money or merits.
+- **Homework** (§12): set for a class, from a template or from scratch. Optional files (PDF or image) and an optional "lock after the deadline". Primary contacts are emailed when it's set, with an optional BCC from Settings → Homework. Ticking students done, the incomplete report, reminders (with a "send me a test" option), the year report (print, PDF or email to families) and storage usage are all here. **Parent uploads** of finished work arrive with the parent portal (Phase 8).
+- **Exams** (§13):
+  - Each exam has papers, and each paper is marked out of its maximum. Marks are kept to one decimal place (stored in tenths). Absent is its own state, not zero.
+  - Positions count ties (two students on 87 are both 1st, and the next is 3rd).
+  - Status is Open, Closed or Locked. A locked exam refuses result changes on the server, not just in the form.
+  - Grading systems are editable. **"Load standard grades"** replaces the IBEAMS "defaults" button with a fictional A*–U set.
+  - Semesters combine exams across classes.
+  - **Quizzes** keep only their header fields (title, class, date, marks), as agreed for question 6.
+- **EOTY reports** (§16):
+  - A report sets the term, the questions teachers score (Behaviour, Progress, Effort by default), the score labels, and what to include (exams, positions, attendance, homework).
+  - Paragraph templates (5 levels × 3 areas) fill in `{FIRST_NAME}`, `{HE_SHE}` and the like. **When no gender is recorded, the first name is used instead of he/she**, so the text never reads "they works".
+  - Paragraphs can be backed up and restored as a file. "Restore defaults" brings back the built-in text.
+  - The comments grid, overview, all-comments, and the generated reports (print or PDF per class) are admin pages. **Teachers writing comments** in their own portal is Phase 8; the server functions already check their class privileges.
+- **Incidents** (§14):
+  - Severities are **Low, Medium, High, Serious**.
+  - An incident involves students, a teacher or "other". It can email and text the primary contacts, and can be included in the EOTY report.
+  - Templates prefill the form. The 12-month report and CSV export are by severity and class.
+- **Merits** (§15):
+  - **Sanctions are merits with negative points**, so one total covers both.
+  - Merits can go to students or teachers. Totals are by class or person.
+  - Achievements fire at a points target (sanction targets count down).
+  - Certificate templates place text by **millimetres on an A4-landscape basis**, scaled for other sizes and orientations. Certificates are issued in bulk and downloaded as PDFs (pdf-lib).
+  - Teams and competitions total their members' points.
+- **Products** (§17): stock, and sales by invoice or by merits. Paying by invoice raises a **Products** invoice. A contact buying for themselves is invoiced against their **first linked student**, because every invoice belongs to a student. Paying by merits checks the balance first. A sale can be marked delivered.
+- **Events** (§18):
+  - Each event has timeslots with capacity, consents (required or optional) and prices (required or optional).
+  - An opt-in without a required consent is refused on the server.
+  - With auto-invoice, one **Contribution** invoice is raised per student and event; re-running never adds a second (idempotency key `ev{event}-s{student}`). Withdrawing removes the opt-in and cancels its invoice, unless a payment has been made against it; then the invoice is kept for the office to handle.
+- **Forums:**
+  - Categories and topics. A locked topic takes replies from admins only.
+  - Removed posts stay in the record as "Removed by …".
+  - Posting by **teachers and parents** arrives with their portals (Phase 8).
+- **Permissions:** every change needs Can edit, deletions need Can delete, and both are checked in the server actions. Pages that only add something (`/new`) also need Can edit. View-only staff can read every Learning page.
+- **Student profile:** new Merits, Certificates and Incidents panels. The students list gains an "Incidents" row action.
+- **Templates editor:** the Homework (new, reminder, year report) and Incidents groups are added.
+
+**Phase 6 gaps**
+- **Student Diary / Daily Progress Tracker** (§12) still waits for the fields you want (FUTURE.md).
+- **Quiz questions and online quiz-taking** are left out, as agreed (header fields only).
+- **Portal sides** of homework, EOTY comments, events opt-in and forums are Phase 8. The server rules are built and tested.

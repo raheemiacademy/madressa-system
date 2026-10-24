@@ -42,6 +42,7 @@ export function StudentsTable({ rows, classes, statuses, canEdit, canDelete, can
                     <Link href={`/admin/students/${r.id}`} aria-label={`Profile of ${r.name}`}><Icon name="eye" /></Link>
                     <Link href={`/admin/students/${r.id}/history`} aria-label={`Class history of ${r.name}`}><Icon name="clock" /></Link>
                     <Link href={`/admin/register/student/${r.id}`} aria-label={`Register of ${r.name}`}><Icon name="check" /></Link>
+                    <Link href={`/admin/incidents?student=${r.id}`} aria-label={`Incidents of ${r.name}`}><Icon name="alert" /></Link>
                     {canFees && <Link href={`/admin/fees/student/${r.id}`} aria-label={`Fees of ${r.name}`}><Icon name="pound" /></Link>}
                     {canFees && <Link href={`/admin/fees/student/${r.id}?view=history`} aria-label={`Fees history of ${r.name}`}><Icon name="receipt" /></Link>}
                   </span></td>

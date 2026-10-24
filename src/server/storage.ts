@@ -22,12 +22,14 @@ export function sniffMime(b: Buffer): string | null {
   if (b.length >= 12 && b.toString('latin1', 0, 4) === 'RIFF' && b.toString('latin1', 8, 12) === 'WEBP') return 'image/webp';
   if (b.length >= 12 && b.toString('latin1', 4, 8) === 'ftyp') return 'video/mp4';
   if (b.length >= 4 && b.readUInt32BE(0) === 0x1a45dfa3) return 'video/webm';
+  if (b.length >= 5 && b.toString('latin1', 0, 5) === '%PDF-') return 'application/pdf';
   return null;
 }
 
 export const UPLOAD_RULES = {
   image: { mimes: ['image/png', 'image/jpeg', 'image/webp'], maxBytes: 5 * 1024 * 1024, label: 'a PNG, JPEG or WebP image up to 5 MB' },
-  video: { mimes: ['video/mp4', 'video/webm'], maxBytes: 20 * 1024 * 1024, label: 'an MP4 or WebM video up to 20 MB' }
+  video: { mimes: ['video/mp4', 'video/webm'], maxBytes: 20 * 1024 * 1024, label: 'an MP4 or WebM video up to 20 MB' },
+  pdf: { mimes: ['application/pdf'], maxBytes: 10 * 1024 * 1024, label: 'a PDF up to 10 MB' }
 } as const;
 
 export type UploadKind = keyof typeof UPLOAD_RULES;

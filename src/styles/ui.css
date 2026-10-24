@@ -389,3 +389,7 @@ button.ra-mk { cursor: pointer; }
 .ra-rich-body:focus-visible { outline: 2px solid var(--ra-indigo); outline-offset: 2px; border-radius: var(--ra-r-sm); }
 .ra-rich-body a { color: var(--ra-accent-text); }
 .ra-preview { width: 100%; min-height: 520px; border: 1px solid var(--color-border-line); border-radius: var(--ra-r); background: var(--color-panel); }
+
+/* Learning (Phase 6) */
+.ra-report { gap: 12px; }
+.ra-report th { color: var(--color-fg-muted); font-weight: 500; }

@@ -19,7 +19,7 @@ const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&
 const name = (s: { firstName: string; surname: string }) => `${s.firstName} ${s.surname}`;
 
 /** Primary contacts (with an email) for each student. */
-async function primaryContacts(db: DbOrTx, studentIds: number[]) {
+export async function primaryContacts(db: DbOrTx, studentIds: number[]) {
   if (!studentIds.length) return [];
   return db.select({ studentId: studentContact.studentId, id: contact.id, name: contact.name, email: contact.email }).from(studentContact)
     .innerJoin(contact, eq(contact.id, studentContact.contactId)).where(and(inArray(studentContact.studentId, studentIds), eq(studentContact.isPrimary, true), eq(contact.active, true)));
