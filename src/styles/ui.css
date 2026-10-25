@@ -531,3 +531,53 @@ li[data-state="todo"] .ra-setup-why { margin-bottom: 0; }
 .ra-release ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .ra-release li { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; align-items: start; line-height: 1.5; }
 .ra-release li .ra-chip { justify-self: start; margin-top: 1px; }
+
+/* Phone app (design-reference/mobile/Main, AdminStudents, AdminFees): app header, bottom tab bar, More page */
+@container (min-width: 641px) { .ra-m-only, .ra-tabbar, .ra-top-mark { display: none !important; } }
+.ra-drill-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; min-height: 60px; border-radius: var(--ra-r-mobile); border: 1px solid color-mix(in srgb, var(--color-bad) 25%, transparent); background: color-mix(in srgb, var(--color-bad) 6%, var(--color-panel)); color: var(--color-bad); text-decoration: none; }
+.ra-drill-row svg { width: 20px; height: 20px; flex: none; }
+.ra-drill-row span { flex: 1; font-size: 15px; font-weight: 500; }
+.ra-drill-row small { font-size: 13px; color: var(--color-fg-muted); }
+.ra-more-me { flex-direction: row; align-items: center; gap: 12px; }
+.ra-more-me > span:nth-child(2) { flex: 1; min-width: 0; }
+.ra-more-me b { display: block; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.ra-more-me small { display: block; font-size: 13px; color: var(--color-fg-muted); overflow-wrap: anywhere; }
+.ra-more-year { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 15px; font-weight: 500; }
+.ra-more-h { margin: 4px 2px 8px; font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--color-fg-muted); }
+.ra-menu-page .rp-list > li { padding: 0; }
+.ra-menu-page .rp-list > li > a { margin: 0; padding: 10px 16px; min-height: 56px; display: flex; align-items: center; }
+.ra-more-row { display: flex; align-items: center; gap: 12px; }
+.ra-search-m { display: flex; gap: 8px; }
+.ra-search-m .ra-input { flex: 1; min-width: 0; }
+@container (max-width: 640px) {
+  .ra-d-only, .ra-side, .ra-search, .ra-top .ra-year { display: none !important; }
+  .ra-shell { display: block; }
+  .ra-main { min-height: 100dvh; }
+  .ra-top { position: sticky; top: 0; flex-wrap: nowrap; gap: 12px; padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px 10px; background: var(--ra-surface); border-bottom: 0; }
+  .ra-top-mark { display: block; text-decoration: none; border-radius: 12px; }
+  .ra-top-mark .ra-brand-mark { width: 40px; height: 40px; border-radius: 12px; color: var(--ra-on-ink); }
+  .ra-crumb small { font-size: 13px; }
+  .ra-crumb strong { font-size: 17px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ra-top .ra-icon-btn { width: 44px; height: 44px; border-radius: 14px; background: var(--color-panel); }
+  .ra-tabbar { position: sticky; bottom: 0; z-index: 5; }
+  .ra-tabbar .rp-tabs { position: static; }
+  .ra-page { padding: 6px 16px 24px; gap: 14px; }
+  .ra-page-h h1 { font-size: 28px; }
+  .ra-card { border-radius: var(--ra-r-mobile); padding: 14px 16px; }
+  .ra-grid { gap: 14px; }
+  .ra-m-first { order: -1; }
+  .ra-hero { border-radius: 22px; padding: 20px; }
+  .ra-hero-date { display: none; }
+  .ra-hero h1 { font-size: 26px; }
+  .ra-hero p { font-size: 15px; }
+  .ra-quick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 16px; }
+  .ra-quick > * { justify-content: center; min-height: 44px; border-radius: 12px; font-size: 14px; padding: 0 8px; gap: 6px; white-space: nowrap; }
+  .ra-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .ra-kpi { border-radius: var(--ra-r-mobile); padding: 14px 16px; gap: 4px; }
+  .ra-kpi:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .ra-kpi-ic { display: none; }
+  .ra-kpi-val { font-size: 28px; }
+  /* "More tools" and filter pills: one swipeable row instead of a wall of buttons */
+  .ra-more, .ra-filters { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; margin: 0 -16px; padding: 0 16px 2px; }
+  .ra-more > *, .ra-filters > * { flex: none; white-space: nowrap; }
+}

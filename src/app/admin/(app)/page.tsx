@@ -64,7 +64,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   // A new madrasah's setup checklist comes first, for the Super admins who do the setting up.
   const [setup, sp] = await Promise.all([admin.staff.isSuper ? setupProgress(db) : null, searchParams]);
   const jar = await cookies();
-  const [local, { year }] = await Promise.all([readTab(db, 'local'), resolveYear(db, Number(jar.get('year_id')?.value) || null)]);
+  const [local, fire, { year }] = await Promise.all([readTab(db, 'local'), readTab(db, 'fire'), resolveYear(db, Number(jar.get('year_id')?.value) || null)]);
   const tz = local.timezone as string;
   const now = new Date();
   const today = todayIso(now);
@@ -111,9 +111,11 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <Trend from={year?.startsOn ?? null} to={year ? (today < year.endsOn ? today : year.endsOn) : null} />
         </Panel>
         <Panel id="d-age" cls="ra-c4" title="Students by age group" note="Current students" height={200} anim={anim}><Ages today={today} /></Panel>
-        <Panel id="d-msg" cls="ra-c7" title="Unread messages" note="From parents and teachers" height={200} anim="" action={<Link className="ra-link" href="/admin/messages">Open inbox</Link>}>
+        <Panel id="d-msg" cls="ra-c7 ra-m-first" title="Unread messages" note="From parents and teachers" height={200} anim="" action={<Link className="ra-link" href="/admin/messages">Open inbox</Link>}>
           <Messages me={me} />
         </Panel>
+        {/* Phone app: the fire drill sits under the figures and messages (design-reference/mobile/Main). */}
+        {(fire.buttonPlaces as string[]).length > 0 && <Link className="ra-drill-row ra-c12 ra-m-only ra-m-first tap" href="/admin/fire-drill"><Icon name="fire" /><span>Fire drill</span><small>Hold to start</small></Link>}
         <Panel id="d-tl" cls="ra-c5" title="Teacher sign-in" note="Today, from kiosk and teacher portal" height={200} anim="" action={<Link className="ra-link" href="/admin/teacher-logs">All logs</Link>}>
           <SignIns today={today} />
         </Panel>

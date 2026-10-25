@@ -36,6 +36,39 @@ test('staff without fees access see no fees figures on the dashboard', async ({ 
   await ctx.close();
 });
 
+test('on a phone the admin is an app: bottom tabs, and More holds the menu, year and sign-out', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page);
+  const tabs = page.getByRole('navigation', { name: 'Main' });
+  await expect(tabs.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByRole('navigation', { name: 'Sections' })).toBeHidden();
+  await expect(page.getByRole('link', { name: 'Fire drill' })).toBeVisible();
+  await tabs.getByRole('link', { name: 'Students' }).click();
+  await expect(page).toHaveURL(/\/admin\/students$/);
+  await expect(tabs.getByRole('link', { name: 'Students' })).toHaveAttribute('aria-current', 'page');
+  await tabs.getByRole('link', { name: 'More' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'More' })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Academic year' })).toBeVisible();
+  await page.getByRole('navigation', { name: 'Learning' }).getByRole('link', { name: 'Homework' }).click();
+  await expect(page).toHaveURL(/\/admin\/homework$/);
+  await page.getByRole('link', { name: 'Search', exact: true }).click();
+  await page.getByRole('searchbox', { name: 'Search students, contacts and teachers' }).fill('Test Student 001');
+  await page.getByRole('button', { name: 'Search' }).click();
+  await expect(page.getByRole('link', { name: 'Test Student 001' })).toBeVisible();
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto('/admin/more');
+    const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).exclude('nextjs-portal').analyze();
+    expect(r.violations.map((x) => `${scheme} ${x.id}: ${x.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
+  }
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  await expect(page).toHaveURL(/\/admin\/login$/);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page);
+  await expect(page.getByRole('navigation', { name: 'Main' })).toBeHidden();
+  await expect(page.getByRole('navigation', { name: 'Sections' })).toBeVisible();
+});
+
 for (const scheme of ['light', 'dark'] as const) {
   test(`dashboard passes axe in ${scheme} theme, at desktop and phone widths`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme });

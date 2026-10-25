@@ -10,6 +10,7 @@ import { runningDrill } from '@/server/attendance/drill';
 import { countNotices, countPendingRequests } from '@/server/attendance/requests';
 import { todayIso } from '@/server/people/common';
 import { unreadCount } from '@/server/comm/messages';
+import { formatInstant } from '@/lib/dates';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +26,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <>
       {/* §3 header/menu theme: set before the page paints, so there's no flash of the other theme. */}
       <script dangerouslySetInnerHTML={{ __html: theme ? `document.documentElement.dataset.theme=${JSON.stringify(theme)}` : 'delete document.documentElement.dataset.theme' }} />
-      <Shell school={profile?.name ?? 'School'} logoSrc={logoSrc} userName={admin.name} userEmail={admin.email}
+      <Shell school={profile?.name ?? 'School'} logoSrc={logoSrc} userName={admin.name} userEmail={admin.email} todayLabel={formatInstant(new Date(), 'EEEE d MMMM')}
       years={years.map((y) => ({ id: y.id, title: y.title }))} yearId={year?.id ?? null} drillPlaces={fire.buttonPlaces as string[]} drillRunning={!!drill} notifications={notices + requests} unreadMessages={unread} areas={areas}>
       {children}
       </Shell>

@@ -15,6 +15,7 @@ export const NAV: { group: string; items: NavItem[] }[] = [
 
 const EXTRA: { prefix: string; group: string; title: string }[] = [
   { prefix: '/admin/search', group: 'Overview', title: 'Search' },
+  { prefix: '/admin/more', group: 'Overview', title: 'More' },
   { prefix: '/admin/no-access', group: 'Overview', title: 'No access' },
   { prefix: '/admin/contacts', group: 'School', title: 'Contacts' },
   { prefix: '/admin/import', group: 'School', title: 'Import' },

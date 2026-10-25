@@ -697,3 +697,11 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
   - "Moving from another system" (`/admin/import/guide`) explains exporting from IBEAMS, Excel, Google Sheets and paper records, in order: classes, then students.
 - **Hidden for later (your request):** text messages, the online payment gateways (Stripe/GoCardless: families pay by cash or bank transfer), the student portal, and the Student Diary. Their Settings tabs, menu items and links are hidden. The routes and data are kept, so nothing is lost. They're listed in FUTURE.md.
 - **What's new (`/admin/whats-new`, your request).** Each update gets a plain-language entry in `src/lib/releases.ts` (New / Better / Fixed / Removed), newest first. The dashboard shows "New update" to each admin until they open the page; `admin_staff.seen_release` (migration 0009) remembers this. Updates are installed by whoever hosts the system, so there's no "update" button; the page says which version is running. The System page shows the same version. A new madrasah's first admin starts with the current release marked as seen.
+- **The admin on a phone is laid out as an app (your request, 25/10/2026),** following the admin screens in `design-reference/mobile` (Main, AdminStudents, AdminFees). When the screen is 640px or narrower:
+  - the sidebar and the sideways-scrolling menu are replaced by a bottom tab bar: Home, Students, Fees (for staff with fees access), Messages (with the unread count) and More;
+  - the header shows the school's mark, the page name (on Home, the school and today's date), a search button and notifications;
+  - the full menu, the year switcher, the fire drill and "Sign out" move to **More** (`/admin/more`);
+  - on the dashboard, the figures sit two to a row, the quick actions form a two-by-two grid, and unread messages and the fire drill come straight after the figures;
+  - rows of tool buttons and filter pills scroll sideways instead of wrapping.
+
+  Wider screens are unchanged. Tables keep their columns, which now fit at 390px, so bulk selection still works on a phone.
