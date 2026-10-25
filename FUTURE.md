@@ -65,6 +65,12 @@ Things deliberately left out of the current build, kept so nothing is forgotten.
     - Hosting several madrasahs on one installation.
     - Choosing the product's name and branding.
 
+15. **Newsletters** (§11, your request 25/10/2026)
+    Built, but taken out of the menu for now: Communication has Messages and Shared files. The pages and data are kept (`/admin/newsletters`), so it can come back by adding the menu item.
+
+16. **Phone notifications (web push)** for new messages, homework (sabak) and more
+    The installed parent and teacher apps could buzz the phone even when closed. This needs web push: VAPID keys, the phones' subscriptions saved, and the `web-push` library (a new dependency, so it needs your OK). On iPhones it only works once the app is added to the home screen (iOS 16.4+). Until then, open pages update their badges live and chime.
+
 ## Waiting on your details
 
 - **Student Diary / Daily Progress Tracker** (§12): its inner pages weren't visible in the inventory. Send the fields you want and it will be built.

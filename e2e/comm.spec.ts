@@ -19,11 +19,44 @@ test('compose to a class, read the reply state, then reply and lock', async ({ p
   await first.click();
   await expect(page.getByRole('heading', { name: 'Sample trip letter', level: 2 })).toBeVisible();
   await expect(page.getByText('Not yet read').first()).toBeVisible();
+  await expect(page.getByText('Delivered').first()).toBeAttached(); // grey ticks on our message
   await page.getByLabel('Reply').fill('A reminder for tomorrow.');
   await page.getByRole('button', { name: 'Reply & lock' }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Reply sent and conversation locked.' })).toBeVisible();
   await page.getByRole('link', { name: 'Locked (archived)' }).click();
   await expect(page.getByRole('link', { name: /Sample trip letter/ }).first()).toBeVisible();
+});
+
+test('messages: search bar with a filter, delete one message, and live counts', async ({ page }) => {
+  await signIn(page);
+  await page.goto('/admin/messages/new');
+  await page.getByRole('group', { name: /Or a class/ }).getByLabel('Test Class B').check();
+  await page.getByLabel('Subject').fill('Sample delete check');
+  await page.getByRole('textbox', { name: 'Message' }).fill('This one will be deleted.');
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/messages$/);
+  await page.getByRole('searchbox', { name: 'Search messages' }).fill('delete check');
+  await page.getByRole('button', { name: 'Search', exact: true }).click();
+  await expect(page).toHaveURL(/q=delete\+check/);
+  // Sending to a class makes one conversation per family; delete the only message in one of them.
+  const threads = page.getByRole('link', { name: /Sample delete check/ });
+  const before = await threads.count();
+  await threads.first().click();
+  page.once('dialog', (d) => d.accept());
+  await page.getByRole('button', { name: /^Delete this message from/ }).first().click();
+  await expect(page.getByText('Choose a conversation to read it.')).toBeVisible(); // its only message went, so the conversation did too
+  await expect(threads).toHaveCount(before - 1);
+  await expect(page.getByRole('combobox', { name: 'Filter by teacher or contact' })).toBeVisible();
+  const counts = await (await page.request.get('/admin/api/badges')).json();
+  expect(counts).toEqual({ messages: expect.any(Number), notifications: expect.any(Number) });
+});
+
+test('outstanding fees: remind each family on WhatsApp with the amount written in', async ({ page }) => {
+  await signIn(page);
+  await page.goto('/admin/fees/reminders?show=all');
+  await page.getByText('Remind families on WhatsApp').click();
+  const first = page.getByRole('list', { name: 'Remind families on WhatsApp' }).getByRole('link').first();
+  await expect(first).toHaveAttribute('href', /^https:\/\/wa\.me\/44\d+\?text=Salaam%20.*%C2%A3\d/);
 });
 
 test('newsletter: write, preview, send a test, and see it on the mail queue', async ({ page }) => {

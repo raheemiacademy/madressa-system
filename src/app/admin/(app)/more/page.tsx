@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { db } from '@/db';
 import { logoutAction } from '@/app/_auth/actions';
 import { Icon } from '@/components/Icon';
+import { SoundToggle } from '@/components/SoundToggle';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { initials } from '@/lib/text';
 import { resolveYear } from '@/server/academic-years';
@@ -31,6 +32,7 @@ export default async function More() {
       </section>
       <div className="ra-more-year"><span aria-hidden="true">Academic year</span><YearSwitcher years={years.map((y) => ({ id: y.id, title: y.title }))} yearId={year?.id ?? null} /></div>
       <ThemeToggle className="ra-card ra-toggle-row tap" label />
+      <SoundToggle className="ra-card ra-toggle-row tap" />
       {(fire.buttonPlaces as string[]).length > 0 && (
         <Link className="ra-drill-row tap" href="/admin/fire-drill"><Icon name="fire" /><span>Fire drill</span><small>Hold to start</small></Link>
       )}

@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useTransition } from 'react';
 import { Icon } from '@/components/Icon';
+import { LiveBadges } from '@/components/LiveBadges';
+import { SoundToggle } from '@/components/SoundToggle';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { TabBar, type Tab } from '@/app/_portal/TabBar';
 import { STEPS } from '@/lib/onboarding-steps';
@@ -90,6 +92,7 @@ export function Shell({ school, logoSrc, userName, userEmail, todayLabel, years,
           <Suspense fallback={null}><SetupBanner /></Suspense>
           <main id="main" tabIndex={-1} className="ra-content">{children}</main>
           <div className="ra-tabbar"><TabBar tabs={tabs} /></div>
+          <LiveBadges url="/admin/api/badges" counts={{ messages: unreadMessages, notifications }} />
         </div>
       </div>
     </div>
@@ -147,6 +150,7 @@ function AccountMenu({ name, email }: { name: string; email: string }) {
         onClick={() => requestAnimationFrame(place)}>{initials(name)}</button>
       <div ref={menu} id="account-menu" popover="auto" className="ra-menu">
         <p><strong style={{ color: 'var(--color-fg)', display: 'block' }}>{name}</strong>{email}</p>
+        <SoundToggle className="ra-menu-toggle" />
         <form action={logoutAction.bind(null, 'admin')}><button type="submit">Sign out</button></form>
       </div>
     </>

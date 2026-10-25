@@ -751,3 +751,23 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
   - Received opens All fees received, most recent first.
   - Outstanding opens Outstanding and reminders with everything still to pay.
   - Overdue opens the same page filtered to overdue.
+- **Messages (your requests, 25/10/2026).**
+  - **Opening a conversation** marks it read, and the page refreshes the header's counts straight away. Previously the count could lag by a page.
+  - **Read ticks** (WhatsApp-style): grey means delivered, blue means read.
+    - On the office's messages, blue means every parent or teacher on the conversation has read it.
+    - On a parent's or teacher's own messages, blue means the other person has read it, or (for a message to the office) any admin has.
+  - **Search:** a single search bar with a filter (Everyone, or one teacher or contact) replaces "Advanced search".
+  - **Deleting:** admins with Delete access can delete one message (a bin icon on it) or a whole conversation (a button). A conversation left empty goes too. Both ask first and are audited.
+  - **Teacher → parent messages:** these count as new for each admin until they open Messages → Teacher ↔ parent. They're added to the Messages badge, and the tab shows how many. Stored per admin in `admin_staff.seen_teacher_parent_at` (migration 0011).
+  - **Live counts and sound:** pages ask for the current counts every 20 seconds while the tab is open (`/admin/api/badges`, `/teacher/api/badges`, `/parent/api/badges`). The badges update, and a short chime plays when messages, holiday requests or parent absence/late notices go up.
+    - The chime is made in the browser, with no sound file.
+    - "Sounds" on/off, per device, is in the admin account menu and on every More page.
+  - **Phone notifications** when the app is closed need web push and a new library, so they're waiting on your OK (FUTURE.md 16).
+- **Newsletters and WhatsApp left the Communication menu (your request).** Newsletters is on the to-do list (FUTURE.md 15). WhatsApp is now used for reminders where they're needed: a "Remind … on WhatsApp" card with one ready-written message per family (main contacts with a usable mobile) on:
+  - Fees → Outstanding and reminders (each family's total owed);
+  - a student's Fees page;
+  - Register → Attendance alerts;
+  - Homework → Incomplete homework;
+  - incidents, as before.
+
+  The old WhatsApp page and Message templates still exist but aren't in the menu.

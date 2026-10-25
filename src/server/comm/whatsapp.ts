@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import type { DbOrTx } from '@/db';
 import { contact, incident, smsTemplate, student, studentContact } from '@/db/schema';
 import { formatInstant } from '@/lib/dates';
@@ -51,3 +51,33 @@ export async function incidentWhatsapp(db: DbOrTx, incidentId: number) {
     return n ? [{ key: `contact:${c.id}`, name: c.name, number: n.slice(1), text: fill(t?.body ?? 'Salaam {NAME}, please contact {SCHOOL_NAME} about {STUDENT_NAME}.', { ...vars, NAME: c.name.split(/\s+/)[0] ?? '' }, false) }] : [];
   });
 }
+
+/**
+ * WhatsApp reminders from a list (fees owed, attendance, homework): each student's main contacts with a usable mobile, one message
+ * per contact covering all their children in the list. `text` writes the message from the contact's first name and their items.
+ */
+export async function remindFamilies<T extends { studentId: number }>(db: DbOrTx, items: T[], text: (first: string, mine: T[], school: string) => string) {
+  const ids = [...new Set(items.map((i) => i.studentId))];
+  if (!ids.length) return { people: [] as WaPerson[], unusable: 0 };
+  const cc = String((await readTab(db, 'sms')).countryCode || '44');
+  const school = String((await commonVars(db)).SCHOOL_NAME ?? '');
+  const links = await db.select({ studentId: studentContact.studentId, id: contact.id, name: contact.name, mobile: contact.mobile }).from(studentContact)
+    .innerJoin(contact, eq(contact.id, studentContact.contactId)).where(and(inArray(studentContact.studentId, ids), eq(studentContact.isPrimary, true)));
+  const byContact = new Map<number, { name: string; mobile: string | null; kids: Set<number> }>();
+  for (const l of links) {
+    const c = byContact.get(l.id) ?? { name: l.name, mobile: l.mobile, kids: new Set<number>() };
+    c.kids.add(l.studentId);
+    byContact.set(l.id, c);
+  }
+  const people: WaPerson[] = [];
+  let unusable = 0;
+  for (const [id, c] of byContact) {
+    const n = c.mobile ? normaliseNumber(c.mobile, cc) : null;
+    if (!n) { unusable++; continue; }
+    people.push({ key: `contact:${id}`, name: c.name, number: n.slice(1), text: text(c.name.split(/\s+/)[0] ?? '', items.filter((i) => c.kids.has(i.studentId)), school) });
+  }
+  return { people: people.sort((a, b) => a.name.localeCompare(b.name, 'en-GB')), unusable };
+}
+
+/** "Ali and Sara", "Ali, Sara and Yusuf". */
+export const listNames = (names: string[]) => { const u = [...new Set(names)]; return u.length > 1 ? `${u.slice(0, -1).join(', ')} and ${u.at(-1)}` : u[0] ?? ''; };

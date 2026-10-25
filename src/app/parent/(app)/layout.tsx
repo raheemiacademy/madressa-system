@@ -1,6 +1,7 @@
 import { db } from '@/db';
 import { PortalSide } from '@/app/_portal/Side';
 import { TabBar, type Tab } from '@/app/_portal/TabBar';
+import { LiveBadges } from '@/components/LiveBadges';
 import { getProfile } from '@/server/profile';
 import { parentLinks, parentMenu } from './menu';
 import { requireParent } from '@/server/next/portal';
@@ -26,6 +27,7 @@ export default async function ParentApp({ children }: { children: React.ReactNod
         groups={[{ label: 'Your children', items: tabs.slice(0, -1) }, { label: 'More', items: parentMenu(p, unread) }]} />
       <div className="rp-body">{children}</div>
       <TabBar tabs={tabs} />
+      <LiveBadges url="/parent/api/badges" counts={{ messages: unread, notifications: 0 }} />
     </div>
   );
 }

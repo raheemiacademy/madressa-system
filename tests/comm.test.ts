@@ -5,12 +5,13 @@ import { academicYear, adminStaff, alertSent, classAssignment, classTeacher, con
 import { login } from '@/server/auth';
 import { claimDay, runDaily } from '@/server/comm/jobs';
 import { logOutbox, processMailQueue } from '@/server/comm/mail';
-import { bulkThreads, compose, deleteRange, inbox, openThread, reply, routeAllowed, startFromPortal } from '@/server/comm/messages';
+import { bulkThreads, compose, deleteMessage, deleteRange, inbox, markTeacherParentSeen, openThread, reply, routeAllowed, startFromPortal, teacherParentNew } from '@/server/comm/messages';
+import { partyThread } from '@/server/portal/messages';
 import { recipients, saveNewsletter, sendNewsletter } from '@/server/comm/newsletters';
 import { sendReceipts, studentLeftEmails } from '@/server/comm/notify';
 import { csvRecipients, groupRecipients, normaliseNumber, processSmsQueue, queueSms, smsOutbox, whatsappLink } from '@/server/comm/sms';
 import { fill, getTemplate, render, saveTemplate } from '@/server/comm/templates';
-import { whatsappList } from '@/server/comm/whatsapp';
+import { listNames, remindFamilies, whatsappList } from '@/server/comm/whatsapp';
 import { syncPortalLogin } from '@/server/people/logins';
 import { requestPasswordLink, redeemPasswordLink } from '@/server/password-links';
 import { db, makeStaff, resetDb } from './helpers';
@@ -122,6 +123,61 @@ describe('messages', () => {
     expect(await routeAllowed(db, p, t)).toBe(false);
     expect(await startFromPortal(db, { ...p, name: 'Parent Comm' }, t, 'Hi', 'Hello')).toMatchObject({ ok: false });
     expect(await routeAllowed(db, p, { kind: 'admin', id: 0 })).toBe(false);
+  });
+});
+
+describe('messages: ticks, deleting, teacher → parent alerts', () => {
+  it('ticks turn blue once the office has read a parent’s message, and back for the parent', async () => {
+    const f = await family();
+    await setSetting(f.actor, 'messaging', { contactsToAdmins: 'on' });
+    const p = { kind: 'contact' as const, id: f.parent.id, name: 'Parent Comm' };
+    const r = await startFromPortal(db, p, { kind: 'admin', id: 0 }, 'Late tomorrow', 'Kid will be late');
+    if (!r.ok) throw new Error(r.error);
+    expect((await partyThread(db, p, r.id))!.messages[0]).toMatchObject({ mine: true, read: false }); // delivered, grey
+    await openThread(db, f.staff.id, r.id); // an admin reads it
+    expect((await partyThread(db, p, r.id))!.messages[0]).toMatchObject({ mine: true, read: true }); // read, blue
+    expect(await reply(db, { kind: 'admin', id: f.staff.id, name: 'Admin' }, r.id, 'Thanks')).toEqual({ ok: true });
+    const office = (await openThread(db, f.staff.id, r.id))!.messages.at(-1)!;
+    expect(office.notReadBy).toEqual(['Parent Comm']); // the admin's reply: not read yet
+    await partyThread(db, p, r.id);
+    expect((await openThread(db, f.staff.id, r.id))!.messages.at(-1)!.notReadBy).toEqual([]);
+  });
+
+  it('admins can delete one message; the last one takes the conversation with it', async () => {
+    const f = await family();
+    const r = await compose(db, f.actor, { teacherIds: [String(f.teacher.id)], subject: 'Rota', body: 'First' });
+    if (!r.ok) throw new Error();
+    const id = r.ids[0]!;
+    await reply(db, { kind: 'teacher', id: f.teacher.id, name: 'Teacher Comm' }, id, 'Second');
+    const [first, second] = (await openThread(db, f.staff.id, id))!.messages;
+    expect(await deleteMessage(db, f.actor, first!.id)).toBe(true);
+    expect((await openThread(db, f.staff.id, id))!.messages.map((m) => m.body)).toEqual(['Second']);
+    expect(await deleteMessage(db, f.actor, first!.id)).toBe(false); // already gone
+    await deleteMessage(db, f.actor, second!.id);
+    expect(await openThread(db, f.staff.id, id)).toBeNull();
+  });
+
+  it('counts teacher messages to parents as new for each admin until they look', async () => {
+    const f = await family();
+    await db.insert(classTeacher).values({ classId: f.cls.id, teacherId: f.teacher.id, canMessage: true });
+    await setSetting(f.actor, 'messaging', { teachersToPrimaryContacts: 'on' });
+    expect(await teacherParentNew(db, f.staff.id)).toBe(0);
+    const r = await startFromPortal(db, { kind: 'teacher', id: f.teacher.id, name: 'Teacher Comm' }, { kind: 'contact', id: f.parent.id }, 'Homework', 'Please check the reading');
+    expect(r.ok).toBe(true);
+    expect(await teacherParentNew(db, f.staff.id)).toBe(1);
+    await markTeacherParentSeen(db, f.staff.id);
+    expect(await teacherParentNew(db, f.staff.id)).toBe(0);
+  });
+
+  it('WhatsApp reminders: one message per family covering all their children, numbers it can’t use counted', async () => {
+    const f = await family();
+    const [kid2] = await db.insert(student).values({ firstName: 'Sister', surname: 'Comm', status: 'Current' }).returning();
+    await db.insert(studentContact).values({ studentId: kid2!.id, contactId: f.parent.id, type: 'Parent', isPrimary: true });
+    const r = await remindFamilies(db, [{ studentId: f.kid.id, name: 'Kid' }, { studentId: kid2!.id, name: 'Sister' }], (first, mine) => `Salaam ${first}: ${listNames(mine.map((m) => m.name))}`);
+    expect(r).toMatchObject({ unusable: 0, people: [{ name: 'Parent Comm', number: '447700900111', text: 'Salaam Parent: Kid and Sister' }] });
+    await db.update(contact).set({ mobile: '12' }).where(eq(contact.id, f.parent.id));
+    expect(await remindFamilies(db, [{ studentId: f.kid.id }], () => '')).toEqual({ people: [], unusable: 1 });
+    expect(listNames(['A', 'B', 'C', 'A'])).toBe('A, B and C');
   });
 });
 

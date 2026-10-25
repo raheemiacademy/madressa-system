@@ -266,3 +266,25 @@ export async function deleteRange(db: Db, actor: Actor, raw: unknown) {
     return { ok: true as const, n: gone.length };
   });
 }
+
+/** Admins: delete one message (it's gone for everyone). A conversation left with no messages is deleted too. Audited. */
+export async function deleteMessage(db: Db, actor: Actor, messageId: number) {
+  return db.transaction(async (tx) => {
+    const [m] = await tx.delete(message).where(eq(message.id, messageId)).returning({ threadId: message.threadId, sender: message.senderName });
+    if (!m) return false;
+    const [left] = await tx.select({ n: sql<number>`count(*)::int` }).from(message).where(eq(message.threadId, m.threadId));
+    if (!left?.n) await tx.update(messageThread).set({ deletedAt: new Date() }).where(eq(messageThread.id, m.threadId));
+    await audit(tx, actor, { action: `Deleted a message from ${m.sender}`, page: 'Messages', entity: 'message', entityId: messageId, details: { threadId: m.threadId } });
+    return true;
+  });
+}
+
+/** How many messages teachers have sent parents (conversations without the office) since this admin last looked at them. */
+export async function teacherParentNew(db: DbOrTx, staffId: number) {
+  const [r] = await db.select({ n: sql<number>`count(*)::int` }).from(message).innerJoin(messageThread, eq(messageThread.id, message.threadId))
+    .where(and(eq(messageThread.withOffice, false), isNull(messageThread.deletedAt), eq(message.senderKind, 'teacher'),
+      sql`${message.createdAt} > coalesce((select seen_teacher_parent_at from admin_staff where id = ${staffId}), (select created_at from admin_staff where id = ${staffId}))`));
+  return r?.n ?? 0;
+}
+
+export const markTeacherParentSeen = (db: DbOrTx, staffId: number) => db.update(adminStaff).set({ seenTeacherParentAt: new Date() }).where(eq(adminStaff.id, staffId));

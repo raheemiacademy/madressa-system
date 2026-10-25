@@ -1,6 +1,7 @@
 import { db } from '@/db';
 import { PortalSide } from '@/app/_portal/Side';
 import { TabBar, type Tab } from '@/app/_portal/TabBar';
+import { LiveBadges } from '@/components/LiveBadges';
 import { getProfile } from '@/server/profile';
 import { teacherLinks, teacherMenu } from './menu';
 import { leaveTeacherViewAction } from './actions';
@@ -35,6 +36,7 @@ export default async function TeacherApp({ children }: { children: React.ReactNo
         {children}
       </div>
       <TabBar tabs={tabs} />
+      <LiveBadges url="/teacher/api/badges" counts={{ messages: unread, notifications: 0 }} />
     </div>
   );
 }

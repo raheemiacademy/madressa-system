@@ -712,3 +712,24 @@ th[aria-sort] .ra-sort span { opacity: 1; color: var(--ra-accent-text); }
 .ra-classfees .ra-btn svg { width: 14px; height: 14px; }
 .ra-classfees-name { color: inherit; text-decoration: none; }
 @media (hover: hover) and (pointer: fine) { .ra-classfees-name:hover b { color: var(--ra-accent-text); text-decoration: underline; } }
+
+/* Messages: search bar with a filter, read ticks, and delete on each message */
+.ra-msg-search { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ra-msg-search .ra-findbar { flex: 1 1 260px; max-width: none; }
+.ra-msg-search .ra-select { flex: 0 1 240px; }
+.ra-ticks { display: inline-flex; vertical-align: -1px; color: var(--color-fg-muted); }
+.ra-ticks.read { color: var(--ra-blue); }
+.ra-msg-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+.ra-msg-meta .ra-acts button { opacity: .7; }
+@media (hover: hover) and (pointer: fine) { .ra-msg-meta .ra-acts button:hover { opacity: 1; color: var(--color-bad); } }
+.ra-filter .ra-msg-count { margin-left: 2px; }
+
+/* Sounds on/off in the admin account menu */
+.ra-menu .ra-menu-toggle { display: flex; align-items: center; gap: 8px; width: 100%; }
+.ra-menu .ra-menu-toggle svg { width: 16px; height: 16px; }
+.ra-menu .ra-menu-toggle span { flex: 1; text-align: left; }
+
+/* "Remind on WhatsApp" cards on list pages: closed until needed */
+.ra-wa-remind > summary { cursor: pointer; list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-height: 40px; }
+.ra-wa-remind > summary::-webkit-details-marker { display: none; }
+.ra-wa-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--color-ok); flex: none; }

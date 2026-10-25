@@ -1,3 +1,5 @@
+import { RefreshOnce } from '@/components/RefreshOnce';
+import { Ticks } from '@/components/Ticks';
 import Link from 'next/link';
 import { SelectField, TextArea, TextField } from '@/components/Fields';
 import { Form } from '@/components/Form';
@@ -34,10 +36,12 @@ export function Inbox({ threads, base }: { threads: Awaited<ReturnType<typeof pa
 export function Conversation({ data, fileBase, reply }: { data: NonNullable<Awaited<ReturnType<typeof partyThread>>>; fileBase: string; reply: Action }) {
   return (
     <>
+      {/* Opening it marks it read: refresh once so the tab's unread count drops. */}
+      <RefreshOnce when={data.thread.id} />
       <section className="ra-card ra-thread" aria-label="Messages">
         {data.messages.map((m) => (
           <article key={m.id} aria-label={`From ${m.mine ? 'you' : m.name}`} style={{ display: 'grid', justifyItems: m.mine ? 'end' : 'start', gap: 4 }}>
-            <div className="ra-note">{m.mine ? 'You' : m.office ? `${m.name} (office)` : m.name} · {m.at}</div>
+            <div className="ra-note">{m.mine ? 'You' : m.office ? `${m.name} (office)` : m.name} · {m.at}{m.mine && <> <Ticks read={m.read} /></>}</div>
             <div className="ra-bubble" style={{ whiteSpace: 'pre-wrap', maxWidth: '100%' }}>{m.body}</div>
             {m.attachmentFileId && <a href={`${fileBase}/${m.attachmentFileId}`}>Attachment</a>}
           </article>

@@ -78,6 +78,13 @@
       "when": 1792961612239,
       "tag": "0010_teacher_view_as",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792968704032,
+      "tag": "0011_teacher_parent_seen",
+      "breakpoints": true
     }
   ]
 }

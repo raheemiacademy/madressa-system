@@ -4,14 +4,16 @@ import { db } from '@/db';
 import { contact, teacher } from '@/db/schema';
 import { Chip } from '@/components/Chip';
 import { SelectField, TextArea } from '@/components/Fields';
-import { Form } from '@/components/Form';
+import { ActionButton, Form } from '@/components/Form';
+import { RefreshOnce } from '@/components/RefreshOnce';
+import { Ticks } from '@/components/Ticks';
 import { Icon } from '@/components/Icon';
 import { formatInstant } from '@/lib/dates';
 import { initials } from '@/lib/text';
 import { requireAdmin } from '@/server/next/actor';
 import { adminCan } from '@/server/permissions';
-import { inbox, openThread, type InboxFilter } from '@/server/comm/messages';
-import { bulkAction, replyAction } from './actions';
+import { inbox, markTeacherParentSeen, openThread, teacherParentNew, type InboxFilter } from '@/server/comm/messages';
+import { bulkAction, deleteMessageAction, deleteThreadAction, replyAction } from './actions';
 
 export const metadata = { title: 'Messages' };
 const BOXES = { inbox: 'Inbox', locked: 'Locked (archived)', other: 'Teacher ↔ parent' } as const;
@@ -23,18 +25,27 @@ export default async function Messages({ searchParams }: { searchParams: Promise
   const sp = await searchParams;
   const box = (sp.box && sp.box in BOXES ? sp.box : 'inbox') as InboxFilter['box'];
   const who = (sp.who && sp.who in WHO && sp.who !== 'all' ? sp.who : undefined) as InboxFilter['who'];
-  const f: InboxFilter = { box, who, teacherId: Number(sp.teacher) || undefined, contactId: Number(sp.contact) || undefined, q: (sp.q ?? '').trim().slice(0, 60) || undefined };
+  // The search bar's filter is one value, "teacher:ID" or "contact:ID" (older links may still use teacher= or contact=).
+  const [pk, pid] = (sp.person ?? '').split(':');
+  const teacherId = (pk === 'teacher' ? Number(pid) : Number(sp.teacher)) || undefined;
+  const contactId = (pk === 'contact' ? Number(pid) : Number(sp.contact)) || undefined;
+  const f: InboxFilter = { box, who, teacherId, contactId, q: (sp.q ?? '').trim().slice(0, 60) || undefined };
   const me = { id: admin.staff.id, rank: admin.staff.rank, isSuper: admin.staff.isSuper };
   const tid = Number(sp.t) || null;
   // Open (and mark read) before listing, so the list doesn't show this conversation as unread.
   const open = tid ? await openThread(db, admin.staff.id, tid) : null;
+  // Teacher → parent messages count as new until the admin opens this box.
+  const newOther = box === 'other' ? 0 : await teacherParentNew(db, admin.staff.id);
+  if (box === 'other') await markTeacherParentSeen(db, admin.staff.id);
   const [threads, teachers, contacts] = await Promise.all([
     inbox(db, me, f),
     db.select({ id: teacher.id, name: teacher.name }).from(teacher).where(isNull(teacher.deletedAt)).orderBy(asc(teacher.name)),
     db.select({ id: contact.id, name: contact.name }).from(contact).orderBy(asc(contact.name)).limit(2000)
   ]);
   const canEdit = adminCan(admin.staff, 'edit');
-  const q = (v: Record<string, string | undefined>) => `?${new URLSearchParams(Object.entries({ box, who, teacher: sp.teacher, contact: sp.contact, q: f.q, ...v }).filter(([, x]) => x) as [string, string][])}`;
+  const person = teacherId ? `teacher:${teacherId}` : contactId ? `contact:${contactId}` : undefined;
+  const q = (v: Record<string, string | undefined>) => `?${new URLSearchParams(Object.entries({ box, who, person, q: f.q, ...v }).filter(([, x]) => x) as [string, string][])}`;
+  const canDelete = adminCan(admin.staff, 'delete');
   return (
     <div className="ra-page">
       <div className="ra-page-h"><div><h1>Messages</h1><p>Inbox for parents, teachers and admins</p></div>
@@ -42,18 +53,23 @@ export default async function Messages({ searchParams }: { searchParams: Promise
           {canEdit && <Link className="ra-btn primary" href="/admin/messages/new"><Icon name="plus" />Compose</Link>}
           {adminCan(admin.staff, 'delete') && <Link className="ra-btn" href="/admin/messages/delete">Delete by date</Link>}
         </div></div>
-      <nav className="ra-filters" aria-label="Mailbox">{Object.entries(BOXES).map(([k, l]) => <Link key={k} className="ra-filter" aria-current={box === k ? 'page' : undefined} href={q({ box: k, t: undefined })}>{l}</Link>)}</nav>
+      {/* Opening a conversation (or the teacher ↔ parent box) changes the header's counts: refresh them once. */}
+      {(tid || box === 'other') && <RefreshOnce when={`${box}:${tid ?? ''}`} />}
+      <nav className="ra-filters" aria-label="Mailbox">{Object.entries(BOXES).map(([k, l]) => (
+        <Link key={k} className="ra-filter" aria-current={box === k ? 'page' : undefined} href={q({ box: k, t: undefined })}>{l}{k === 'other' && newOther > 0 && <> <b className="ra-msg-count">{newOther}<span className="sr-only"> new</span></b></>}</Link>
+      ))}</nav>
 
-      <details className="ra-card" open={!!(sp.teacher || sp.contact || sp.q)}>
-        <summary className="ra-link" style={{ display: 'inline-grid' }}>Advanced search</summary>
-        <form className="ra-toolbar" role="search">
-          <input type="hidden" name="box" value={box} />
-          <div className="ra-field"><label htmlFor="m-teacher">Teacher</label><select className="ra-select" id="m-teacher" name="teacher" defaultValue={sp.teacher ?? ''}><option value="">Any teacher</option>{teachers.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
-          <div className="ra-field"><label htmlFor="m-contact">Contact</label><select className="ra-select" id="m-contact" name="contact" defaultValue={sp.contact ?? ''}><option value="">Any contact</option>{contacts.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
-          <div className="ra-field grow"><label htmlFor="m-q">Words</label><input className="ra-input" id="m-q" type="search" name="q" defaultValue={f.q ?? ''} /></div>
-          <button className="ra-btn">Search</button>
-        </form>
-      </details>
+      <form className="ra-card ra-msg-search" role="search">
+        <input type="hidden" name="box" value={box} />
+        <div className="ra-findbar"><Icon name="search" /><input className="ra-input" type="search" name="q" defaultValue={f.q ?? ''} placeholder="Search messages" aria-label="Search messages" enterKeyHint="search" /></div>
+        <select className="ra-select" name="person" defaultValue={person ?? ''} aria-label="Filter by teacher or contact">
+          <option value="">Everyone</option>
+          <optgroup label="Teachers">{teachers.map((t) => <option key={t.id} value={`teacher:${t.id}`}>{t.name}</option>)}</optgroup>
+          <optgroup label="Contacts">{contacts.map((c) => <option key={c.id} value={`contact:${c.id}`}>{c.name}</option>)}</optgroup>
+        </select>
+        <button className="ra-btn">Search</button>
+        {(f.q || person) && <Link className="ra-link" href={`?box=${box}`}>Clear</Link>}
+      </form>
 
       <div className="ra-grid">
         <section className="ra-card ra-c5" aria-label="Conversations">
@@ -85,11 +101,13 @@ export default async function Messages({ searchParams }: { searchParams: Promise
           {!open ? <p className="ra-empty">Choose a conversation to read it.</p> : (
             <>
               <div className="ra-card-h"><div><h2 id="th-h">{open.thread.subject}</h2>
-                <div className="ra-note">{open.people.map((p) => `${p.name} (${ROLE[p.kind]})`).join(', ')}{open.thread.faoRank ? ` · for ${open.thread.faoRank}` : ''}{open.thread.locked ? ' · locked: parents and teachers can’t reply' : ''}</div></div></div>
+                <div className="ra-note">{open.people.map((p) => `${p.name} (${ROLE[p.kind]})`).join(', ')}{open.thread.faoRank ? ` · for ${open.thread.faoRank}` : ''}{open.thread.locked ? ' · locked: parents and teachers can’t reply' : ''}</div></div>
+                {canDelete && <ActionButton action={deleteThreadAction.bind(null, open.thread.id)} label="Delete conversation" className="ra-btn" danger confirm={`Delete “${open.thread.subject}” for everyone? This can’t be undone.`} />}</div>
               <div className="ra-thread">
                 {open.messages.map((m) => (
                   <article key={m.id} aria-label={`From ${m.senderName} at ${m.at}`}>
-                    <div className="ra-note" style={{ marginBottom: 4 }}><b>{m.senderName}</b> · {ROLE[m.senderKind]} · {m.at}</div>
+                    <div className="ra-note ra-msg-meta"><span><b>{m.senderName}</b> · {ROLE[m.senderKind]} · {m.at}{m.senderKind === 'admin' && m.readBy.length + m.notReadBy.length > 0 && <> <Ticks read={m.notReadBy.length === 0} /></>}</span>
+                      {canDelete && <span className="ra-acts"><ActionButton action={deleteMessageAction.bind(null, m.id)} ariaLabel={`Delete this message from ${m.senderName}`} confirm="Delete this message for everyone? This can’t be undone." className="ra-del"><Icon name="trash" /></ActionButton></span>}</div>
                     <div className="ra-bubble" style={{ whiteSpace: 'pre-wrap' }}>{m.body}</div>
                     {m.attachmentFileId && <a className="ra-link" href={`/admin/files/${m.attachmentFileId}`}><Icon name="paperclip" /> Attachment</a>}
                     <div className="ra-note">{m.notReadBy.length ? `Not yet read${m.readBy.length ? `; read by ${m.readBy.join(', ')}` : ''}` : m.readBy.length ? `Read by ${m.readBy.join(', ')}` : ''}</div>

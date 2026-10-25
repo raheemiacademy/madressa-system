@@ -64,6 +64,7 @@ export const adminStaff = pgTable('admin_staff', {
   dbsExpiresOn: date('dbs_expires_on', { mode: 'string' }),
   isSuper: boolean('is_super').notNull().default(false),
   seenRelease: text('seen_release'), // the newest "What's new" release this person has opened
+  seenTeacherParentAt: tz('seen_teacher_parent_at'), // when they last opened Messages → Teacher ↔ parent (newer teacher messages to parents count as new)
   canEdit: boolean('can_edit').notNull().default(false),
   canDelete: boolean('can_delete').notNull().default(false),
   feesAccess: boolean('fees_access').notNull().default(false),

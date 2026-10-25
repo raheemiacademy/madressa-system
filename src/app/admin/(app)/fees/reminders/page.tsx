@@ -11,6 +11,8 @@ import { FeesHead } from '../FeesHead';
 import { InvoiceTable } from '../InvoiceTable';
 import { sendRemindersAction } from '../actions';
 import { versionsOf } from '@/server/comm/templates';
+import { WhatsAppReminders } from '@/components/WhatsAppReminders';
+import { listNames, remindFamilies } from '@/server/comm/whatsapp';
 
 export const metadata = { title: 'Outstanding and reminders' };
 const SHOW = { overdue: 'Overdue', active: 'Active', upcoming: 'Upcoming', all: 'All' } as const;
@@ -33,6 +35,8 @@ export default async function Reminders({ searchParams }: { searchParams: Promis
   const [rows, versions] = await Promise.all([reminders(db, { show, type, min, month, from: date(sp.from), to: date(sp.to), studentIds }), versionsOf(db, 'fees.reminder')]);
   const sent = sp.sent !== undefined ? Number(sp.sent) || 0 : null;
   const total = rows.reduce((s, r) => s + r.balance, 0);
+  const wa = await remindFamilies(db, rows, (first, mine, school) =>
+    `Salaam ${first}, this is a reminder from ${school} that ${formatPence(mine.reduce((s, r) => s + r.balance, 0))} is still to pay for ${listNames(mine.map((r) => r.studentName))}. You can pay by cash or bank transfer. JazakAllahu khairan.`);
   const students = new Set(rows.map((r) => r.studentId)).size;
   const keep = (v: Record<string, string | undefined>) => `?${new URLSearchParams(Object.entries({ ...sp, ...v }).filter(([, x]) => x) as [string, string][])}`;
   return (
@@ -57,6 +61,7 @@ export default async function Reminders({ searchParams }: { searchParams: Promis
         <div className="ra-card-h"><div><h2>{rows.length === 1 ? '1 invoice' : `${rows.length} invoices`} · {students === 1 ? '1 student' : `${students} students`} · {formatPence(total)} to pay</h2>
           <div className="ra-note">Untick any invoice you don’t want to include. Each family gets one email listing their invoices. <a className="ra-link" href="/admin/settings/templates/fees.reminder">Edit email template</a></div></div></div>
         <InvoiceTable rows={rows} select="ids" empty="Nothing outstanding matches these filters." />
+        <WhatsAppReminders title="Remind families on WhatsApp" list={wa} />
         {rows.length > 0 && (
           <div className="ra-toolbar">
             <div className="ra-field"><label htmlFor="r-version">Template version</label><select className="ra-select" id="r-version" name="version">{versions.map((v) => <option key={v}>{v}</option>)}</select></div>
