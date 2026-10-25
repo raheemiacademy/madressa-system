@@ -87,6 +87,20 @@ test('classes: search as you type, open a class from anywhere on its card, chang
   await expect(items.nth(1).locator('b')).toHaveText(second);
 });
 
+test('the student list sorts by a column heading, and again the other way', async ({ page }) => {
+  await signIn(page);
+  await page.goto('/admin/students');
+  const table = page.getByRole('region', { name: 'Manage students' }).getByRole('table');
+  await table.getByRole('link', { name: 'ID', exact: true }).click();
+  await expect(page).toHaveURL(/sort=id&dir=asc/);
+  await expect(table.getByRole('columnheader', { name: 'ID' })).toHaveAttribute('aria-sort', 'ascending');
+  await table.getByRole('link', { name: 'ID', exact: true }).click();
+  await expect(page).toHaveURL(/sort=id&dir=desc/);
+  await expect(table.getByRole('columnheader', { name: 'ID' })).toHaveAttribute('aria-sort', 'descending');
+  const ids = await table.locator('tbody tr td:nth-child(2)').allTextContents();
+  expect(ids.map(Number)).toEqual([...ids.map(Number)].sort((a, b) => b - a));
+});
+
 test('the Students page shows boys and girls by age group', async ({ page }) => {
   await signIn(page);
   await page.goto('/admin/students');

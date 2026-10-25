@@ -10,8 +10,10 @@ import { bulkAction, deleteStudentsAction } from './actions';
 
 type Row = { id: number; name: string; gender: string; classes: string | null; age: number | null; yearGroup: string | null; status: string; hasMedical: boolean };
 
-export function StudentsTable({ rows, classes, statuses, canEdit, canDelete, canFees, filtered }: {
-  rows: Row[]; classes: { value: string; label: string }[]; statuses: string[]; canEdit: boolean; canDelete: boolean; canFees: boolean; filtered: boolean;
+type Sort = { key: string; dir: 'asc' | 'desc'; hrefs: Record<string, string> };
+
+export function StudentsTable({ rows, classes, statuses, canEdit, canDelete, canFees, filtered, sort }: {
+  rows: Row[]; classes: { value: string; label: string }[]; statuses: string[]; canEdit: boolean; canDelete: boolean; canFees: boolean; filtered: boolean; sort: Sort;
 }) {
   const [sel, setSel] = useState<number[]>([]);
   const [action, setAction] = useState('accept');
@@ -25,7 +27,7 @@ export function StudentsTable({ rows, classes, statuses, canEdit, canDelete, can
           <table className="ra-table">
             <thead><tr>
               {canEdit && <th><input type="checkbox" aria-label="Select all students on this page" checked={all} onChange={() => setSel(all ? [] : rows.map((r) => r.id))} /></th>}
-              <th>ID</th><th>Name</th><th className="opt">Gender</th><th>Class</th><th className="num opt">Age</th><th>Status</th><th><span className="sr-only">Actions</span></th>
+              {th(sort, 'id', 'ID')}{th(sort, 'name', 'Name')}{th(sort, 'gender', 'Gender', 'opt')}{th(sort, 'class', 'Class')}{th(sort, 'age', 'Age', 'num opt')}{th(sort, 'status', 'Status')}<th><span className="sr-only">Actions</span></th>
             </tr></thead>
             <tbody>
               {rows.map((r) => (
@@ -38,13 +40,13 @@ export function StudentsTable({ rows, classes, statuses, canEdit, canDelete, can
                   <td className="num opt" title={r.yearGroup ?? undefined}>{r.age ?? ''}</td>
                   <td><Chip>{r.status}</Chip></td>
                   <td><span className="ra-acts">
-                    {canEdit && <Link href={`/admin/students/${r.id}/edit`} aria-label={`Edit ${r.name}`}><Icon name="edit" /></Link>}
-                    <Link href={`/admin/students/${r.id}`} aria-label={`Profile of ${r.name}`}><Icon name="eye" /></Link>
-                    <Link href={`/admin/students/${r.id}/history`} aria-label={`Class history of ${r.name}`}><Icon name="clock" /></Link>
-                    <Link href={`/admin/register/student/${r.id}`} aria-label={`Register of ${r.name}`}><Icon name="check" /></Link>
-                    <Link href={`/admin/incidents?student=${r.id}`} aria-label={`Incidents of ${r.name}`}><Icon name="alert" /></Link>
-                    {canFees && <Link href={`/admin/fees/student/${r.id}`} aria-label={`Fees of ${r.name}`}><Icon name="pound" /></Link>}
-                    {canFees && <Link href={`/admin/fees/student/${r.id}?view=history`} aria-label={`Fees history of ${r.name}`}><Icon name="receipt" /></Link>}
+                    {canEdit && <Link href={`/admin/students/${r.id}/edit`} aria-label={`Edit ${r.name}`} data-tip="Edit"><Icon name="edit" /></Link>}
+                    <Link href={`/admin/students/${r.id}`} aria-label={`Profile of ${r.name}`} data-tip="Profile"><Icon name="eye" /></Link>
+                    <Link href={`/admin/students/${r.id}/history`} aria-label={`Class history of ${r.name}`} data-tip="Class history"><Icon name="clock" /></Link>
+                    <Link href={`/admin/register/student/${r.id}`} aria-label={`Register of ${r.name}`} data-tip="Register"><Icon name="check" /></Link>
+                    <Link href={`/admin/incidents?student=${r.id}`} aria-label={`Incidents of ${r.name}`} data-tip="Incidents"><Icon name="alert" /></Link>
+                    {canFees && <Link href={`/admin/fees/student/${r.id}`} aria-label={`Fees of ${r.name}`} data-tip="Fees"><Icon name="pound" /></Link>}
+                    {canFees && <Link href={`/admin/fees/student/${r.id}?view=history`} aria-label={`Fees history of ${r.name}`} data-tip="Fees history"><Icon name="receipt" /></Link>}
                   </span></td>
                 </tr>
               ))}
@@ -76,5 +78,15 @@ export function StudentsTable({ rows, classes, statuses, canEdit, canDelete, can
         </section>
       )}
     </>
+  );
+}
+
+/** A column heading that sorts the list by that column; pressing it again reverses the order. */
+function th(sort: Sort, key: string, label: string, className?: string) {
+  const on = sort.key === key;
+  return (
+    <th className={className} aria-sort={on ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}>
+      <Link className="ra-sort" href={sort.hrefs[key]!} scroll={false}>{label}<span aria-hidden="true">{on ? (sort.dir === 'asc' ? '↑' : '↓') : '↕'}</span></Link>
+    </th>
   );
 }

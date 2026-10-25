@@ -199,13 +199,15 @@ export async function inbox(db: DbOrTx, staff: { id: number; rank: string | null
     last: sql<{ name: string; body: string; kind: string; at: string } | null>`(select json_build_object('name', m.sender_name, 'body', left(m.body, 160), 'kind', m.sender_kind, 'at', m.created_at) from message m where m.thread_id = ${TID} order by m.id desc limit 1)`,
     others: sql<string | null>`(select string_agg(coalesce(a.name, t.name, c.name), ', ') from message_participant p left join admin_staff a on p.kind = 'admin' and a.id = p.person_id left join teacher t on p.kind = 'teacher' and t.id = p.person_id left join contact c on p.kind = 'contact' and c.id = p.person_id where p.thread_id = ${TID} and not (p.kind = 'admin' and p.person_id = ${staff.id}))`,
     mine: sql<{ lastReadAt: string | null; unreadOverride: boolean } | null>`(select json_build_object('lastReadAt', p.last_read_at, 'unreadOverride', p.unread_override) from message_participant p where p.thread_id = ${TID} and p.kind = 'admin' and p.person_id = ${staff.id})`,
-    newest: sql<string | null>`(select max(m.created_at) from message m where m.thread_id = ${TID} and not (m.sender_kind = 'admin' and m.sender_id = ${staff.id}))`
+    newest: sql<string | null>`(select max(m.created_at) from message m where m.thread_id = ${TID} and not (m.sender_kind = 'admin' and m.sender_id = ${staff.id}))`,
+    newCount: sql<number>`(select count(*)::int from message m where m.thread_id = ${TID} and not (m.sender_kind = 'admin' and m.sender_id = ${staff.id}) and m.created_at > coalesce((select p.last_read_at from message_participant p where p.thread_id = ${TID} and p.kind = 'admin' and p.person_id = ${staff.id}), '-infinity'::timestamptz))`
   }).from(messageThread).where(and(...conds)).orderBy(desc(messageThread.lastMessageAt)).limit(300);
-  return rows.map((r) => ({
-    ...r.t, last: r.last, others: r.others ?? '',
+  return rows.map((r) => {
     // Locked threads never show as unread (locking clears them from unread).
-    unread: !r.t.locked && f.box !== 'other' && (!!r.mine?.unreadOverride || (!!r.newest && (!r.mine?.lastReadAt || new Date(r.newest) > new Date(r.mine.lastReadAt))))
-  }));
+    const unread = !r.t.locked && f.box !== 'other' && (!!r.mine?.unreadOverride || (!!r.newest && (!r.mine?.lastReadAt || new Date(r.newest) > new Date(r.mine.lastReadAt))));
+    // How many messages are new to this person (a thread marked unread by hand counts as 1).
+    return { ...r.t, last: r.last, others: r.others ?? '', unread, unreadCount: unread ? Math.max(1, r.newCount) : 0 };
+  });
 }
 
 export const unreadCount = async (db: DbOrTx, staff: { id: number; rank: string | null; isSuper: boolean }) => (await inbox(db, staff, { box: 'inbox' })).filter((t) => t.unread).length;

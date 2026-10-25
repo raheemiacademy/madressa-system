@@ -3,6 +3,7 @@ import { PortalSide } from '@/app/_portal/Side';
 import { TabBar, type Tab } from '@/app/_portal/TabBar';
 import { getProfile } from '@/server/profile';
 import { teacherLinks, teacherMenu } from './menu';
+import { leaveTeacherViewAction } from './actions';
 import { requireTeacher } from '@/server/next/portal';
 import { shows } from '@/server/portal/access';
 import { partyUnread } from '@/server/portal/messages';
@@ -24,7 +25,15 @@ export default async function TeacherApp({ children }: { children: React.ReactNo
     <div className="rp rp-shell rp-teacher">
       <PortalSide school={profile?.name ?? 'School'} sub="Teacher portal" portal="teacher" links={teacherLinks(t)}
         groups={[{ label: 'Teaching', items: tabs.slice(0, -1) }, { label: 'More', items: teacherMenu(t) }]} />
-      <div className="rp-body">{children}</div>
+      <div className="rp-body">
+        {t.via && (
+          <div className="ra-banner rp-viewas" role="status" style={{ ['--c' as string]: 'var(--ra-violet)' }}>
+            <div>You’re using the teacher portal as <b>{t.ctx.teacher.name}</b> ({t.via} opened it). Anything you do here is done as them.</div>
+            <form action={leaveTeacherViewAction}><button className="ra-btn">Back to admin</button></form>
+          </div>
+        )}
+        {children}
+      </div>
       <TabBar tabs={tabs} />
     </div>
   );

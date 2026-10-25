@@ -6,7 +6,7 @@ import { adminCan } from '@/server/permissions';
 import { addDays } from '@/server/attendance/registers';
 import { mondayOf, weekLogs } from '@/server/attendance/teacher-logs';
 import { todayIso } from '@/server/people/common';
-import { LogRows } from './LogRows';
+import { WeekEditor } from './WeekEditor';
 
 export const metadata = { title: 'Teacher logs' };
 const t = (v: string | null) => v?.slice(0, 5) ?? '';
@@ -45,8 +45,8 @@ export default async function TeacherLogs({ searchParams }: { searchParams: Prom
       </section>
       {canEdit && rows.length > 0 && (
         <section className="ra-card" aria-labelledby="ed-h">
-          <div className="ra-card-h"><div><h2 id="ed-h">Update this week</h2><div className="ra-note">Days each teacher was due or has a log.</div></div></div>
-          <LogRows rows={rows.flatMap((r) => r.cells.filter((c) => c.log || c.expected).map((c) => ({ teacherId: r.id, name: r.name, date: c.date, timeIn: t(c.log?.timeIn ?? null), timeOut: t(c.log?.timeOut ?? null), absent: !!c.log?.absent, note: c.log?.note ?? '', expected: c.expected ? `${t(c.expected.startTime)}–${t(c.expected.endTime)}` : '' })))} />
+          <div className="ra-card-h"><div><h2 id="ed-h">Update this week</h2><div className="ra-note">Press a teacher to update their days.</div></div></div>
+          <WeekEditor rows={rows.flatMap((r) => r.cells.filter((c) => c.log || c.expected).map((c) => ({ teacherId: r.id, name: r.name, date: c.date, timeIn: t(c.log?.timeIn ?? null), timeOut: t(c.log?.timeOut ?? null), absent: !!c.log?.absent, note: c.log?.note ?? '', expected: c.expected ? `${t(c.expected.startTime)}–${t(c.expected.endTime)}` : '' })))} />
         </section>
       )}
     </div>

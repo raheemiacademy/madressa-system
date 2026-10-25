@@ -17,6 +17,7 @@ const EXTRA: { prefix: string; group: string; title: string }[] = [
   { prefix: '/admin/search', group: 'Overview', title: 'Search' },
   { prefix: '/admin/more', group: 'Overview', title: 'More' },
   { prefix: '/admin/no-access', group: 'Overview', title: 'No access' },
+  { prefix: '/admin/students/portal-access', group: 'System', title: 'Portals' },
   { prefix: '/admin/contacts', group: 'School', title: 'Contacts' },
   { prefix: '/admin/import', group: 'School', title: 'Import' },
   { prefix: '/admin/classes/order', group: 'School', title: 'Class order' },

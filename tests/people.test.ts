@@ -15,7 +15,9 @@ import { formWindow, submitApplication } from '@/server/people/registration';
 import { globalSearch } from '@/server/people/search';
 import { findSiblings, saveFoundSiblings } from '@/server/people/siblings';
 import { bulkUpdate, deleteStudents, getStudent, listStudents, listFilters, saveStudent } from '@/server/people/students';
-import { getTeacher, saveTeacher, setHours } from '@/server/people/teachers';
+import { getTeacher, openTeacherPortalAs, saveTeacher, setHours } from '@/server/people/teachers';
+import { syncPortalLogin } from '@/server/people/logins';
+import { validateSession } from '@/server/auth';
 import { db, makeStaff, resetDb } from './helpers';
 
 beforeEach(resetDb);
@@ -178,6 +180,22 @@ describe('siblings', () => {
 });
 
 describe('teachers', () => {
+  it('lets a Super admin open the teacher portal as a teacher, marked and audited', async () => {
+    const { actor, staff } = await makeStaff({ isSuper: true });
+    const [t] = await db.insert(teacher).values({ name: 'Sample Portal Teacher', email: 'portal.teacher@example.org' }).returning();
+    expect(await openTeacherPortalAs(db, actor, staff.id, t!.id)).toMatchObject({ ok: false, error: expect.stringContaining('no portal login') });
+    await syncPortalLogin(db, 'teacher', t!.id, t!.email, '');
+    const r = await openTeacherPortalAs(db, actor, staff.id, t!.id);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const s = await validateSession(db, 'teacher', r.token);
+    expect(s).toMatchObject({ actingAdminId: staff.id, identity: { teacherId: t!.id } });
+    expect(await validateSession(db, 'admin', r.token)).toBeNull(); // only good for the teacher portal
+    expect((await db.select().from(auditLog)).some((a) => a.action === 'Opened the teacher portal as Sample Portal Teacher')).toBe(true);
+    await db.update(loginIdentity).set({ allowLogin: false }).where(eq(loginIdentity.teacherId, t!.id));
+    expect(await openTeacherPortalAs(db, actor, staff.id, t!.id)).toMatchObject({ ok: false, error: expect.stringContaining('blocked') });
+  });
+
   it('encrypts NI number, bank details and medical info, and hashes the kiosk PIN', async () => {
     const { actor } = await setup();
     const r = await saveTeacher(db, actor, { name: 'Sample Teacher', niNumber: 'qq 12 34 56 c', bankAccount: '12345678', bankSortCode: '12-34-56', medical: 'Asthma', kioskPin: '4321' },
@@ -255,6 +273,18 @@ describe('classes', () => {
     const rows = await db.select().from(classAssignment).where(eq(classAssignment.studentId, r.id));
     expect(rows.find((x) => x.classId === a.id)?.toDate).toBe('2027-07-31');
     expect(rows.find((x) => x.classId === newB!.id)).toMatchObject({ fromDate: '2027-09-01', toDate: null });
+  });
+});
+
+describe('student list sorting', () => {
+  it('sorts by any column either way, youngest first for age, blanks last', async () => {
+    const { actor } = await setup();
+    for (const [first, dob] of [['Older', '2015-01-01'], ['Younger', '2019-01-01'], ['Undated', '']] as const) await saveStudent(db, actor, base({ firstName: first, surname: 'Sort', dob }), [], null);
+    const names = async (o: Record<string, string>) => (await listStudents(db, listFilters.parse({ q: 'Sort', ...o }), 50)).rows.map((r) => r.firstName);
+    expect(await names({ sort: 'age', dir: 'asc' })).toEqual(['Younger', 'Older', 'Undated']);
+    expect(await names({ sort: 'age', dir: 'desc' })).toEqual(['Older', 'Younger', 'Undated']);
+    expect(await names({ sort: 'id', dir: 'desc' })).toEqual(['Undated', 'Younger', 'Older']);
+    expect(await names({ sort: 'nonsense' })).toEqual(['Older', 'Undated', 'Younger']); // falls back to name order
   });
 });
 

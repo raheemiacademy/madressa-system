@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, gte, inArray, isNull, lte, sql, type SQL } from 'drizzle-orm';
 import type { DbOrTx } from '@/db';
-import { contact, directDebitMandate, INVOICE_TYPES, invoice, PAYMENT_METHODS, PAYMENT_STATUSES, payment, RECEIPT_STATES, student, studentContact } from '@/db/schema';
+import { classAssignment, contact, directDebitMandate, INVOICE_TYPES, invoice, PAYMENT_METHODS, PAYMENT_STATUSES, payment, RECEIPT_STATES, student, studentContact } from '@/db/schema';
 import { plusDays, plusMonths } from '@/lib/fees';
 import { todayIso } from '../people/common';
 import { invoiceRows, totals, type InvoiceRow } from './invoices';
@@ -103,9 +103,14 @@ export async function monthly(db: DbOrTx, month: string, type?: InvoiceType) {
 }
 
 /** §2 Full Overview: every student with invoices this year. */
-export async function overview(db: DbOrTx, yearId: number) {
+export async function overview(db: DbOrTx, yearId: number, classId?: number) {
   const rows = await invoiceRows(db, eq(invoice.academicYearId, yearId));
-  return [...rollUp(rows, (r) => r.studentId)].map(([id, t]) => ({ id, name: rows.find((r) => r.studentId === id)!.studentName, ...t })).sort((a, b) => a.name.localeCompare(b.name));
+  const all = [...rollUp(rows, (r) => r.studentId)].map(([id, t]) => ({ id, name: rows.find((r) => r.studentId === id)!.studentName, ...t }));
+  if (!classId) return all.sort((a, b) => a.name.localeCompare(b.name));
+  // One class: everyone in it now, including students with nothing invoiced yet.
+  const members = await db.select({ id: student.id, name: sql<string>`${student.firstName} || ' ' || ${student.surname}` }).from(classAssignment)
+    .innerJoin(student, eq(student.id, classAssignment.studentId)).where(and(eq(classAssignment.classId, classId), isNull(classAssignment.toDate)));
+  return members.map((m) => all.find((a) => a.id === m.id) ?? { ...m, count: 0, total: 0, received: 0, balance: 0 }).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /* ───────── Direct debits ───────── */

@@ -232,7 +232,7 @@ fieldset.ra-fieldset legend { font-size: 13px; font-weight: 500; padding: 0 4px;
 @starting-style { .ra-banner { opacity: 0; transform: translateY(-4px); } }
 :is(.ra-btn, .ra-filter, .ra-link, .ra-icon-btn, .ra-acts button, .ra-acts a, .ra-quick > *):active { transform: scale(0.97); }
 /* Dashboard tiles: rise + fade with a stagger, first view of the session only */
-.ra-anim { animation: ra-rise 280ms var(--ra-ease-out) both; animation-delay: calc(min(var(--i, 0), 8) * 40ms); }
+.ra-anim { animation: ra-rise 280ms var(--ra-ease-out) backwards; animation-delay: calc(min(var(--i, 0), 8) * 40ms); }
 @keyframes ra-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes ra-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ra-pulse { 50% { opacity: .55; } }
@@ -316,11 +316,13 @@ fieldset.ra-fieldset legend { font-size: 13px; font-weight: 500; padding: 0 4px;
 .ra-reg th.m { text-align: center; padding: 8px 2px; line-height: 1.25; }
 .ra-mk { display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 3px; border-radius: 7px; font-size: 12px; font-weight: 600; color: var(--color-fg); border: 0; font-family: inherit; }
 button.ra-mk { cursor: pointer; }
-.ra-mk-P { background: color-mix(in srgb, var(--ra-blue) 24%, transparent); }
-.ra-mk-L { background: color-mix(in srgb, var(--ra-sky) 50%, transparent); }
-.ra-mk-A { background: color-mix(in srgb, var(--ra-lav) 65%, transparent); }
-.ra-mk-N { background: color-mix(in srgb, var(--ra-violet) 30%, transparent); }
-.ra-mk-U { background: color-mix(in srgb, var(--color-bad) 18%, transparent); color: var(--color-bad); }
+/* Register marks at a glance (your request): present green, late yellow, absent red. The letter always shows too, so colour is never the only clue;
+   the three kinds of absence are shades of red, strongest for unauthorised. */
+.ra-mk-P { background: color-mix(in srgb, var(--color-ok) 30%, transparent); }
+.ra-mk-L { background: color-mix(in srgb, var(--color-warn) 34%, transparent); }
+.ra-mk-A { background: color-mix(in srgb, var(--color-bad) 16%, transparent); }
+.ra-mk-N { background: color-mix(in srgb, var(--color-bad) 24%, transparent); }
+.ra-mk-U { background: color-mix(in srgb, var(--color-bad) 36%, transparent); }
 .ra-mk-E { background: color-mix(in srgb, var(--ra-blue) 12%, transparent); outline: 1px dashed var(--ra-blue); }
 .ra-mk-H, .ra-mk-C { background: transparent; color: var(--color-fg-muted); font-weight: 500; }
 .ra-mk-X { background: color-mix(in srgb, var(--ra-lav) 30%, transparent); }
@@ -382,6 +384,8 @@ button.ra-mk { cursor: pointer; }
 .ra-msg-prev { font-size: 13px; color: var(--color-fg-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ra-msg-side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; font-size: 12px; color: var(--color-fg-muted); white-space: nowrap; }
 .ra-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ra-violet); }
+/* Unread count on a conversation (in place of a dot): how many new messages it holds */
+.ra-msg-count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--ra-violet); color: var(--ra-on-ink); font-size: 12px; font-weight: 600; display: inline-grid; place-items: center; line-height: 1; }
 .ra-msg[data-unread="false"] .ra-dot { visibility: hidden; }
 .ra-msg[data-unread="false"] .ra-msg-from { font-weight: 400; }
 @container (max-width: 480px) { .ra-msg-top .ra-chip { display: none; } }
@@ -635,7 +639,11 @@ li[data-state="todo"] .ra-setup-why { margin-bottom: 0; }
 .ra-order .ra-acts { display: flex; gap: 6px; }
 .ra-order .ra-btn { min-width: 44px; min-height: 44px; justify-content: center; font-size: 18px; }
 
-/* Class cards: the whole card opens the class (the name's link stretches over it), with a slight lift on hover */
+/* Class cards and dashboard figure tiles open their page wherever you click, with a slight lift on hover */
+.ra-kpi-link { color: var(--color-fg); text-decoration: none; transition: transform 160ms var(--ra-ease-out), box-shadow 160ms ease, border-color 160ms ease; }
+@media (hover: hover) and (pointer: fine) { .ra-kpi-link:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--c, var(--ra-accent)) 55%, var(--color-border-line)); box-shadow: var(--ra-shadow-pop); } }
+.ra-kpi-link:active { transform: scale(0.99); }
+@media (prefers-reduced-motion: reduce) { .ra-kpi-link, .ra-kpi-link:hover, .ra-kpi-link:active { transform: none; } }
 .ra-class { position: relative; transition: transform 160ms var(--ra-ease-out), box-shadow 160ms ease, border-color 160ms ease; }
 .ra-class h3 a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
 .ra-class h3 a:focus-visible { box-shadow: none; }
@@ -648,3 +656,59 @@ li[data-state="todo"] .ra-setup-why { margin-bottom: 0; }
 .ra-findbar { position: relative; max-width: 420px; margin: 0; }
 .ra-findbar svg { position: absolute; left: 12px; top: 50%; translate: 0 -50%; width: 16px; height: 16px; color: var(--color-fg-muted); pointer-events: none; }
 .ra-findbar .ra-input { width: 100%; padding-left: 36px; }
+
+/* Sortable column headings */
+.ra-sort { color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; min-height: 32px; }
+.ra-sort span { font-size: 12px; color: var(--color-fg-muted); opacity: .6; }
+th[aria-sort] .ra-sort { color: var(--color-fg); }
+th[aria-sort] .ra-sort span { opacity: 1; color: var(--ra-accent-text); }
+@media (hover: hover) and (pointer: fine) { .ra-sort:hover { color: var(--ra-accent-text); } .ra-sort:hover span { opacity: 1; } }
+
+/* Hover labels for icon buttons ([data-tip]): shown on hover and on keyboard focus, so you can tell what an icon does */
+[data-tip] { position: relative; }
+[data-tip]::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; translate: -50% 4px; z-index: 6; white-space: nowrap;
+  padding: 4px 8px; border-radius: 6px; background: var(--ra-ink); color: var(--ra-on-ink); font: 500 12px/1.3 var(--font-sans), sans-serif;
+  opacity: 0; pointer-events: none; transition: opacity 120ms ease, translate 120ms var(--ra-ease-out); }
+.ra-acts > [data-tip]:last-child::after { left: auto; right: 0; translate: 0 4px; }
+@media (hover: hover) and (pointer: fine) { [data-tip]:hover::after { opacity: 1; translate: -50% 0; } .ra-acts > [data-tip]:last-child:hover::after { translate: 0 0; } }
+[data-tip]:focus-visible::after { opacity: 1; translate: -50% 0; }
+.ra-acts > [data-tip]:last-child:focus-visible::after { translate: 0 0; }
+@media (prefers-reduced-motion: reduce) { [data-tip]::after { transition: opacity 120ms ease; } }
+
+/* Teacher portal opened by an admin: a banner at the top of every page */
+.rp-viewas { max-width: 1040px; margin: max(12px, env(safe-area-inset-top, 0px)) 20px 0; }
+.rp-viewas form { flex: none; }
+@media (min-width: 861px) { .rp-viewas { margin: 20px 32px 0; } }
+
+/* Register page: the two register views as their own big buttons, apart from the tools */
+.ra-views { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: 12px; max-width: 640px; }
+.ra-view { display: flex; align-items: center; gap: 12px; padding: 14px 16px; min-height: 64px; border-radius: 14px; background: var(--color-panel); border: 1px solid var(--color-border-line); color: var(--color-fg); text-decoration: none; transition: transform 160ms var(--ra-ease-out), box-shadow 160ms ease, border-color 160ms ease; }
+.ra-view svg { width: 22px; height: 22px; flex: none; padding: 8px; box-sizing: content-box; border-radius: 10px; background: color-mix(in srgb, var(--ra-accent) 18%, transparent); }
+.ra-view b { display: block; font-size: 15px; font-weight: 600; }
+.ra-view small { display: block; font-size: 13px; color: var(--color-fg-muted); }
+@media (hover: hover) and (pointer: fine) { .ra-view:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--ra-accent) 55%, var(--color-border-line)); box-shadow: var(--ra-shadow-pop); } }
+@media (prefers-reduced-motion: reduce) { .ra-view:hover { transform: none; } }
+
+/* A list of people to pick from, each opening a pop-up (Teacher logs → Update this week) */
+.ra-pick-rows { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); gap: 8px; }
+.ra-pick-rows button { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: center;
+  padding: 12px 14px; min-height: 56px; border-radius: 12px; border: 1px solid var(--color-border-line); background: var(--color-bg); transition: border-color 150ms ease, transform 160ms var(--ra-ease-out); }
+.ra-pick-rows b { font-weight: 600; overflow-wrap: anywhere; }
+.ra-pick-rows small { grid-column: 1; font-size: 13px; color: var(--color-fg-muted); }
+.ra-pick-rows svg { grid-row: 1 / span 2; grid-column: 2; width: 18px; height: 18px; color: var(--ra-accent-text); }
+.ra-pick-rows button:focus-visible { outline: 2px solid var(--ra-indigo); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) { .ra-pick-rows button:hover { border-color: color-mix(in srgb, var(--ra-accent) 55%, var(--color-border-line)); transform: translateY(-2px); } }
+@media (prefers-reduced-motion: reduce) { .ra-pick-rows button:hover { transform: none; } }
+
+/* Fees dashboard: a stack of cards in one grid column, and the Class fees list */
+.ra-stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.ra-classfees { list-style: none; margin: 0; padding: 0; }
+.ra-classfees li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--ra-hairline); }
+.ra-classfees li:last-child { border-bottom: 0; }
+.ra-classfees b { display: block; font-weight: 600; overflow-wrap: anywhere; }
+.ra-classfees small { display: block; font-size: 12px; color: var(--color-fg-muted); overflow-wrap: anywhere; }
+.ra-classfees .num { font-weight: 600; white-space: nowrap; }
+.ra-classfees .ra-btn { min-height: 36px; padding: 0 10px; }
+.ra-classfees .ra-btn svg { width: 14px; height: 14px; }
+.ra-classfees-name { color: inherit; text-decoration: none; }
+@media (hover: hover) and (pointer: fine) { .ra-classfees-name:hover b { color: var(--ra-accent-text); text-decoration: underline; } }

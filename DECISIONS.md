@@ -728,3 +728,26 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
     - The filter box and button are now a plain search bar that filters as you type.
     - Each class card opens its class wherever you click on it, with a slight lift on hover. Keyboard users still tab to the class name, and the whole card gets the focus ring.
     - "Change order" (`/admin/classes/order`) sets the custom order with Move up / Move down, and numbers the classes 1, 2, 3. The number field on a class's edit page still works.
+  - **Clickable figure tiles:** each dashboard figure opens the page behind it (Students, Register, Fees, Portals, Teacher logs). On the Students page, Current and Waiting list open the student list filtered to that status, and Parents on portal opens Portals. They lift slightly on hover, like the class cards.
+  - **Unread messages show a count instead of a dot** on the dashboard and the Messages page: the number of new messages from others in that conversation since you last opened it. A conversation marked unread by hand shows 1.
+  - The Students page's "More tools" no longer repeats "Move student classes"; the "Move classes" button is at the top.
+  - **Students page "More tools" trimmed (your request):** Download students, Import students and Move student classes repeated the buttons at the top, so they're gone from the row. "Parent portal access" moved to System → Portals, as a "Who sees each child" button on the Parent portal card; the page shows under System → Portals.
+  - **Sorting the student list:** the column headings (ID, Name, Gender, Class, Age, Status) sort the whole list on the server, across every page. Pressing the same heading again reverses it. Blanks go last, and Age goes youngest first. The sort is kept while you search, filter or change page.
+- **Teachers page and teacher portal access (your requests, 25/10/2026).**
+  - The Work days column is gone from the teacher list. The CSV export still includes it.
+  - Icon buttons in the teacher and student lists show a short label ("Edit", "Profile", "Working hours"…) on hover and on keyboard focus.
+  - **Open their teacher portal** (Super admins only): on the teacher's row and profile. It opens the teacher portal as that teacher in a session marked with the admin (`session.acting_admin_id`, migration 0010).
+    - The portal shows a banner on every page, with **Back to admin**, which ends that session.
+    - Opening it is audited, and anything done meanwhile is recorded as "Teacher (via Admin)".
+    - It needs the teacher to have a portal login (an email on their record) that isn't blocked. A teacher who hasn't chosen a password yet can still be viewed.
+- **Register:**
+  - Marks are coloured at a glance: present green, late yellow, absences red (authorised, notified and unauthorised are deepening shades). The letters stay.
+  - Daily register and Monthly register are two big buttons of their own, apart from the other tools.
+- **Teacher logs → Update this week (your request):** a list of teachers, each showing "N of M days logged". Pressing a name opens a pop-up with just that teacher's days (absent, time in, time out, note). Saving closes it and confirms. Saving only touches the days in the pop-up.
+- **Fees dashboard → Class fees (your request):** a card on the right lists every class with its full-year fee per student and the structure it uses. Edit opens that structure; for the default structure the button's name says it's shared with other classes. "Set fees" opens the class's fees section if it isn't billed. Hidden along with the other figures when Hide fees is on.
+  Pressing a class's name opens **Fees for that class**: Full overview filtered to the students in it now, including anyone not invoiced yet (£0), with the class totals.
+- **Fees dashboard figures open their lists (your request):**
+  - Invoiced opens the new **All invoices** page (`/admin/fees/invoices`). It lists every invoice this year with filters (student name, type, status, class, due dates), a sort (due date either way, student, amount, balance owed) and totals for what's shown.
+  - Received opens All fees received, most recent first.
+  - Outstanding opens Outstanding and reminders with everything still to pay.
+  - Overdue opens the same page filtered to overdue.

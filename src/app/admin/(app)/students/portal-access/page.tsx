@@ -28,7 +28,7 @@ export default async function PortalAccess({ searchParams }: { searchParams: Pro
   for (const r of rows) byStudent.set(r.s.id, [...(byStudent.get(r.s.id) ?? []), r]);
   return (
     <div className="ra-page">
-      <div className="ra-page-h"><div><h1>Parent portal access</h1><p>Who can see each child on the parent portal.</p></div>
+      <div className="ra-page-h"><div><h1>Parent portal access</h1><p>Who can see each child on the parent portal. <Link href="/admin/tools/portals">Back to Portals</Link></p></div>
         <div className="ra-toolbar"><Link className="ra-btn" href="/admin/settings/parentPortal">Portal settings</Link></div></div>
       <div className="ra-banner" style={{ ['--c' as string]: 'var(--ra-blue)' }}><div>
         The portal is {settings.disabled ? <b>turned off</b> : <b>on</b>}. Contact types allowed: <b>{allowedTypes.join(', ') || 'none'}</b>.

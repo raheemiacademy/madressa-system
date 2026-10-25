@@ -3,7 +3,8 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { db } from '@/db';
-import { cookieName, cookiePath, invalidateSession, login, PORTALS, SESSION_TTL_MS, type Portal } from '@/server/auth';
+import { cookieName, cookiePath, invalidateSession, login, PORTALS, type Portal } from '@/server/auth';
+import { setSessionCookie } from '@/server/next/session-cookie';
 import { requestMeta, sessionFor } from '@/server/next/actor';
 import { changeOwnPassword, isLinkPortal, requestPasswordLink, sendPasswordLink, redeemPasswordLink } from '@/server/password-links';
 import { loginIdentity } from '@/db/schema';
@@ -13,14 +14,6 @@ import { setUpSchool } from '@/server/onboarding';
 
 export type LoginState = { error?: string; notice?: string; email?: string } | undefined;
 const LINK_SENT = 'Check your email: we’ve sent you a link to set your password. It expires in 48 hours.';
-
-async function setSessionCookie(portal: Portal, token: string) {
-  (await cookies()).set(cookieName(portal), token, {
-    httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: cookiePath(portal),
-    // Staff cookies end with the browser session; family devices keep theirs. The DB expiry is the real limit.
-    ...(portal === 'parent' || portal === 'student' ? { maxAge: SESSION_TTL_MS[portal] / 1000 } : {})
-  });
-}
 
 export async function loginAction(portal: Portal, _prev: LoginState, fd: FormData): Promise<LoginState> {
   if (!PORTALS.includes(portal)) return { error: 'Unknown portal' };

@@ -71,6 +71,13 @@
       "when": 1792882885374,
       "tag": "0009_whats_new",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792961612239,
+      "tag": "0010_teacher_view_as",
+      "breakpoints": true
     }
   ]
 }

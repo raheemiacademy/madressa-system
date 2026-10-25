@@ -153,13 +153,14 @@ async function HeroLine({ today, yearId, fees }: { today: string; yearId: number
 async function Headline({ today, yearId, yearStart, fees, anim }: { today: string; yearId: number | null; yearStart: string; fees: boolean; anim: string }) {
   const [h, parents] = await Promise.all([headline(today, yearId, fees), parentFigures(db, yearStart)]);
   const due = h.signIns.rows.length;
-  const tiles: [string, string, IconName, ReactNode, ReactNode][] = [
-    ['--ra-indigo', 'Current students', 'users', h.students.current.toLocaleString('en-GB'), <><Delta v={h.students.change} unit="count" good="up" /> since last week · {h.students.waiting.toLocaleString('en-GB')} waiting</>],
+  // Each tile opens the page with the detail behind its figure.
+  const tiles: [string, string, IconName, ReactNode, ReactNode, string][] = [
+    ['--ra-indigo', 'Current students', 'users', h.students.current.toLocaleString('en-GB'), <><Delta v={h.students.change} unit="count" good="up" /> since last week · {h.students.waiting.toLocaleString('en-GB')} waiting</>, '/admin/students'],
     ['--ra-blue', 'Attendance today', 'check', h.attendance.pct === null ? '—' : pct1(h.attendance.pct),
-      h.attendance.pct === null ? 'No registers taken yet today' : h.attendance.change === null ? 'No register on this day last week' : <><Delta v={h.attendance.change} unit="pts" good="up" /> vs same day last week</>],
-    ...(h.fees ? [['--ra-violet', 'Fees outstanding', 'pound', formatPence(h.fees.outstanding), <><Delta v={h.fees.change} unit="pence" good="down" /> since last week</>] as [string, string, IconName, ReactNode, ReactNode]] : []),
-    ['--ra-sky', 'Parents on portal', 'phone', parents.active.toLocaleString('en-GB'), `of ${plural(parents.total, 'parent contact')}`],
-    ['--ra-lav', 'Teachers signed in', 'clock', h.signIns.signedIn.toLocaleString('en-GB'), due ? `of ${due.toLocaleString('en-GB')} teaching today` : 'No one is due in today']
+      h.attendance.pct === null ? 'No registers taken yet today' : h.attendance.change === null ? 'No register on this day last week' : <><Delta v={h.attendance.change} unit="pts" good="up" /> vs same day last week</>, '/admin/register'],
+    ...(h.fees ? [['--ra-violet', 'Fees outstanding', 'pound', formatPence(h.fees.outstanding), <><Delta v={h.fees.change} unit="pence" good="down" /> since last week</>, '/admin/fees'] as [string, string, IconName, ReactNode, ReactNode, string]] : []),
+    ['--ra-sky', 'Parents on portal', 'phone', parents.active.toLocaleString('en-GB'), `of ${plural(parents.total, 'parent contact')}`, '/admin/tools/portals'],
+    ['--ra-lav', 'Teachers signed in', 'clock', h.signIns.signedIn.toLocaleString('en-GB'), due ? `of ${due.toLocaleString('en-GB')} teaching today` : 'No one is due in today', '/admin/teacher-logs']
   ];
   return (
     <>
@@ -178,12 +179,12 @@ async function Headline({ today, yearId, yearStart, fees, anim }: { today: strin
         </div>
       )}
       <div className="ra-kpis">
-        {tiles.map(([c, label, icon, val, sub], i) => (
-          <div key={label} className={`ra-kpi${anim}`} style={{ ...tint(c), ['--i' as string]: i + 1 }}>
+        {tiles.map(([c, label, icon, val, sub, href], i) => (
+          <Link key={label} href={href} className={`ra-kpi ra-kpi-link${anim}`} style={{ ...tint(c), ['--i' as string]: i + 1 }}>
             <div className="ra-kpi-top">{label}<span className="ra-kpi-ic"><Icon name={icon} /></span></div>
             <div className="ra-kpi-val">{val}</div>
             <div className="ra-kpi-sub">{sub}</div>
-          </div>
+          </Link>
         ))}
       </div>
     </>
@@ -210,7 +211,7 @@ async function Messages({ me }: { me: { id: number; rank: string | null; isSuper
                 <span className="ra-msg-subj" style={{ display: 'block' }}><span className="sr-only">Unread: </span>{t.subject}</span>
                 <span className="ra-msg-prev" style={{ display: 'block' }}>{t.last?.body ?? ''}</span>
               </span>
-              <span className="ra-msg-side">{formatInstant(t.lastMessageAt, 'dd/MM HH:mm')}<span className="ra-dot" aria-hidden="true" /></span>
+              <span className="ra-msg-side">{formatInstant(t.lastMessageAt, 'dd/MM HH:mm')}{t.unreadCount > 0 && <span className="ra-msg-count">{t.unreadCount}<span className="sr-only"> unread</span></span>}</span>
             </Link>
           </li>
         ))}

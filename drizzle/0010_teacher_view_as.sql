@@ -1,0 +1,2 @@
+ALTER TABLE "session" ADD COLUMN "acting_admin_id" integer;--> statement-breakpoint
+ALTER TABLE "session" ADD CONSTRAINT "session_acting_admin_id_admin_staff_id_fk" FOREIGN KEY ("acting_admin_id") REFERENCES "public"."admin_staff"("id") ON DELETE cascade ON UPDATE no action;

@@ -112,7 +112,9 @@ export const session = pgTable('session', {
   expiresAt: tz('expires_at').notNull(),
   lastSeenAt: tz('last_seen_at').notNull().defaultNow(),
   ip: text('ip'),
-  userAgent: text('user_agent')
+  userAgent: text('user_agent'),
+  // Set when a Super admin opened this teacher-portal session to use the portal as that teacher; ends if the admin is removed.
+  actingAdminId: integer('acting_admin_id').references(() => adminStaff.id, { onDelete: 'cascade' })
 }, (t) => [index('session_identity_idx').on(t.identityId)]);
 
 export const rateLimit = pgTable('rate_limit', {

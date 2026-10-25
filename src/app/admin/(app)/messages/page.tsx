@@ -71,7 +71,7 @@ export default async function Messages({ searchParams }: { searchParams: Promise
                         <span className="ra-msg-subj" style={{ display: 'block' }}>{t.unread && <span className="sr-only">Unread: </span>}{t.subject}</span>
                         <span className="ra-msg-prev" style={{ display: 'block' }}>{t.last ? `${t.last.name}: ${t.last.body}` : ''}</span>
                       </span>
-                      <span className="ra-msg-side">{formatInstant(t.lastMessageAt, 'dd/MM HH:mm')}<span className="ra-dot" aria-hidden="true" /></span>
+                      <span className="ra-msg-side">{formatInstant(t.lastMessageAt, 'dd/MM HH:mm')}{t.unreadCount > 0 && <span className="ra-msg-count">{t.unreadCount}<span className="sr-only"> unread</span></span>}</span>
                     </Link>
                   </li>
                 ))}

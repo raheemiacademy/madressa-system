@@ -194,4 +194,18 @@ test('the Portals page keeps each sign-in list closed until asked', async ({ pag
   await expect(parents.getByRole('columnheader', { name: 'Last signed in' })).toBeHidden();
   await parents.getByText('Show who').click();
   await expect(parents.getByRole('columnheader', { name: 'Last signed in' })).toBeVisible();
+  await page.getByRole('link', { name: 'Who sees each child' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Parent portal access' })).toBeVisible();
+});
+
+test('a Super admin can open the teacher portal as a teacher, and go back to the admin', async ({ page }) => {
+  await signIn(page);
+  await page.goto('/admin/teachers');
+  await page.getByRole('button', { name: 'Open the teacher portal as Sample Teacher One' }).click();
+  await expect(page).toHaveURL(/\/teacher$/);
+  await expect(page.getByRole('status').filter({ hasText: 'You’re using the teacher portal as Sample Teacher One' })).toBeVisible();
+  await page.getByRole('button', { name: 'Back to admin' }).click();
+  await expect(page).toHaveURL(/\/admin\/teachers\/\d+$/);
+  await page.goto('/teacher');
+  await expect(page).toHaveURL(/\/teacher\/login$/); // the borrowed session has ended
 });

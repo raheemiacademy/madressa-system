@@ -160,6 +160,8 @@ export const listFilters = z.object({
   leftFrom: isoDate.optional().catch(undefined), leftTo: isoDate.optional().catch(undefined),
   startFrom: isoDate.optional().catch(undefined), startTo: isoDate.optional().catch(undefined),
   medical: z.literal('1').optional().catch(undefined),
+  sort: z.enum(['name', 'id', 'gender', 'class', 'age', 'status']).catch('name').default('name'),
+  dir: z.enum(['asc', 'desc']).catch('asc').default('asc'),
   page: z.coerce.number().int().min(1).catch(1).default(1)
 });
 export type ListFilters = z.infer<typeof listFilters>;
@@ -186,9 +188,13 @@ function where(f: ListFilters, includeStatus = true): SQL | undefined {
 
 export async function listStudents(db: DbOrTx, f: ListFilters, perPage: number) {
   const today = todayIso();
+  // Sorting by a column heading; blanks go last either way. Age runs the other way to date of birth (youngest first = latest dob first).
+  const cols = { id: [student.id], name: [student.surname, student.firstName], gender: [student.gender], class: [classNames], age: [student.dob], status: [student.status] }[f.sort];
+  const up = f.sort === 'age' ? f.dir === 'desc' : f.dir === 'asc';
+  const order = [...cols.map((c) => (up ? sql`${c} asc nulls last` : sql`${c} desc nulls last`)), asc(student.surname), asc(student.id)];
   const [rows, [count], statusCounts, groups] = await Promise.all([
     db.select({ id: student.id, firstName: student.firstName, surname: student.surname, gender: student.gender, dob: student.dob, status: student.status, hasMedical: student.hasMedical, email: student.email, classes: classNames })
-      .from(student).where(where(f)).orderBy(asc(student.surname), asc(student.firstName), asc(student.id)).limit(perPage).offset((f.page - 1) * perPage),
+      .from(student).where(where(f)).orderBy(...order).limit(perPage).offset((f.page - 1) * perPage),
     db.select({ n: sql<number>`count(*)::int` }).from(student).where(where(f)),
     db.select({ status: student.status, n: sql<number>`count(*)::int` }).from(student).where(where(f, false)).groupBy(student.status),
     db.select().from(yearGroup).orderBy(asc(yearGroup.minAge))

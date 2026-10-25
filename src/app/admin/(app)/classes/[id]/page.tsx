@@ -101,7 +101,7 @@ export default async function ClassPage({ params }: { params: Promise<{ id: stri
           </section>
 
           {canFees && (
-            <section className="ra-card" aria-labelledby="fee-h">
+            <section className="ra-card" id="class-fees" aria-labelledby="fee-h">
               <div className="ra-card-h"><div><h2 id="fee-h">Fees</h2><div className="ra-note">{fees?.structure ? `${fees.structure.name}${fees.own ? '' : ' (default)'}: ${formatPence(perYear ?? 0)} per student per year` : 'No fees structure applies: this class isn’t billed.'}</div></div>
                 <Link className="ra-link" href="/admin/fees/structure">Fees structure</Link></div>
               <Form action={classStructureAction.bind(null, id)} card={false} savebar={false} submit="Save fees">

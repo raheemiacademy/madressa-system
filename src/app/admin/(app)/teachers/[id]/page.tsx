@@ -8,6 +8,7 @@ import { ActionButton } from '@/components/Form';
 import { Icon } from '@/components/Icon';
 import { formatCalendarDate, formatInstant } from '@/lib/dates';
 import { requireAdmin } from '@/server/next/actor';
+import { ViewAsButton } from '../ViewAsButton';
 import { adminCan } from '@/server/permissions';
 import { PRIVILEGES } from '@/server/people/classes';
 import { todayIso } from '@/server/people/common';
@@ -48,6 +49,7 @@ export default async function TeacherProfile({ params }: { params: Promise<{ id:
         <div className="ra-toolbar">
           {adminCan(admin.staff, 'edit') && <Link className="ra-btn primary" href={`/admin/teachers/${id}/edit`}><Icon name="edit" />Edit</Link>}
           <Link className="ra-btn" href={`/admin/teachers/hours?teacher=${id}`}>Work hours</Link>
+          {admin.staff.isSuper && <ViewAsButton id={id} name={t.name} label />}
         </div>
       </div>
       <div className="ra-grid">

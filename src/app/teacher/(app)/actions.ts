@@ -1,9 +1,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
+import { cookieName, cookiePath, invalidateSession } from '@/server/auth';
 import { exam } from '@/db/schema';
 import { marksFromForm } from '@/lib/register-form';
 import { zodErrors, type FormState } from '@/lib/validate';
@@ -217,4 +219,13 @@ export async function forumPostAction(where: { categoryId: number } | { topicId:
   if (!('topicId' in where)) redirect(`/teacher/forums/topic/${r.topicId}`);
   revalidatePath(`/teacher/forums/topic/${where.topicId}`);
   return { ok: true, message: 'Posted.' };
+}
+
+/** Ends a teacher-portal session a Super admin opened from Teachers, and goes back to that teacher in the admin. */
+export async function leaveTeacherViewAction() {
+  const t = await requireTeacher();
+  const jar = await cookies();
+  await invalidateSession(db, jar.get(cookieName('teacher'))?.value);
+  jar.delete({ name: cookieName('teacher'), path: cookiePath('teacher') });
+  redirect(t.via ? `/admin/teachers/${t.ctx.teacher.id}` : '/teacher/login');
 }

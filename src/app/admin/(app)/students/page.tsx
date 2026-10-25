@@ -19,8 +19,8 @@ import { StudentsTable } from './StudentsTable';
 export const metadata = { title: 'Students' };
 
 const TOOLS: [string, string][] = [
-  ['/admin/students/move', 'Move student classes'], ['/admin/students/portal-access', 'Parent portal access'], ['/admin/students/download', 'Download students'],
-  ['/admin/students/walk-home', 'Walk-home consents'], ['/admin/import/students', 'Import students'], ['/admin/import/students?edit=1', 'Export/import edit'],
+  // Import, Download and Move classes are the buttons at the top, so they aren't repeated here.
+  ['/admin/students/walk-home', 'Walk-home consents'], ['/admin/import/students?edit=1', 'Export/import edit'],
   ['/admin/students/registration', 'Registration pages'], ['/admin/students/siblings', 'Manage siblings'], ['/admin/contacts', 'Manage contacts'],
   ['/admin/students/data-forms', 'Data update forms'], ['/admin/students/duplicates', 'Find duplicate students'], ['/admin/students/multi-class', 'Multiple class students']
 ];
@@ -55,9 +55,9 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
       </div>
 
       <div className="ra-kpis">
-        <div className="ra-kpi" style={{ ['--c' as string]: 'var(--ra-indigo)' }}><div className="ra-kpi-top">Current</div><div className="ra-kpi-val">{totals.current.toLocaleString('en-GB')}</div><div className="ra-kpi-sub">Enrolled and attending</div></div>
-        <div className="ra-kpi" style={{ ['--c' as string]: 'var(--ra-blue)' }}><div className="ra-kpi-top">Waiting list</div><div className="ra-kpi-val">{totals.waiting.toLocaleString('en-GB')}</div><div className="ra-kpi-sub">From the application form</div></div>
-        <div className="ra-kpi" style={{ ['--c' as string]: 'var(--ra-sky)' }}><div className="ra-kpi-top">Parents on portal</div><div className="ra-kpi-val">{(portal?.n ?? 0).toLocaleString('en-GB')}</div><div className="ra-kpi-sub">Logged in this year</div></div>
+        <Link className="ra-kpi ra-kpi-link" href="/admin/students?status=Current#ms-h" style={{ ['--c' as string]: 'var(--ra-indigo)' }}><div className="ra-kpi-top">Current</div><div className="ra-kpi-val">{totals.current.toLocaleString('en-GB')}</div><div className="ra-kpi-sub">Enrolled and attending</div></Link>
+        <Link className="ra-kpi ra-kpi-link" href={`/admin/students?status=${encodeURIComponent('Waiting List')}#ms-h`} style={{ ['--c' as string]: 'var(--ra-blue)' }}><div className="ra-kpi-top">Waiting list</div><div className="ra-kpi-val">{totals.waiting.toLocaleString('en-GB')}</div><div className="ra-kpi-sub">From the application form</div></Link>
+        <Link className="ra-kpi ra-kpi-link" href="/admin/tools/portals" style={{ ['--c' as string]: 'var(--ra-sky)' }}><div className="ra-kpi-top">Parents on portal</div><div className="ra-kpi-val">{(portal?.n ?? 0).toLocaleString('en-GB')}</div><div className="ra-kpi-sub">Logged in this year</div></Link>
       </div>
 
       <div className="ra-more">
@@ -94,6 +94,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
           <form className="ra-toolbar" role="search" action="/admin/students">
             <input className="ra-input grow" type="search" name="q" defaultValue={f.q} placeholder="Search name, ID or class" aria-label="Search students" style={{ maxWidth: 340 }} />
             {f.status !== 'All' && <input type="hidden" name="status" value={f.status} />}
+            {(f.sort !== 'name' || f.dir !== 'asc') && <><input type="hidden" name="sort" value={f.sort} /><input type="hidden" name="dir" value={f.dir} /></>}
             <button className="ra-btn">Search</button>
           </form>
           <nav className="ra-filters" aria-label="Filter by status">
@@ -118,7 +119,8 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
           <StudentsTable
             rows={list.rows.map((r) => ({ id: r.id, name: `${r.firstName} ${r.surname}`, gender: r.gender, classes: r.classes, age: r.age, yearGroup: r.yearGroup, status: r.status, hasMedical: r.hasMedical }))}
             classes={classes.map((c) => ({ value: String(c.c.id), label: c.c.name }))} statuses={[...STUDENT_STATUSES]}
-            canEdit={canEdit} canDelete={adminCan(admin.staff, 'delete')} canFees={adminCan(admin.staff, 'fees')} filtered={filtered} />
+            canEdit={canEdit} canDelete={adminCan(admin.staff, 'delete')} canFees={adminCan(admin.staff, 'fees')} filtered={filtered}
+            sort={{ key: f.sort, dir: f.dir, hrefs: Object.fromEntries((['id', 'name', 'gender', 'class', 'age', 'status'] as const).map((k) => [k, qs({ sort: k, dir: f.sort === k && f.dir === 'asc' ? 'desc' : 'asc', page: undefined })])) }} />
           {pages > 1 && (
             <nav className="ra-pager" aria-label="Pages">
               {f.page > 1 ? <Link className="ra-btn" href={qs({ page: f.page - 1 })}>Previous</Link> : <span />}

@@ -45,7 +45,8 @@ export default async function Portals() {
         <section key={path} className="ra-card" aria-labelledby={`p-${path.slice(1)}`}>
           <div className="ra-card-h"><div><h2 id={`p-${path.slice(1)}`}>{name} <Chip colour={on ? 'var(--color-ok)' : 'var(--color-fg-muted)'}>{on ? 'Open' : path === '/student' ? 'Not in use yet' : 'Closed'}</Chip></h2>
             <div className="ra-note"><a href={path} target="_blank" rel="noopener" style={{ overflowWrap: 'anywhere' }}>{base}{path}</a> · installs as an app on phones</div></div>
-            <div className="ra-toolbar"><a className="ra-btn" href={path} target="_blank" rel="noopener">Open {name.toLowerCase()}<span className="sr-only"> (opens in a new tab)</span></a><Link className="ra-link" href={settings}>Settings</Link></div></div>
+            <div className="ra-toolbar"><a className="ra-btn" href={path} target="_blank" rel="noopener">Open {name.toLowerCase()}<span className="sr-only"> (opens in a new tab)</span></a>
+              {path === '/parent' && <Link className="ra-btn" href="/admin/students/portal-access">Who sees each child</Link>}<Link className="ra-link" href={settings}>Settings</Link></div></div>
           {users && (users.length === 0 ? <p className="ra-empty">Nobody has signed in in the last 30 days.</p> : (
             // Closed by default: with hundreds of parents the list would fill the page.
             <details className="ra-collapse">

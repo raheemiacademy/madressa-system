@@ -107,3 +107,33 @@ for (const scheme of ['light', 'dark'] as const) {
     expect(r.violations.map((x) => x.id)).toEqual([]);
   });
 }
+
+test('the Fees dashboard lists each class’s full-year fee with an Edit button', async ({ page }) => {
+  await signIn(page);
+  await page.goto('/admin/fees');
+  const card = page.getByRole('region', { name: 'Class fees' });
+  await expect(card.getByText('Test Class A')).toBeVisible();
+  await expect(card.getByText(/^£\d/).first()).toBeVisible();
+  await card.getByRole('link', { name: 'Test Class A', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Fees for Test Class A' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Test Student 001' })).toBeVisible();
+  await page.goBack();
+  await card.getByRole('link', { name: /^Edit fees for Test Class A/ }).click();
+  await expect(page).toHaveURL(/\/admin\/fees\/structure\/\d+$/);
+});
+
+test('each Fees figure opens its list; All invoices filters and sorts', async ({ page }) => {
+  await signIn(page);
+  for (const [tile, heading] of [['Received', 'All fees received'], ['Outstanding', 'Outstanding and reminders'], ['Overdue invoices', 'Outstanding and reminders'], ['Invoiced', 'All invoices']] as const) {
+    await page.goto('/admin/fees');
+    await page.getByRole('link', { name: new RegExp(`^${tile}`) }).click();
+    await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+  }
+  await page.getByLabel('Status').selectOption('Overdue');
+  await page.getByLabel('Sort by').selectOption('balance');
+  await page.getByRole('button', { name: 'Show invoices' }).click();
+  await expect(page).toHaveURL(/status=Overdue/);
+  const statuses = await page.getByRole('table').locator('tbody tr td:last-child').allTextContents();
+  expect(statuses.length).toBeGreaterThan(0);
+  expect(statuses.every((x) => x.includes('Overdue'))).toBe(true);
+});

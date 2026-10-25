@@ -93,6 +93,8 @@ describe('messages', () => {
     const parentThread = (await inbox(db, me, { box: 'inbox', who: 'contacts' }))[0]!;
     expect(await reply(db, { kind: 'contact', id: f.parent.id, name: 'Parent Comm' }, parentThread.id, 'Thanks!')).toEqual({ ok: true });
     expect((await inbox(db, me, { box: 'inbox' })).find((t) => t.id === parentThread.id)!.unread).toBe(true);
+    expect(await reply(db, { kind: 'contact', id: f.parent.id, name: 'Parent Comm' }, parentThread.id, 'And another thing')).toEqual({ ok: true });
+    expect((await inbox(db, me, { box: 'inbox' })).find((t) => t.id === parentThread.id)!.unreadCount).toBe(2); // the badge says 2
     const open = await openThread(db, f.staff.id, parentThread.id);
     expect(open!.messages[0]!.readBy).toEqual(['Parent Comm']);
     expect((await inbox(db, me, { box: 'inbox' })).find((t) => t.id === parentThread.id)!.unread).toBe(false);
@@ -100,7 +102,7 @@ describe('messages', () => {
     expect(await reply(db, { kind: 'contact', id: f.parent.id, name: 'Parent Comm' }, parentThread.id, 'One more')).toMatchObject({ ok: false });
     expect((await inbox(db, me, { box: 'locked' })).map((t) => t.id)).toContain(parentThread.id);
     expect(await bulkThreads(db, f.actor, [parentThread.id], 'unlock')).toBe(1);
-    expect(await deleteRange(db, f.actor, { from: '2000-01-01', to: '2100-01-01', person: `contact:${f.parent.id}` })).toMatchObject({ ok: true, n: 3 });
+    expect(await deleteRange(db, f.actor, { from: '2000-01-01', to: '2100-01-01', person: `contact:${f.parent.id}` })).toMatchObject({ ok: true, n: 4 }); // compose, two replies, and the locking reply
     expect((await db.select().from(messageThread).where(eq(messageThread.id, parentThread.id)))[0]!.deletedAt).not.toBeNull();
     expect((await db.select().from(mailQueue)).map((m) => m.toEmail).sort()).toEqual(expect.arrayContaining(['parent.comm@example.org', 'teacher.comm@example.org']));
   });

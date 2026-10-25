@@ -70,6 +70,18 @@ test('on a phone the admin is an app: bottom tabs, and More holds the menu, year
   await expect(page.getByRole('navigation', { name: 'Sections' })).toBeVisible();
 });
 
+test('the figure tiles open the page behind each figure', async ({ page }) => {
+  await signIn(page);
+  for (const [label, url] of [['Current students', /\/admin\/students$/], ['Attendance today', /\/admin\/register$/], ['Teachers signed in', /\/admin\/teacher-logs$/]] as const) {
+    await page.goto('/admin');
+    await page.getByRole('link', { name: new RegExp(`^${label}`) }).click();
+    await expect(page).toHaveURL(url);
+  }
+  await page.goto('/admin/students');
+  await page.getByRole('link', { name: /^Waiting list/ }).click();
+  await expect(page).toHaveURL(/status=Waiting(%20|\+)List/);
+});
+
 test('Hide fees leaves money off the dashboard and the Fees page until shown again', async ({ page }) => {
   await signIn(page);
   const main = page.locator('main');

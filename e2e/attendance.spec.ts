@@ -61,6 +61,18 @@ test('parent notice shows in the bell badge and on the notices page', async ({ p
   await expect(page.getByText('Seen', { exact: true })).toBeVisible();
 });
 
+test('teacher logs: pick a teacher, update their week in a pop-up', async ({ page }) => {
+  await signIn(page);
+  await page.goto('/admin/teacher-logs');
+  await page.getByRole('button', { name: /^Sample Teacher Two/ }).click();
+  const dialog = page.getByRole('dialog', { name: 'Sample Teacher Two' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('textbox', { name: /note on/ }).first().fill('Covered by a colleague');
+  await dialog.getByRole('button', { name: 'Save Sample’s logs' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole('status').filter({ hasText: /^Sample Teacher Two: Saved \d+ logs?\.$/ })).toBeVisible();
+});
+
 test('teacher logs: prefill from working hours and save; kiosk sign-in with a PIN', async ({ page, browser }) => {
   await signIn(page);
   const date = lastMonday();
