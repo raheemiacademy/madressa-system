@@ -1,5 +1,6 @@
 import { inArray } from 'drizzle-orm';
 import Link from 'next/link';
+import { ClassSearch } from './ClassSearch';
 import { db } from '@/db';
 import { teacher } from '@/db/schema';
 import { Chip } from '@/components/Chip';
@@ -49,20 +50,16 @@ export default async function Classes({ searchParams }: { searchParams: Promise<
             <select className="ra-select" name="sort" defaultValue={sort} aria-label="Order classes">{Object.entries(ORDERS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
             <button className="ra-btn">Sort</button>
           </form>
+          {adminCan(admin.staff, 'edit') && <Link className="ra-btn" href="/admin/classes/order">Change order</Link>}
           {adminCan(admin.staff, 'edit') && <Link className="ra-btn primary" href="/admin/classes/new"><Icon name="plus" />Add class</Link>}
           <Link className="ra-btn" href="/admin/classes/timetable">Timetable</Link>
           <Link className="ra-btn" href="/admin/classes/print">Class PDFs</Link>
         </div></div>
       <div className="ra-more">
         <span className="ra-more-l">More tools</span>
-        {[['/admin/students/move', 'Move students'], ['/admin/classes/rename', 'Switch/rename classes'], ['/admin/classes/timetable#copy', 'Duplicate class timings'], ['/admin/classes/rooms', 'Classrooms & subjects'],
-          ['/admin/settings/schoolDays', 'School days'], ['/admin/classes/maintenance', 'Maintenance'], ['/admin/import/classes', 'Import classes']].map(([h, l]) => <Link key={h} className="ra-btn" href={h!}>{l}</Link>)}
+        {[['/admin/students/move', 'Move students'], ['/admin/settings/schoolDays', 'School days'], ['/admin/classes/maintenance', 'Maintenance'], ['/admin/import/classes', 'Import classes']].map(([h, l]) => <Link key={h} className="ra-btn" href={h!}>{l}</Link>)}
       </div>
-      <form className="ra-toolbar" role="search" action="/admin/classes">
-        <input type="hidden" name="sort" value={sort} />
-        <input className="ra-input grow" type="search" name="q" defaultValue={q} placeholder="Quick filter: class, teacher or age group" aria-label="Filter classes" style={{ maxWidth: 340 }} />
-        <button className="ra-btn">Filter</button>
-      </form>
+      <ClassSearch q={q} sort={sort} />
       {!year ? <p className="ra-empty">Add an academic year first.</p> : rows.length === 0 ? <p className="ra-empty">{q ? 'No classes match.' : 'No classes set up for this year yet.'}</p> : (
         <div className="ra-class-grid">
           {rows.map((r, i) => {

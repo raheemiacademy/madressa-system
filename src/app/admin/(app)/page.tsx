@@ -5,6 +5,8 @@ import { db } from '@/db';
 import { PAYMENT_METHODS, PAYMENT_STATUSES } from '@/db/schema';
 import { Chip } from '@/components/Chip';
 import { HBarChart, TrendChart } from '@/components/charts';
+import { HideFeesToggle } from '@/components/HideFeesToggle';
+import { HIDE_FEES_COOKIE } from '@/lib/hide-fees';
 import { Icon, type IconName } from '@/components/Icon';
 import { formatCalendarDate, formatInstant, greeting } from '@/lib/dates';
 import { formatPence } from '@/lib/money';
@@ -14,7 +16,7 @@ import { formatChange, initials, plural } from '@/lib/text';
 import { resolveYear } from '@/server/academic-years';
 import { weeklyTrend } from '@/server/attendance/registers';
 import { countNotices, countPendingRequests } from '@/server/attendance/requests';
-import { ageGroups, attendanceFigures, outstandingWeekAgo, parentFigures, studentFigures, teacherSignIns, unreadMessages } from '@/server/dashboard';
+import { attendanceFigures, outstandingWeekAgo, parentFigures, studentFigures, teacherSignIns, unreadMessages } from '@/server/dashboard';
 import { dashboard as feesDashboard, paymentList } from '@/server/fees/reports';
 import { requireAdmin } from '@/server/next/actor';
 import { todayIso } from '@/server/people/common';
@@ -58,7 +60,10 @@ function Panel({ id, cls, title, note, action, height, anim, children }: { id: s
   );
 }
 
-/** §1 Dashboard: today's figures, banners, attendance, age groups, unread messages, teacher sign-in, and (with fees access) payments and fees by type. */
+/**
+ * §1 Dashboard: today's figures, banners, unread messages, teacher sign-in, attendance, and (with fees access) payments and fees by type.
+ * "Hide fees" leaves every money figure out of the page on this device. (Students by age group moved to the Students page.)
+ */
 export default async function Dashboard({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
   const admin = await requireAdmin();
   // A new madrasah's setup checklist comes first, for the Super admins who do the setting up.
@@ -69,6 +74,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const now = new Date();
   const today = todayIso(now);
   const fees = adminCan(admin.staff, 'fees');
+  const feesHidden = fees && !!jar.get(HIDE_FEES_COOKIE)?.value;
+  const money = fees && !feesHidden;
   const me = { id: admin.staff.id, rank: admin.staff.rank, isSuper: admin.staff.isSuper };
   const anim = jar.get('ra_dash_seen') ? '' : ' ra-anim';
   const quick: [string, IconName, string][] = [
@@ -90,27 +97,24 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         <h1>{greeting(now, tz)}, {admin.name.split(/\s+/)[0]}</h1>
         <PanelBoundary>
           <Suspense fallback={<p><span className="ra-skel" style={{ display: 'block', height: '3em', maxWidth: '64ch' }} role="status" aria-label="Loading today’s summary" /></p>}>
-            <HeroLine today={today} yearId={year?.id ?? null} fees={fees} />
+            <HeroLine today={today} yearId={year?.id ?? null} fees={money} /* shares the figures query with the tiles below */ />
           </Suspense>
         </PanelBoundary>
         <div className="ra-quick">
           {quick.slice(0, 1).map(([h, i, l]) => <Link key={h} href={h}><Icon name={i} />{l}</Link>)}
           {fees && <AddFeesButton label="Record payment" className="" plus />}
           {quick.slice(1).map(([h, i, l]) => <Link key={h} href={h}><Icon name={i} />{l}</Link>)}
+          {fees && <HideFeesToggle hidden={feesHidden} />}
         </div>
       </div>
 
       <PanelBoundary>
-        <Suspense fallback={<div className="ra-kpis" role="status" aria-label="Loading today’s figures">{Array.from({ length: fees ? 5 : 4 }, (_, i) => <div key={i} className="ra-kpi ra-skel" style={{ height: 112 }} />)}</div>}>
-          <Headline today={today} yearId={year?.id ?? null} yearStart={year?.startsOn ?? today} fees={fees} anim={anim} />
+        <Suspense fallback={<div className="ra-kpis" role="status" aria-label="Loading today’s figures">{Array.from({ length: money ? 5 : 4 }, (_, i) => <div key={i} className="ra-kpi ra-skel" style={{ height: 112 }} />)}</div>}>
+          <Headline today={today} yearId={year?.id ?? null} yearStart={year?.startsOn ?? today} fees={money} anim={anim} />
         </Suspense>
       </PanelBoundary>
 
       <div className="ra-grid">
-        <Panel id="d-att" cls="ra-c8" title="Weekly attendance" note="Share of register sessions marked present or late, this year" height={230} anim={anim}>
-          <Trend from={year?.startsOn ?? null} to={year ? (today < year.endsOn ? today : year.endsOn) : null} />
-        </Panel>
-        <Panel id="d-age" cls="ra-c4" title="Students by age group" note="Current students" height={200} anim={anim}><Ages today={today} /></Panel>
         <Panel id="d-msg" cls="ra-c7 ra-m-first" title="Unread messages" note="From parents and teachers" height={200} anim="" action={<Link className="ra-link" href="/admin/messages">Open inbox</Link>}>
           <Messages me={me} />
         </Panel>
@@ -119,7 +123,10 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         <Panel id="d-tl" cls="ra-c5" title="Teacher sign-in" note="Today, from kiosk and teacher portal" height={200} anim="" action={<Link className="ra-link" href="/admin/teacher-logs">All logs</Link>}>
           <SignIns today={today} />
         </Panel>
-        {fees && (
+        <Panel id="d-att" cls="ra-c12" title="Weekly attendance" note="Share of register sessions marked present or late, this year" height={230} anim={anim}>
+          <Trend from={year?.startsOn ?? null} to={year ? (today < year.endsOn ? today : year.endsOn) : null} />
+        </Panel>
+        {money && (
           <>
             <Panel id="d-pay" cls="ra-c7" title="Recent payments" note="Latest ten, all invoice types" height={260} anim="" action={<Link className="ra-link" href="/admin/fees">Fees dashboard</Link>}>
               <Payments />
@@ -135,13 +142,10 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
 async function HeroLine({ today, yearId, fees }: { today: string; yearId: number | null; fees: boolean }) {
   const h = await headline(today, yearId, fees);
-  const a = h.attendance, f = h.fees;
+  const a = h.attendance;
   return (
     <p>
       {a.pct === null ? 'No registers have been taken yet today.' : <>Attendance today is <b>{pct1(a.pct)}</b>{a.change !== null && <> ({formatChange(a.change, 'pts')} on last week)</>}.</>}
-      {f && (f.overdue > 0
-        ? <> <b>{f.overdue.toLocaleString('en-GB')}</b> {f.overdue === 1 ? 'invoice is' : 'invoices are'} overdue, with <b>{formatPence(f.outstanding)}</b> outstanding. Sending reminders is the job for today.</>
-        : <> No invoices are overdue{f.outstanding > 0 && <>, and <b>{formatPence(f.outstanding)}</b> is still to come in</>}.</>)}
     </p>
   );
 }
@@ -189,23 +193,6 @@ async function Headline({ today, yearId, yearStart, fees, anim }: { today: strin
 async function Trend({ from, to }: { from: string | null; to: string | null }) {
   if (!from || !to || to < from) return <p className="ra-empty">No registers taken yet this year.</p>;
   return <TrendChart data={await weeklyTrend(db, from, to)} empty="No registers taken yet this year." />;
-}
-
-async function Ages({ today }: { today: string }) {
-  const rows = await ageGroups(db, today);
-  const other = rows.some((r) => r.unspecified);
-  return (
-    <>
-      {rows.length > 0 && <div className="ra-legend"><span><i style={{ background: 'var(--ra-indigo)' }} />Boys</span><span><i style={{ background: 'var(--ra-violet)' }} />Girls</span>{other && <span><i style={{ background: 'var(--ra-lav)' }} />Not recorded</span>}</div>}
-      <HBarChart empty="No current students yet."
-        label={`Students by age group: ${rows.map((r) => `${r.group} ${r.boys} boys, ${r.girls} girls${r.unspecified ? `, ${r.unspecified} not recorded` : ''}`).join('; ')}`}
-        rows={rows.map((r) => ({
-          label: r.group, end: (r.boys + r.girls + r.unspecified).toLocaleString('en-GB'),
-          segs: [{ name: 'Boys', value: r.boys, colour: '--ra-indigo' }, { name: 'Girls', value: r.girls, colour: '--ra-violet' }, { name: 'Not recorded', value: r.unspecified, colour: '--ra-lav' }],
-          tip: [`Boys ${r.boys}`, `Girls ${r.girls}`, ...(r.unspecified ? [`Not recorded ${r.unspecified}`] : [])]
-        }))} />
-    </>
-  );
 }
 
 async function Messages({ me }: { me: { id: number; rank: string | null; isSuper: boolean } }) {

@@ -3,12 +3,15 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { db } from '@/db';
 import { loginIdentity, STUDENT_STATUSES } from '@/db/schema';
+import { HBarChart } from '@/components/charts';
 import { Icon } from '@/components/Icon';
 import { plural } from '@/lib/text';
 import { resolveYear } from '@/server/academic-years';
 import { requireAdmin } from '@/server/next/actor';
 import { adminCan } from '@/server/permissions';
 import { listClasses } from '@/server/people/classes';
+import { ageGroups } from '@/server/dashboard';
+import { todayIso } from '@/server/people/common';
 import { countsByAge, listFilters, listStudents } from '@/server/people/students';
 import { readTab } from '@/server/settings';
 import { StudentsTable } from './StudentsTable';
@@ -28,8 +31,8 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
   const f = listFilters.parse(sp);
   const [{ year }, prefs] = await Promise.all([resolveYear(db, Number((await cookies()).get('year_id')?.value) || null), readTab(db, 'preferences')]);
   const perPage = Number(prefs.studentsPerPage) || 50;
-  const [list, byAge, classes, [portal]] = await Promise.all([
-    listStudents(db, f, perPage), countsByAge(db), year ? listClasses(db, year.id) : [],
+  const [list, byAge, genders, classes, [portal]] = await Promise.all([
+    listStudents(db, f, perPage), countsByAge(db), ageGroups(db, todayIso()), year ? listClasses(db, year.id) : [],
     db.select({ n: sql<number>`count(*)::int` }).from(loginIdentity).where(and(eq(loginIdentity.portal, 'parent'), year ? gte(loginIdentity.lastLoginAt, new Date(`${year.startsOn}T00:00:00Z`)) : undefined))
   ]);
   const totals = byAge.reduce((t, r) => ({ current: t.current + r.current, waiting: t.waiting + r.waiting }), { current: 0, waiting: 0 });
@@ -70,6 +73,19 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
               <thead><tr><th>Group</th><th className="num">Current</th><th className="num">Waiting</th></tr></thead>
               <tbody>{byAge.map((r) => <tr key={r.label}><td className="wrap">{r.label}</td><td className="num">{r.current}</td><td className="num">{r.waiting}</td></tr>)}</tbody>
             </table>
+          )}
+          {genders.length > 0 && (
+            <>
+              <h3 style={{ margin: '8px 0 0', fontSize: 14, fontWeight: 600 }}>Boys and girls</h3>
+              <div className="ra-legend"><span><i style={{ background: 'var(--ra-indigo)' }} />Boys</span><span><i style={{ background: 'var(--ra-violet)' }} />Girls</span>{genders.some((r) => r.unspecified) && <span><i style={{ background: 'var(--ra-lav)' }} />Not recorded</span>}</div>
+              <HBarChart empty="No current students yet."
+                label={`Current students by age group: ${genders.map((r) => `${r.group} ${r.boys} boys, ${r.girls} girls${r.unspecified ? `, ${r.unspecified} not recorded` : ''}`).join('; ')}`}
+                rows={genders.map((r) => ({
+                  label: r.group, end: (r.boys + r.girls + r.unspecified).toLocaleString('en-GB'),
+                  segs: [{ name: 'Boys', value: r.boys, colour: '--ra-indigo' }, { name: 'Girls', value: r.girls, colour: '--ra-violet' }, { name: 'Not recorded', value: r.unspecified, colour: '--ra-lav' }],
+                  tip: [`Boys ${r.boys}`, `Girls ${r.girls}`, ...(r.unspecified ? [`Not recorded ${r.unspecified}`] : [])]
+                }))} />
+            </>
           )}
         </section>
 

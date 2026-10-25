@@ -612,3 +612,39 @@ li[data-state="todo"] .ra-setup-why { margin-bottom: 0; }
 /* In dark mode the navy top card sits on a navy page: a faint edge keeps it a card */
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) :is(.ra-hero, .rp-hero) { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ra-on-ink) 10%, transparent); } }
 :root[data-theme="dark"] :is(.ra-hero, .rp-hero) { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ra-on-ink) 10%, transparent); }
+
+/* Holiday requests: two big answer buttons, green and red (text takes the panel colour, so it passes in both themes) */
+.ra-respond { display: flex; flex-direction: column; gap: 10px; }
+.ra-respond-main { display: flex; gap: 10px; flex-wrap: wrap; }
+.ra-respond-main .ra-btn { min-height: 48px; padding: 0 22px; font-size: 15px; font-weight: 600; border-color: transparent; color: var(--color-panel); flex: 1 1 160px; max-width: 240px; justify-content: center; }
+.ra-respond-main .ra-btn svg { width: 18px; height: 18px; }
+.ra-go { background: var(--color-ok); }
+.ra-stop { background: var(--color-bad); }
+@media (hover: hover) and (pointer: fine) { .ra-respond-main .ra-btn:hover { color: var(--color-panel); border-color: transparent; filter: brightness(1.08); } }
+
+/* A list that starts closed (e.g. who signed in to a portal) */
+.ra-collapse > summary { cursor: pointer; list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-height: 44px; }
+.ra-collapse > summary::-webkit-details-marker { display: none; }
+/* Class order: a numbered list with Move up / Move down */
+.ra-order { list-style: none; margin: 0; padding: 6px 16px; gap: 0; }
+.ra-order > li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--ra-hairline); }
+.ra-order > li:last-child { border-bottom: 0; }
+.ra-order-n { font-weight: 600; color: var(--color-fg-muted); text-align: right; }
+.ra-order-name b { display: block; font-weight: 600; overflow-wrap: anywhere; }
+.ra-order-name small { display: block; color: var(--color-fg-muted); font-size: 13px; }
+.ra-order .ra-acts { display: flex; gap: 6px; }
+.ra-order .ra-btn { min-width: 44px; min-height: 44px; justify-content: center; font-size: 18px; }
+
+/* Class cards: the whole card opens the class (the name's link stretches over it), with a slight lift on hover */
+.ra-class { position: relative; transition: transform 160ms var(--ra-ease-out), box-shadow 160ms ease, border-color 160ms ease; }
+.ra-class h3 a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.ra-class h3 a:focus-visible { box-shadow: none; }
+.ra-class:has(h3 a:focus-visible) { box-shadow: 0 0 0 2px var(--color-panel), 0 0 0 4px var(--ra-indigo); }
+@media (hover: hover) and (pointer: fine) { .ra-class:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--ra-accent) 55%, var(--color-border-line)); box-shadow: var(--ra-shadow-pop); } }
+.ra-class:active { transform: scale(0.99); }
+@media (prefers-reduced-motion: reduce) { .ra-class, .ra-class:hover, .ra-class:active { transform: none; } }
+
+/* A plain search bar: icon inside, filters as you type */
+.ra-findbar { position: relative; max-width: 420px; margin: 0; }
+.ra-findbar svg { position: absolute; left: 12px; top: 50%; translate: 0 -50%; width: 16px; height: 16px; color: var(--color-fg-muted); pointer-events: none; }
+.ra-findbar .ra-input { width: 100%; padding-left: 36px; }

@@ -25,7 +25,7 @@ export default async function Timetable({ searchParams }: { searchParams: Promis
   const canEdit = adminCan(admin.staff, 'edit');
   return (
     <div className="ra-page">
-      <div className="ra-page-h"><div><h1>Timetable</h1><p>Weekly sessions for each class, and reusable templates.</p></div><div className="ra-toolbar"><Link className="ra-btn" href="/admin/classes">Classes</Link></div></div>
+      <div className="ra-page-h"><div><h1>Timetable</h1><p>Weekly sessions for each class, and reusable templates.</p></div><div className="ra-toolbar"><a className="ra-btn" href="#copy">Duplicate timings</a><Link className="ra-btn" href="/admin/classes/rooms">Classrooms &amp; subjects</Link><Link className="ra-btn" href="/admin/classes">Classes</Link></div></div>
       <nav className="ra-filters" aria-label="Class">{options.map((o) => <Link key={o.value} className="ra-filter" href={`?class=${o.value}`} aria-current={String(classId) === o.value && !template ? 'page' : undefined}>{o.label}</Link>)}</nav>
       {classId && (
         <section className="ra-card" aria-labelledby="wk-h">

@@ -2,13 +2,14 @@ import Link from 'next/link';
 import { db } from '@/db';
 import { HOLIDAY_REQUEST_STATUSES } from '@/db/schema';
 import { Chip } from '@/components/Chip';
-import { SelectField, TextArea, TextField } from '@/components/Fields';
+import { TextArea, TextField } from '@/components/Fields';
 import { ActionButton, Form } from '@/components/Form';
 import { formatCalendarDate, formatInstant } from '@/lib/dates';
 import { requireAdmin } from '@/server/next/actor';
 import { adminCan } from '@/server/permissions';
 import { listHolidayRequests } from '@/server/attendance/requests';
 import { deleteRequestAction, editRequestAction, respondAction } from '../actions';
+import { RespondButtons } from './RespondButtons';
 
 export const metadata = { title: 'Holiday requests' };
 const COLOUR: Record<string, string> = { Pending: 'var(--ra-violet)', Accepted: 'var(--color-ok)', Declined: 'var(--color-bad)', 'Info requested': 'var(--ra-blue)' };
@@ -37,10 +38,7 @@ export default async function Requests({ searchParams }: { searchParams: Promise
           {r.response && <p className="ra-note" style={{ margin: 0 }}>Response: {r.response}</p>}
           {canEdit && (
             <div className="ra-grid">
-              <div className="ra-c7"><Form action={respondAction.bind(null, r.id)} card={false} savebar={false} submit="Send response">
-                <SelectField id={`a${r.id}`} name="action" label="Response" options={[{ value: 'accept-authorised', label: 'Accept as authorised' }, { value: 'accept-unauthorised', label: 'Accept as unauthorised' }, { value: 'info', label: 'Request more information' }, { value: 'decline', label: 'Decline' }]} />
-                <TextArea id={`t${r.id}`} name="response" label="Message to the parent" defaultValue={r.response ?? ''} rows={2} />
-              </Form></div>
+              <div className="ra-c7"><RespondButtons id={r.id} action={respondAction.bind(null, r.id)} /></div>
               <details className="ra-c5"><summary className="ra-link" style={{ display: 'inline-grid' }}>Edit request</summary>
                 <Form action={editRequestAction.bind(null, r.id)} card={false} savebar={false} submit="Save">
                   <div className="ra-fields"><TextField id={`s${r.id}`} name="startsOn" label="From" type="date" defaultValue={r.startsOn} /><TextField id={`e${r.id}`} name="endsOn" label="To" type="date" defaultValue={r.endsOn} /></div>

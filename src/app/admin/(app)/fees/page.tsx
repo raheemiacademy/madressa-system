@@ -1,9 +1,12 @@
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { db } from '@/db';
 import { PAYMENT_STATUSES } from '@/db/schema';
 import { Chip } from '@/components/Chip';
 import { FeesChart } from '@/components/charts';
+import { HideFeesToggle } from '@/components/HideFeesToggle';
 import { Icon } from '@/components/Icon';
+import { HIDE_FEES_COOKIE } from '@/lib/hide-fees';
 import { formatCalendarDate } from '@/lib/dates';
 import { formatPence } from '@/lib/money';
 import { requireAdmin } from '@/server/next/actor';
@@ -21,7 +24,9 @@ export default async function Fees({ searchParams }: { searchParams: Promise<{ s
   const status = (PAYMENT_STATUSES as readonly string[]).includes(sp.status ?? '') ? sp.status as (typeof PAYMENT_STATUSES)[number] : undefined;
   const q = (sp.q ?? '').trim().slice(0, 60);
   const { year } = await yearAndClasses();
-  const [d, pays] = await Promise.all([year ? dashboard(db, year.id) : null, paymentList(db, { status, q: q || undefined, limit: 100 })]);
+  const hidden = !!(await cookies()).get(HIDE_FEES_COOKIE)?.value;
+  // Hidden figures aren't fetched at all, so they can't be read from the page.
+  const [d, pays] = hidden ? [null, []] : await Promise.all([year ? dashboard(db, year.id) : null, paymentList(db, { status, q: q || undefined, limit: 100 })]);
   const t = d?.totals;
   const share = t && t.due ? `${((t.received / t.due) * 100).toFixed(1)}%` : '—';
   return (
@@ -30,9 +35,12 @@ export default async function Fees({ searchParams }: { searchParams: Promise<{ s
         <Link className="ra-btn" href="/admin/fees/generate">Generate invoices</Link>
         <Link className="ra-btn" href="/admin/fees/monthly">Monthly invoices</Link>
         <Link className="ra-btn" href="/admin/fees/reminders">Send reminders</Link>
+        {!hidden && <HideFeesToggle hidden={false} className="ra-btn" />}
       </FeesHead>
 
-      {!year ? <p className="ra-empty">Add an academic year first.</p> : (
+      {hidden && <div className="ra-banner" role="status" style={{ ['--c' as string]: 'var(--ra-lav)' }}><div><b>Fee figures are hidden on this device.</b> Totals, the chart and payments are left out until you show them again.</div><HideFeesToggle hidden className="ra-link" /></div>}
+
+      {!year ? <p className="ra-empty">Add an academic year first.</p> : d && (
         <div className="ra-kpis">
           <div className="ra-kpi" style={{ ['--c' as string]: 'var(--ra-indigo)' }}><div className="ra-kpi-top">Invoiced</div><div className="ra-kpi-val">{formatPence(t!.due)}</div><div className="ra-kpi-sub">All invoice types</div></div>
           <div className="ra-kpi" style={{ ['--c' as string]: 'var(--ra-blue)' }}><div className="ra-kpi-top">Received</div><div className="ra-kpi-val">{formatPence(t!.received)}</div><div className="ra-kpi-sub">{share} collected</div></div>
@@ -70,7 +78,7 @@ export default async function Fees({ searchParams }: { searchParams: Promise<{ s
         </div>
       )}
 
-      <section className="ra-card" aria-labelledby="pay-h">
+      {!hidden && <section className="ra-card" aria-labelledby="pay-h">
         <div className="ra-card-h"><div><h2 id="pay-h">Payments</h2><div className="ra-note">Search by name, payment ID or method</div></div>
           <nav className="ra-filters" aria-label="Payment status">{FILTERS.map((f) => {
             const on = (f === 'All' && !status) || f === status;
@@ -95,7 +103,7 @@ export default async function Fees({ searchParams }: { searchParams: Promise<{ s
             ))}</tbody>
           </table></div>
         )}
-      </section>
+      </section>}
     </div>
   );
 }

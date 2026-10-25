@@ -19,6 +19,7 @@ const EXTRA: { prefix: string; group: string; title: string }[] = [
   { prefix: '/admin/no-access', group: 'Overview', title: 'No access' },
   { prefix: '/admin/contacts', group: 'School', title: 'Contacts' },
   { prefix: '/admin/import', group: 'School', title: 'Import' },
+  { prefix: '/admin/classes/order', group: 'School', title: 'Class order' },
   { prefix: '/admin/fire-drill', group: 'School', title: 'Fire drill' },
   { prefix: '/admin/reports', group: 'Learning', title: 'Exams & reports' },
   { prefix: '/admin/products', group: 'Learning', title: 'Merits & shop' },

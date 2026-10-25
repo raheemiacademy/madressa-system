@@ -179,10 +179,19 @@ test('on a computer the portals have a sidebar instead of the bottom tabs, and p
     await page.reload();
     await expect(page.getByRole('button', { name: 'Dark mode' })).toHaveAttribute('aria-pressed', 'true');
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.getByRole('button', { name: 'Sign out' }).click();
+    await page.getByRole('complementary', { name: 'Main menu' }).getByRole('button', { name: 'Sign out' }).click();
     await expect(page).toHaveURL(new RegExp(`/${who}/login$`));
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.getByRole('navigation', { name: 'Sections' })).toHaveCount(0);
     await ctx.close();
   }
+});
+
+test('the Portals page keeps each sign-in list closed until asked', async ({ page }) => {
+  await signIn(page);
+  await page.goto('/admin/tools/portals');
+  const parents = page.getByRole('region', { name: /^Parent portal/ }).getByRole('group');
+  await expect(parents.getByRole('columnheader', { name: 'Last signed in' })).toBeHidden();
+  await parents.getByText('Show who').click();
+  await expect(parents.getByRole('columnheader', { name: 'Last signed in' })).toBeVisible();
 });

@@ -42,10 +42,14 @@ test('mark a student absent across dates, and accept a holiday request', async (
 
   await page.goto('/admin/register/requests');
   const req = page.getByRole('article').first();
-  await req.getByLabel('Response').selectOption('accept-authorised');
-  await req.getByLabel('Message to the parent').fill('Approved, have a safe trip.');
-  await req.getByRole('button', { name: 'Send response' }).click();
+  await req.getByRole('button', { name: 'Authorise', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Authorise this holiday' });
+  await expect(dialog.getByLabel('Message to the parent (optional)')).toHaveValue('Your holiday request has been authorised.');
+  await dialog.getByLabel('Message to the parent (optional)').fill('Approved, have a safe trip.');
+  await dialog.getByRole('button', { name: 'Authorise' }).click();
+  await expect(dialog).toBeHidden();
   await expect(req.getByText('Accepted (authorised)')).toBeVisible();
+  await expect(req.getByText('Response: Approved, have a safe trip.')).toBeVisible();
 });
 
 test('parent notice shows in the bell badge and on the notices page', async ({ page }) => {

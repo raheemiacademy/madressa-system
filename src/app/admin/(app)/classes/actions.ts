@@ -9,7 +9,7 @@ import { formObject, type FormState } from '@/lib/validate';
 import { audit } from '@/server/audit';
 import { actorOf, requireAdmin } from '@/server/next/actor';
 import {
-  addSlot, addStudentsToClass, copyTimings, deleteClass, deleteNamed, deleteSlot, deleteTemplate, fixMaintenance, PRIVILEGES,
+  addSlot, addStudentsToClass, copyTimings, deleteClass, deleteNamed, deleteSlot, deleteTemplate, fixMaintenance, moveClass, PRIVILEGES,
   removeStudentsFromClass, saveClass, saveRoom, saveSubject, saveTemplate, setClassTeacher
 } from '@/server/people/classes';
 
@@ -23,6 +23,12 @@ export async function saveClassAction(id: number | undefined, _p: FormState, fd:
   done();
   if (!id) redirect(`/admin/classes/${r.id}`);
   return { ok: true, message: 'Class saved.' };
+}
+
+export async function moveClassAction(id: number, dir: 'up' | 'down') {
+  const a = await requireAdmin('edit');
+  await moveClass(db, actorOf(a), id, dir);
+  done();
 }
 
 export async function deleteClassAction(id: number) {

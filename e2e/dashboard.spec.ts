@@ -8,8 +8,8 @@ test('dashboard shows today’s figures and panels, and its shortcuts work', asy
   await expect(page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening), Sample$/ })).toBeVisible();
   const kpis = page.locator('.ra-kpi-top');
   await expect(kpis).toHaveText(['Current students', 'Attendance today', 'Fees outstanding', 'Parents on portal', 'Teachers signed in']);
-  for (const h of ['Weekly attendance', 'Students by age group', 'Unread messages', 'Teacher sign-in', 'Recent payments', 'Fees by type']) await expect(page.getByRole('heading', { level: 2, name: h })).toBeVisible();
-  await expect(page.getByRole('img', { name: /^Students by age group: / })).toBeVisible();
+  for (const h of ['Weekly attendance', 'Unread messages', 'Teacher sign-in', 'Recent payments', 'Fees by type']) await expect(page.getByRole('heading', { level: 2, name: h })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Students by age group' })).toHaveCount(0);
   await expect(page.getByRole('img', { name: /^Fees by type: / })).toBeVisible();
   await page.getByRole('button', { name: 'Record payment' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
@@ -68,6 +68,29 @@ test('on a phone the admin is an app: bottom tabs, and More holds the menu, year
   await signIn(page);
   await expect(page.getByRole('navigation', { name: 'Main' })).toBeHidden();
   await expect(page.getByRole('navigation', { name: 'Sections' })).toBeVisible();
+});
+
+test('Hide fees leaves money off the dashboard and the Fees page until shown again', async ({ page }) => {
+  await signIn(page);
+  const main = page.locator('main');
+  await expect(main.getByText('Fees outstanding')).toBeVisible();
+  // Retry the click in case it lands before the page has hydrated (once it works the button says "Show fees").
+  await expect(async () => {
+    await page.getByRole('button', { name: 'Hide fees' }).click({ timeout: 2000 });
+    await expect(page.getByRole('button', { name: 'Show fees' })).toBeVisible({ timeout: 3000 });
+  }).toPass();
+  await expect(main.getByText('Fees outstanding')).toHaveCount(0);
+  for (const h of ['Recent payments', 'Fees by type']) await expect(page.getByRole('heading', { level: 2, name: h })).toHaveCount(0);
+  expect(await main.innerHTML()).not.toContain('£');
+  await expect(page.getByRole('button', { name: 'Record payment' })).toBeVisible();
+  await page.goto('/admin/fees');
+  await expect(page.getByText('Fee figures are hidden on this device.')).toBeVisible();
+  for (const h of ['Invoiced vs received by month', 'Totals by type', 'Payments']) await expect(page.getByRole('heading', { level: 2, name: h })).toHaveCount(0);
+  expect(await page.locator('main').innerHTML()).not.toContain('£');
+  await page.getByRole('button', { name: 'Show fees' }).click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Payments' })).toBeVisible();
+  await page.goto('/admin');
+  await expect(main.getByText('Fees outstanding')).toBeVisible();
 });
 
 test('the Dark mode switch changes the theme on this device and is remembered', async ({ page }) => {

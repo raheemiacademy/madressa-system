@@ -68,6 +68,32 @@ test('permanent delete needs the exact school name', async ({ page }) => {
   await expect(page.getByRole('cell', { name: 'Permanently deleted 1 student' })).toBeVisible();
 });
 
+test('classes: search as you type, open a class from anywhere on its card, change the order', async ({ page }) => {
+  await signIn(page);
+  await page.goto('/admin/classes');
+  await page.getByRole('searchbox', { name: 'Search classes' }).fill('Class B');
+  await expect(page).toHaveURL(/q=Class\+B/);
+  await expect(page.getByRole('article')).toHaveCount(1);
+  const card = page.getByRole('article').first();
+  const box = (await card.boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height - 12); // near the bottom, nowhere near the name
+  await expect(page).toHaveURL(/\/admin\/classes\/\d+$/);
+  await page.goto('/admin/classes/order');
+  const items = page.getByRole('list', { name: 'Classes in order' }).getByRole('listitem');
+  const second = (await items.nth(1).locator('b').textContent())!;
+  await page.getByRole('button', { name: `Move ${second} up` }).click();
+  await expect(items.first().locator('b')).toHaveText(second);
+  await page.getByRole('button', { name: `Move ${second} down` }).click();
+  await expect(items.nth(1).locator('b')).toHaveText(second);
+});
+
+test('the Students page shows boys and girls by age group', async ({ page }) => {
+  await signIn(page);
+  await page.goto('/admin/students');
+  await expect(page.getByRole('heading', { name: 'Boys and girls' })).toBeVisible();
+  await expect(page.getByRole('img', { name: /^Current students by age group: / })).toBeVisible();
+});
+
 test('import students from pasted CSV: preview, then only good rows are saved', async ({ page }) => {
   await signIn(page);
   await page.goto('/admin/import/students');

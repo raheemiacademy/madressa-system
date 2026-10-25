@@ -711,3 +711,20 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
   - Accent colours are never used as text on white: blue and sky fail contrast. Avatars use the primary blue for the same reason.
   - All gradients are gone: the sidebar, top cards, sign-in background, logo tiles and progress bars are solid colours.
 - **Dark mode switch (your request).** Admin has it in the header (and on More on a phone); the portals have it in the sidebar and on their More page. It saves the choice on that device (the `ra_theme` cookie) and applies it before the page paints. Until someone uses it, the school's theme setting (admin) or the device's own setting decides.
+- **Dashboard and screen tidy-ups (your requests, 25/10/2026).**
+  - **Dashboard layout:**
+    - The greeting card no longer mentions fees; it gives today's attendance only.
+    - Unread messages and Teacher sign-in now sit above Weekly attendance, which is full width.
+    - "Students by age group" (boys and girls) moved to the Students page, under the age-group table.
+  - **Hide fees** (on the dashboard's greeting card and the Fees page): for screens other people can see. It's saved on that device (the `ra_hide_fees` cookie). When it's on, the pages leave money out entirely; nothing is just blurred:
+    - the Fees outstanding tile, Recent payments and Fees by type on the dashboard;
+    - the totals, the monthly chart, totals by type and the payments list on the Fees page.
+
+    Record payment, the fee tools and the fees search stay.
+  - **Holiday requests:** two big buttons, Authorise (green) and Unauthorise (red). "Ask for more information" and "Decline" are links underneath. Each one opens a short pop-up with an optional message to the parent, pre-filled for the two main answers.
+  - **Portals page:** each portal's address is a link, and there's an "Open … portal" button. The list of who signed in starts closed ("Show who"), so hundreds of parents don't fill the page.
+  - **Classes page:** "Switch/rename classes" was removed; a class is renamed on its own edit page. The bulk rename page still exists but isn't linked. "Duplicate class timings" and "Classrooms & subjects" moved into the Timetable page; Subjects is also under Exams.
+  - **Classes page:**
+    - The filter box and button are now a plain search bar that filters as you type.
+    - Each class card opens its class wherever you click on it, with a slight lift on hover. Keyboard users still tab to the class name, and the whole card gets the focus ring.
+    - "Change order" (`/admin/classes/order`) sets the custom order with Move up / Move down, and numbers the classes 1, 2, 3. The number field on a class's edit page still works.

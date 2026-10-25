@@ -38,6 +38,7 @@ test('welcome, setup checklist, step banner, hide and show again', async ({ page
 test('step 6 invites parents and teachers, and the step ticks itself off', async ({ page }) => {
   await signIn(page);
   await page.goto('/admin/tools/portals?setup=6');
+  await expect(page.getByRole('link', { name: 'Open parent portal (opens in a new tab)' })).toHaveAttribute('href', '/parent');
   await expect(page.getByText('Setup step 6 of 6: Invite parents and teachers.')).toBeVisible();
   page.once('dialog', (d) => d.accept());
   await page.getByRole('button', { name: 'Invite parents and teachers' }).click();

@@ -4,7 +4,7 @@ import { sql } from '@/db';
 import { academicYear, auditLog, classAssignment, contact, loginIdentity, schoolClass, siblingLink, student, studentContact, teacher, timetableSlot, yearGroup } from '@/db/schema';
 import { decrypt } from '@/server/crypto';
 import { setSetting } from './setting-helper';
-import { copyClassesToYear, copyTimings, addSlot, fixMaintenance, maintenanceReport, migrateStudents, moveStudents, saveClass } from '@/server/people/classes';
+import { copyClassesToYear, copyTimings, addSlot, fixMaintenance, listClasses, maintenanceReport, migrateStudents, moveClass, moveStudents, saveClass } from '@/server/people/classes';
 import { ageOn } from '@/server/people/common';
 import { conflicts, copyAddressToStudents, massAssign, saveContact } from '@/server/people/contacts';
 import { csvDate, csvIds, parseCsv, toCsv } from '@/server/people/csv';
@@ -255,6 +255,21 @@ describe('classes', () => {
     const rows = await db.select().from(classAssignment).where(eq(classAssignment.studentId, r.id));
     expect(rows.find((x) => x.classId === a.id)?.toDate).toBe('2027-07-31');
     expect(rows.find((x) => x.classId === newB!.id)).toMatchObject({ fromDate: '2027-09-01', toDate: null });
+  });
+});
+
+describe('class order', () => {
+  it('moves a class up or down and numbers the year 1, 2, 3', async () => {
+    const { actor, year } = await setup();
+    const names = async () => (await listClasses(db, year.id)).map((r) => r.c.name);
+    const before = await names();
+    const last = (await listClasses(db, year.id)).at(-1)!.c.id;
+    expect(await moveClass(db, actor, last, 'down')).toBe(false); // already last
+    expect(await moveClass(db, actor, last, 'up')).toBe(true);
+    const after = await names();
+    expect(after.at(-1)).toBe(before.at(-2));
+    expect(after.at(-2)).toBe(before.at(-1));
+    expect((await listClasses(db, year.id)).map((r) => r.c.sortOrder)).toEqual(before.map((_, i) => i + 1));
   });
 });
 
