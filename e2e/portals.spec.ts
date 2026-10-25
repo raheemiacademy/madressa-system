@@ -148,3 +148,33 @@ for (const scheme of ['light', 'dark'] as const) {
     }
   });
 }
+
+test('on a computer the portals have a sidebar instead of the bottom tabs, and pass axe', async ({ browser }) => {
+  test.setTimeout(120_000);
+  for (const who of ['parent', 'teacher'] as const) {
+    const { page, ctx } = await portal(browser, who);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/${who}`);
+    const side = page.getByRole('navigation', { name: 'Sections' });
+    await expect(page.getByRole('navigation', { name: 'Main' })).toBeHidden();
+    await expect(side.getByRole('link', { name: who === 'parent' ? 'Home' : 'Today', exact: true })).toHaveAttribute('aria-current', 'page');
+    // Items from the More page are in the sidebar too.
+    await side.getByRole('link', { name: 'Forums' }).click();
+    await expect(page).toHaveURL(new RegExp(`/${who}/forums$`));
+    await expect(side.getByRole('link', { name: 'Forums' })).toHaveAttribute('aria-current', 'page');
+    for (const scheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme: scheme });
+      for (const path of [`/${who}`, `/${who}/homework`, `/${who}/messages`]) {
+        await page.goto(path);
+        await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'));
+        const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+        expect(r.violations.map((x) => `${scheme} ${path} ${x.id}: ${x.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
+      }
+    }
+    await page.getByRole('button', { name: 'Sign out' }).click();
+    await expect(page).toHaveURL(new RegExp(`/${who}/login$`));
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.getByRole('navigation', { name: 'Sections' })).toHaveCount(0);
+    await ctx.close();
+  }
+});

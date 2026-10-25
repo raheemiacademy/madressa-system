@@ -705,3 +705,4 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
   - rows of tool buttons and filter pills scroll sideways instead of wrapping.
 
   Wider screens are unchanged. Tables keep their columns, which now fit at 390px, so bulk selection still works on a phone.
+- **Parent and teacher portals on a computer (your request, 25/10/2026).** On screens wider than 860px, each portal gets a sidebar like the admin's: the school's name, "Parent portal" or "Teacher portal", the main tabs, everything from the More page, the school's links, and Sign out. Pages use the extra width. Phones and tablets keep the bottom tab bar. Both the sidebar and the More page read their items from one list per portal (`menu.ts`), so they always match.

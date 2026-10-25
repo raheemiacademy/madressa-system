@@ -581,3 +581,19 @@ li[data-state="todo"] .ra-setup-why { margin-bottom: 0; }
   .ra-more, .ra-filters { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; margin: 0 -16px; padding: 0 16px 2px; }
   .ra-more > *, .ra-filters > * { flex: none; white-space: nowrap; }
 }
+
+/* Portals on wide screens: the admin-style sidebar replaces the bottom tab bar, and pages get more room */
+.rp-side { display: none; }
+.rp-side-badge { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--ra-violet); color: var(--ra-on-ink); font-size: 12px; font-weight: 600; display: grid; place-items: center; }
+.rp-side-foot { margin-top: auto; }
+.rp-side-foot .ra-nav-btn { width: 100%; border: 0; background: transparent; font: inherit; cursor: pointer; text-align: left; }
+@media (min-width: 861px) {
+  .rp-shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); align-items: start; }
+  .rp-side { display: flex; }
+  .rp-shell > .rp-tabs { display: none; }
+  .rp-body { min-width: 0; }
+  .rp-head, .rp-main { max-width: 1040px; margin: 0; padding-left: 32px; padding-right: 32px; }
+  .rp-head { padding-top: 28px; }
+  .rp-main { padding-bottom: 48px; }
+  .rp-cta { bottom: 24px; }
+}
