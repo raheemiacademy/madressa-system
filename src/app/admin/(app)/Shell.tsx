@@ -79,10 +79,10 @@ export function Shell({ school, logoSrc, userName, userEmail, todayLabel, years,
               <Link className="ra-icon-btn" href="/admin/register" aria-label={notifications ? `${notifications} ${notifications === 1 ? 'notification' : 'notifications'}: parent notices and holiday requests` : 'Notifications'}>
                 <Icon name="bell" />{notifications > 0 && <span className="ra-badge" aria-hidden="true">{notifications}</span>}
               </Link>
-              <ThemeToggle className="ra-icon-btn" />
               <Link className="ra-icon-btn ra-d-only" href="/admin/messages" aria-label={unreadMessages ? `${unreadMessages} unread ${unreadMessages === 1 ? 'message' : 'messages'}` : 'Messages'}>
                 <Icon name="mail" />{unreadMessages > 0 && <span className="ra-badge" aria-hidden="true">{unreadMessages}</span>}
               </Link>
+              <ThemeToggle className="ra-icon-btn" />
               <AccountMenu name={userName} email={userEmail} />
             </div>
           </header>
