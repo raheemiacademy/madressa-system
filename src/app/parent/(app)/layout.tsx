@@ -21,7 +21,7 @@ export default async function ParentApp({ children }: { children: React.ReactNod
     { href: '/parent/more', label: 'More', icon: 'grid', badge: unread }
   ];
   return (
-    <div className="rp rp-shell">
+    <div className="rp rp-shell rp-parent">
       <PortalSide school={profile?.name ?? 'School'} sub="Parent portal" portal="parent" links={parentLinks(p)}
         groups={[{ label: 'Your children', items: tabs.slice(0, -1) }, { label: 'More', items: parentMenu(p, unread) }]} />
       <div className="rp-body">{children}</div>

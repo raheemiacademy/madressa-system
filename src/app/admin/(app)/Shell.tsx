@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useTransition } from 'react';
 import { Icon } from '@/components/Icon';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { TabBar, type Tab } from '@/app/_portal/TabBar';
 import { STEPS } from '@/lib/onboarding-steps';
 import { initials } from '@/lib/text';
@@ -78,6 +79,7 @@ export function Shell({ school, logoSrc, userName, userEmail, todayLabel, years,
               <Link className="ra-icon-btn" href="/admin/register" aria-label={notifications ? `${notifications} ${notifications === 1 ? 'notification' : 'notifications'}: parent notices and holiday requests` : 'Notifications'}>
                 <Icon name="bell" />{notifications > 0 && <span className="ra-badge" aria-hidden="true">{notifications}</span>}
               </Link>
+              <ThemeToggle className="ra-icon-btn ra-d-only" />
               <Link className="ra-icon-btn ra-d-only" href="/admin/messages" aria-label={unreadMessages ? `${unreadMessages} unread ${unreadMessages === 1 ? 'message' : 'messages'}` : 'Messages'}>
                 <Icon name="mail" />{unreadMessages > 0 && <span className="ra-badge" aria-hidden="true">{unreadMessages}</span>}
               </Link>

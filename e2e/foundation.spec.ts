@@ -4,6 +4,8 @@ import { PW, signIn } from './sign-in';
 
 
 async function axe(page: Page) {
+  // Banners fade in; measure contrast once they have finished.
+  await page.waitForFunction(() => document.getAnimations().every((an) => an.playState !== 'running'));
   const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   expect(r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
 }

@@ -69,6 +69,21 @@ test('on a phone the admin is an app: bottom tabs, and More holds the menu, year
   await expect(page.getByRole('navigation', { name: 'Sections' })).toBeVisible();
 });
 
+test('the Dark mode switch changes the theme on this device and is remembered', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await signIn(page);
+  const toggle = page.getByRole('banner').getByRole('button', { name: 'Dark mode' });
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await toggle.click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.getByRole('banner').getByRole('button', { name: 'Dark mode' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('banner').getByRole('button', { name: 'Dark mode' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+});
+
 for (const scheme of ['light', 'dark'] as const) {
   test(`dashboard passes axe in ${scheme} theme, at desktop and phone widths`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme });

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { db } from '@/db';
 import { logoutAction } from '@/app/_auth/actions';
 import { Icon } from '@/components/Icon';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { initials } from '@/lib/text';
 import { resolveYear } from '@/server/academic-years';
 import { requireAdmin } from '@/server/next/actor';
@@ -29,6 +30,7 @@ export default async function More() {
         <form action={logoutAction.bind(null, 'admin')}><button className="ra-btn" type="submit">Sign out</button></form>
       </section>
       <div className="ra-more-year"><span aria-hidden="true">Academic year</span><YearSwitcher years={years.map((y) => ({ id: y.id, title: y.title }))} yearId={year?.id ?? null} /></div>
+      <ThemeToggle className="ra-card ra-toggle-row tap" label />
       {(fire.buttonPlaces as string[]).length > 0 && (
         <Link className="ra-drill-row tap" href="/admin/fire-drill"><Icon name="fire" /><span>Fire drill</span><small>Hold to start</small></Link>
       )}

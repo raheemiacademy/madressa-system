@@ -21,7 +21,7 @@ export default async function TeacherApp({ children }: { children: React.ReactNo
     { href: '/teacher/more', label: 'More', icon: 'grid' }
   ];
   return (
-    <div className="rp rp-shell">
+    <div className="rp rp-shell rp-teacher">
       <PortalSide school={profile?.name ?? 'School'} sub="Teacher portal" portal="teacher" links={teacherLinks(t)}
         groups={[{ label: 'Teaching', items: tabs.slice(0, -1) }, { label: 'More', items: teacherMenu(t) }]} />
       <div className="rp-body">{children}</div>

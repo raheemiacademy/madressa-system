@@ -706,3 +706,8 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
 
   Wider screens are unchanged. Tables keep their columns, which now fit at 390px, so bulk selection still works on a phone.
 - **Parent and teacher portals on a computer (your request, 25/10/2026).** On screens wider than 860px, each portal gets a sidebar like the admin's: the school's name, "Parent portal" or "Teacher portal", the main tabs, everything from the More page, the school's links, and Sign out. Pages use the extra width. Phones and tablets keep the bottom tab bar. Both the sidebar and the More page read their items from one list per portal (`menu.ts`), so they always match.
+- **Accent colours and flat styling (your choice, 25/10/2026,** from the "Portal accent colours" design). Each app has its own accent from the palette: admin indigo, teacher blue, parent violet; sky is kept for the student portal. They are the tokens `--ra-accent` and `--ra-accent-on-ink`, set on `.rp-teacher` and `.rp-parent`.
+  - The accent shows on the logo tile, the current tab (a bar and a pill behind the icon) or sidebar item, progress bars, and the figures on the dark top card.
+  - Accent colours are never used as text on white: blue and sky fail contrast. Avatars use the primary blue for the same reason.
+  - All gradients are gone: the sidebar, top cards, sign-in background, logo tiles and progress bars are solid colours.
+- **Dark mode switch (your request).** Admin has it in the header (and on More on a phone); the portals have it in the sidebar and on their More page. It saves the choice on that device (the `ra_theme` cookie) and applies it before the page paints. Until someone uses it, the school's theme setting (admin) or the device's own setting decides.

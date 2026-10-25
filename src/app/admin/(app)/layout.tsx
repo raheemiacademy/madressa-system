@@ -6,6 +6,7 @@ import { adminCan } from '@/server/permissions';
 import { getProfile } from '@/server/profile';
 import { readTab } from '@/server/settings';
 import { Shell } from './Shell';
+import { THEME_COOKIE } from '@/lib/theme';
 import { runningDrill } from '@/server/attendance/drill';
 import { countNotices, countPendingRequests } from '@/server/attendance/requests';
 import { todayIso } from '@/server/people/common';
@@ -24,8 +25,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const theme = ['light', 'dark'].includes(String(prefs.theme)) ? String(prefs.theme) : null;
   return (
     <>
-      {/* §3 header/menu theme: set before the page paints, so there's no flash of the other theme. */}
-      <script dangerouslySetInnerHTML={{ __html: theme ? `document.documentElement.dataset.theme=${JSON.stringify(theme)}` : 'delete document.documentElement.dataset.theme' }} />
+      {/* §3 the school's theme: set before the page paints, unless this device has chosen its own with the Dark mode switch. */}
+      <script dangerouslySetInnerHTML={{ __html: `if(!/(?:^|; )${THEME_COOKIE}=/.test(document.cookie)){${theme ? `document.documentElement.dataset.theme=${JSON.stringify(theme)}` : 'delete document.documentElement.dataset.theme'}}` }} />
       <Shell school={profile?.name ?? 'School'} logoSrc={logoSrc} userName={admin.name} userEmail={admin.email} todayLabel={formatInstant(new Date(), 'EEEE d MMMM')}
       years={years.map((y) => ({ id: y.id, title: y.title }))} yearId={year?.id ?? null} drillPlaces={fire.buttonPlaces as string[]} drillRunning={!!drill} notifications={notices + requests} unreadMessages={unread} areas={areas}>
       {children}

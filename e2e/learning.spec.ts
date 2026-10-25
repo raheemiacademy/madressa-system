@@ -22,6 +22,7 @@ test('exams: enter results, then a locked exam can’t change; reports generate 
   await page.goto('/admin/exams');
   await page.getByRole('link', { name: 'Autumn assessment' }).click();
   await page.getByRole('link', { name: 'Results', exact: true }).click();
+  await expect(page).toHaveURL(/\/results$/);
   const first = page.getByRole('textbox').first();
   await first.fill('49.5');
   await page.getByRole('button', { name: 'Save results' }).click();

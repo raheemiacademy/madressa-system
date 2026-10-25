@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { logoutAction } from '@/app/_auth/actions';
 import { Icon, type IconName } from '@/components/Icon';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 type Item = { href: string; label: string; icon: IconName; badge?: number };
 
@@ -42,7 +43,8 @@ export function PortalSide({ school, sub, portal, groups, links }: {
           </div>
         )}
       </nav>
-      <form className="rp-side-foot" action={logoutAction.bind(null, portal)}><button className="ra-nav-btn" type="submit"><Icon name="arrow" /><span>Sign out</span></button></form>
+      <div className="rp-side-foot"><ThemeToggle className="ra-nav-btn" label /></div>
+      <form action={logoutAction.bind(null, portal)}><button className="ra-nav-btn" type="submit"><Icon name="arrow" /><span>Sign out</span></button></form>
     </aside>
   );
 }

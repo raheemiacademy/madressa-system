@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { logoutAction } from '@/app/_auth/actions';
 import { PortalHead } from '@/app/_portal/Head';
 import { Icon } from '@/components/Icon';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { requireTeacher } from '@/server/next/portal';
 import { teacherLinks, teacherMenu } from '../menu';
 
@@ -32,6 +33,7 @@ export default async function More() {
             <ul className="rp-list">{links.map((l) => <li key={l.url}><a href={l.url} target="_blank" rel="noopener noreferrer"><span className="t">{l.label}</span><span className="m" aria-hidden="true">↗</span></a></li>)}</ul>
           </>
         )}
+        <ThemeToggle className="ra-card ra-toggle-row tap" label />
         <form action={logoutAction.bind(null, 'teacher')}><button className="ra-btn tap" type="submit" style={{ width: '100%', minHeight: 48, justifyContent: 'center' }}>Sign out</button></form>
       </main>
     </>
