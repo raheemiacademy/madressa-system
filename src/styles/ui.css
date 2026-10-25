@@ -555,7 +555,7 @@ li[data-state="todo"] .ra-setup-why { margin-bottom: 0; }
   .ra-d-only, .ra-side, .ra-search, .ra-top .ra-year { display: none !important; }
   .ra-shell { display: block; }
   .ra-main { min-height: 100dvh; }
-  .ra-top { position: sticky; top: 0; flex-wrap: nowrap; gap: 12px; padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px 10px; background: var(--ra-surface); border-bottom: 0; }
+  .ra-top { position: sticky; top: 0; flex-wrap: nowrap; gap: 8px; padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px 10px; background: var(--ra-surface); border-bottom: 0; }
   .ra-top-mark { display: block; text-decoration: none; border-radius: 12px; }
   .ra-top-mark .ra-brand-mark { width: 40px; height: 40px; border-radius: 12px; color: var(--ra-on-ink); }
   .ra-crumb small { font-size: 13px; }

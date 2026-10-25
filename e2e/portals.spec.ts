@@ -172,10 +172,13 @@ test('on a computer the portals have a sidebar instead of the bottom tabs, and p
       }
     }
     await page.emulateMedia({ colorScheme: 'light' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/${who}`);
     await page.getByRole('button', { name: 'Dark mode' }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await page.reload();
     await expect(page.getByRole('button', { name: 'Dark mode' })).toHaveAttribute('aria-pressed', 'true');
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.getByRole('button', { name: 'Sign out' }).click();
     await expect(page).toHaveURL(new RegExp(`/${who}/login$`));
     await page.setViewportSize({ width: 390, height: 844 });

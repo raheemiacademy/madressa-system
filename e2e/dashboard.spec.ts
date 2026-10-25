@@ -42,6 +42,7 @@ test('on a phone the admin is an app: bottom tabs, and More holds the menu, year
   const tabs = page.getByRole('navigation', { name: 'Main' });
   await expect(tabs.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
   await expect(page.getByRole('navigation', { name: 'Sections' })).toBeHidden();
+  await expect(page.getByRole('banner').getByRole('button', { name: 'Dark mode' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Fire drill' })).toBeVisible();
   await tabs.getByRole('link', { name: 'Students' }).click();
   await expect(page).toHaveURL(/\/admin\/students$/);

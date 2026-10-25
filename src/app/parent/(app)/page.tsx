@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { db } from '@/db';
 import { PortalHead } from '@/app/_portal/Head';
 import { Icon } from '@/components/Icon';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { formatCalendarDate, formatInstant } from '@/lib/dates';
 import { formatPence } from '@/lib/money';
 import { plural } from '@/lib/text';
@@ -31,6 +32,7 @@ export default async function ParentHome({ searchParams }: { searchParams: Promi
   return (
     <>
       <PortalHead kicker={formatInstant(now, 'EEEE d MMMM')} title={`Hello, ${p.ctx.contact.name.split(/\s+/)[0]}`}>
+        <ThemeToggle className="rp-icon-btn tap" />
         <Link className="rp-icon-btn tap" href="/parent/messages" aria-label={unread ? `Messages, ${unread} unread` : 'Messages'}>
           <Icon name="mail" />{unread > 0 && <span className="rp-badge" aria-hidden="true">{unread}</span>}
         </Link>

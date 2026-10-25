@@ -27,7 +27,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <>
       {/* §3 the school's theme: set before the page paints, unless this device has chosen its own with the Dark mode switch. */}
       <script dangerouslySetInnerHTML={{ __html: `if(!/(?:^|; )${THEME_COOKIE}=/.test(document.cookie)){${theme ? `document.documentElement.dataset.theme=${JSON.stringify(theme)}` : 'delete document.documentElement.dataset.theme'}}` }} />
-      <Shell school={profile?.name ?? 'School'} logoSrc={logoSrc} userName={admin.name} userEmail={admin.email} todayLabel={formatInstant(new Date(), 'EEEE d MMMM')}
+      <Shell school={profile?.name ?? 'School'} logoSrc={logoSrc} userName={admin.name} userEmail={admin.email} todayLabel={formatInstant(new Date(), 'EEE d MMMM')}
       years={years.map((y) => ({ id: y.id, title: y.title }))} yearId={year?.id ?? null} drillPlaces={fire.buttonPlaces as string[]} drillRunning={!!drill} notifications={notices + requests} unreadMessages={unread} areas={areas}>
       {children}
       </Shell>
