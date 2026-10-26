@@ -56,6 +56,7 @@ It sends the committed code, builds it on the server (a few minutes) and restart
 cat tenants/demo.passwords                       # each login's current password (portal, email, password)
 ./madrasah password demo parent001@example.org   # a new password for one login
 ./madrasah password demo --all                   # new passwords for every login
+./madrasah password demo --all 'Demo#123'        # the same chosen password for every login
 ```
 
 A new password signs that person out everywhere and is written to `tenants/<name>.passwords`, readable only by the ubuntu user. It stays when the app restarts or updates. People can still change their own password in the app; this file then shows the old one.

@@ -2,7 +2,7 @@
 # Runs the madrasah copies on this server. Lives in /srv/madrasah; see deploy/README.md.
 #   ./madrasah add <name> <web address> [--demo]   new madrasah: its own database, keys, app container and HTTPS site
 #   ./madrasah update                               build the app from ./src (sent by ship.sh) and restart every madrasah
-#   ./madrasah password <name> <email|--all>        new random password for a sign-in (or all of them), kept in tenants/<name>.passwords
+#   ./madrasah password <name> <email|--all> [pw]   new password (random unless given) for a sign-in or all, kept in tenants/<name>.passwords
 #   ./madrasah restart <name> | logs <name> | list
 #   ./madrasah backup                               database dumps of every madrasah into ./backups (nightly from cron)
 set -euo pipefail
@@ -73,9 +73,9 @@ SQL
     ;;
   password)
     n=${2:-}; who=${3:-}
-    [[ -e tenants/$n.env && -n $who ]] || die "usage: ./madrasah password <madrasah> <email|--all>"
+    [[ -e tenants/$n.env && -n $who ]] || die "usage: ./madrasah password <madrasah> <email|--all> [password]"
     umask 077; f=tenants/$n.passwords; touch "$f"
-    new=$(docker exec "ma-$n" npx tsx scripts/set-password.ts "$who") || die "no sign-in found for $who"
+    new=$(docker exec "ma-$n" npx tsx scripts/set-password.ts "$who" ${4:+"$4"}) || die "no sign-in found for $who"
     while read -r portal email _; do # replace that sign-in's old line
       awk -v p="$portal" -v e="$email" '!($1 == p && $2 == e)' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
     done <<< "$new"

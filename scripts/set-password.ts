@@ -1,6 +1,7 @@
-// Gives sign-ins a new random password and prints "portal email password" lines (./madrasah password on the server keeps them).
-//   tsx scripts/set-password.ts <email>   one person (every portal they sign in to)
-//   tsx scripts/set-password.ts --all     every sign-in that has a password
+// Gives sign-ins a new password and prints "portal email password" lines (./madrasah password on the server keeps them).
+//   tsx scripts/set-password.ts <email> [password]   one person (every portal they sign in to)
+//   tsx scripts/set-password.ts --all [password]     every sign-in that has a password
+// Without a password each gets its own random one. A chosen one isn't held to the app's length rule: it's for demo copies.
 import { randomInt } from 'node:crypto';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq, isNotNull, sql } from 'drizzle-orm';
@@ -10,6 +11,7 @@ import { hashPassword } from '../src/server/auth';
 import { log } from '../src/server/ops/logs';
 
 const who = process.argv[2]?.trim().toLowerCase();
+const chosen = process.argv[3];
 if (!who) throw new Error('Name an email, or --all');
 const client = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
 const db = drizzle(client, { schema });
@@ -21,7 +23,7 @@ const newPassword = () => [0, 1, 2].map(() => Array.from({ length: 4 }, () => AB
 
 const rows = await db.select().from(loginIdentity).where(who === '--all' ? isNotNull(loginIdentity.passwordHash) : eq(sql`lower(${loginIdentity.email})`, who));
 for (const r of rows) {
-  const pw = newPassword();
+  const pw = chosen || newPassword();
   await db.update(loginIdentity).set({ passwordHash: await hashPassword(pw), failedAttempts: 0, lockedUntil: null, mustChangePassword: false }).where(eq(loginIdentity.id, r.id));
   await db.delete(session).where(eq(session.identityId, r.id)); // devices signed in with the old password are signed out
   await log(db, 'system', `New password set from the server for ${r.email} (${r.portal})`);
