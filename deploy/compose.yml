@@ -26,7 +26,7 @@ services:
     image: node:22-alpine
     restart: unless-stopped
     command: node /site/server.mjs
-    env_file: { path: ./home.env, required: false } # REQUESTS_PASSWORD, made by ./madrasah home
+    env_file: [{ path: ./home.env, required: false }] # REQUESTS_PASSWORD, made by ./madrasah home
     volumes:
       - ./home:/site:ro
       - ./sites:/sites:ro # which madrasahs exist, for "Sign in"
