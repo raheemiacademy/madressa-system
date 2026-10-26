@@ -1,0 +1,2 @@
+# Each madrasah (and any other site on this server) has its own file in sites/. Caddy gets the HTTPS certificates itself.
+import /etc/caddy/sites/*.caddy
