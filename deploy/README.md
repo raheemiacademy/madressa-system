@@ -48,7 +48,17 @@ It sends the committed code, builds it on the server (a few minutes) and restart
 
 3. Give the madrasah's admin the setup code. They open `https://raheemi.yourdomain.co.uk/admin/setup`, enter it, and create the first admin account.
 
-`./madrasah add <name> <address> --demo` makes a copy filled with fictional sample data instead; `grep SEED_ADMIN_PASSWORD tenants/<name>.env` shows the sample logins' password.
+`./madrasah add <name> <address> --demo` makes a copy filled with fictional sample data instead, and gives each sample login its own password.
+
+## Passwords
+
+```bash
+cat tenants/demo.passwords                       # each login's current password (portal, email, password)
+./madrasah password demo parent001@example.org   # a new password for one login
+./madrasah password demo --all                   # new passwords for every login
+```
+
+A new password signs that person out everywhere and is written to `tenants/<name>.passwords`, readable only by the ubuntu user. It stays when the app restarts or updates. People can still change their own password in the app; this file then shows the old one.
 
 Until you have a domain, an address like `demo.213-32-71-244.sslip.io` works: sslip.io points any such name at that IP.
 

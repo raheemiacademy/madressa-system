@@ -7,7 +7,12 @@ const sql = postgres(process.env.DATABASE_URL_TEST ?? '', { max: 1, onnotice: ()
 test.afterAll(() => sql.end());
 const setTab = async (tab: string, value: Record<string, unknown>) => { await sql`insert into setting (tab, value) values (${tab}, ${sql.json(value as never)}) on conflict (tab) do update set value = excluded.value`; };
 const id = async (surname: string) => (await sql<{ id: number }[]>`select id from student where surname = ${surname}`)[0]!.id;
-const lastMonday = () => { const d = new Date(); while (d.getDay() !== 1) d.setDate(d.getDate() - 1); return d.toLocaleDateString('en-CA', { timeZone: 'Europe/London' }); };
+// The most recent Monday in term time (the seed's half term and winter break have no classes).
+const lastMonday = () => {
+  const d = new Date(), iso = () => d.toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+  while (d.getDay() !== 1 || ['2026-10-26', '2026-12-21', '2026-12-28'].includes(iso())) d.setDate(d.getDate() - 1);
+  return iso();
+};
 
 async function portal(browser: Browser, who: 'parent' | 'teacher') {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });

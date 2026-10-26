@@ -2,6 +2,7 @@
 # Runs the madrasah copies on this server. Lives in /srv/madrasah; see deploy/README.md.
 #   ./madrasah add <name> <web address> [--demo]   new madrasah: its own database, keys, app container and HTTPS site
 #   ./madrasah update                               build the app from ./src (sent by ship.sh) and restart every madrasah
+#   ./madrasah password <name> <email|--all>        new random password for a sign-in (or all of them), kept in tenants/<name>.passwords
 #   ./madrasah restart <name> | logs <name> | list
 #   ./madrasah backup                               database dumps of every madrasah into ./backups (nightly from cron)
 set -euo pipefail
@@ -59,7 +60,9 @@ SQL
     start "$n"
     docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile
     echo "$n will be at https://$domain once it has started (about a minute)."
-    if [[ $demo == --demo ]]; then echo "Sample logins' password: grep SEED_ADMIN_PASSWORD $PWD/tenants/$n.env"
+    if [[ $demo == --demo ]]; then
+      for _ in $(seq 60); do docker logs "ma-$n" 2>&1 | grep -q 'Ready in' && break; sleep 3; done
+      "$0" password "$n" --all # every sample login gets its own password instead of the shared seed one
     else echo "Setup code for its first admin (give it to them, at https://$domain/admin/setup): grep SETUP_CODE $PWD/tenants/$n.env"; fi
     ;;
   update)
@@ -67,6 +70,17 @@ SQL
     docker build -t "$IMAGE" src
     for n in $(tenants); do start "$n"; done
     docker image prune -f >/dev/null
+    ;;
+  password)
+    n=${2:-}; who=${3:-}
+    [[ -e tenants/$n.env && -n $who ]] || die "usage: ./madrasah password <madrasah> <email|--all>"
+    umask 077; f=tenants/$n.passwords; touch "$f"
+    new=$(docker exec "ma-$n" npx tsx scripts/set-password.ts "$who") || die "no sign-in found for $who"
+    while read -r portal email _; do # replace that sign-in's old line
+      awk -v p="$portal" -v e="$email" '!($1 == p && $2 == e)' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+    done <<< "$new"
+    echo "$new" >> "$f"
+    echo "New password set for $(wc -l <<< "$new") sign-in(s), and they were signed out. To see them: cat $PWD/$f"
     ;;
   restart) [[ -e tenants/${2:-}.env ]] || die "no such madrasah"; start "$2" ;;
   logs) docker logs --tail 200 -f "ma-${2:?name}" ;;
@@ -82,5 +96,5 @@ SQL
       docker exec "ma-$n" tar czf - -C /data . > "backups/$n/$(date +%F)-files.tgz"
       find "backups/$n" -type f -mtime +$KEEP_DAYS -delete
     done ;;
-  *) sed -n '2,7p' "$0"; exit 1 ;;
+  *) sed -n '2,8p' "$0"; exit 1 ;;
 esac

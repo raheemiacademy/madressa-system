@@ -2,12 +2,15 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { signIn } from './sign-in';
 
-/** The most recent Monday strictly before today, in UK dates (seeded registers sit on Mondays). */
+/** The most recent term-time Monday strictly before today, in UK dates (seeded registers sit on Mondays). */
 function lastMonday() {
   const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/London' }));
-  do d.setDate(d.getDate() - 1); while (d.getDay() !== 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const iso = () => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  do d.setDate(d.getDate() - 1); while (d.getDay() !== 1 || SEEDED_HOLIDAY_MONDAYS.includes(iso()));
+  return iso();
 }
+// The seed's half term and winter break have no classes.
+const SEEDED_HOLIDAY_MONDAYS = ['2026-10-26', '2026-12-21', '2026-12-28'];
 
 test('take a register, then authorise an absence from the grid', async ({ page }) => {
   await signIn(page);
