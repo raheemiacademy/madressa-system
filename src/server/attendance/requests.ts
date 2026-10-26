@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { Db, DbOrTx } from '@/db';
 import { absenceNotice, attendanceMark, classAssignment, contact, holidayRequest, holidayRequestStudent, registerSession, student } from '@/db/schema';
 import { isoDate } from '@/lib/validate';
+import { queuePush } from '../comm/push';
 import { audit, type AuditActor } from '../audit';
 import { todayIso, type Actor } from '../people/common';
 import { datesBetween, expectedSessions, registerMode } from './registers';
@@ -88,6 +89,10 @@ export async function respondToRequest(db: Db, actor: AuditActor & { identityId:
     const status = v.action === 'info' ? 'Info requested' : v.action === 'decline' ? 'Declined' : 'Accepted';
     const acceptedAs = v.action === 'accept-authorised' ? 'authorised' : v.action === 'accept-unauthorised' ? 'unauthorised' : null;
     await tx.update(holidayRequest).set({ status, acceptedAs, response: v.response, respondedAt: new Date(), respondedBy: actor.identityId }).where(eq(holidayRequest.id, id));
+    if (r.contactId) await queuePush(tx, [{ kind: 'contact', id: r.contactId }], {
+      title: status === 'Accepted' ? `Holiday request ${acceptedAs === 'authorised' ? 'authorised' : 'accepted as unauthorised'}` : status === 'Declined' ? 'Holiday request declined' : 'The school has a question about your holiday request',
+      body: v.response || 'Open the app to see the school’s reply.', url: '/parent/attendance'
+    });
     let marked = 0;
     if (acceptedAs) {
       const kids = (await tx.select({ id: holidayRequestStudent.studentId }).from(holidayRequestStudent).where(eq(holidayRequestStudent.requestId, id))).map((k) => k.id);

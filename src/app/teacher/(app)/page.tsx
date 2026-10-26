@@ -1,5 +1,7 @@
 import { ThemeToggle } from '@/components/ThemeToggle';
 import Link from 'next/link';
+import { PushToggle } from '@/app/_portal/PushToggle';
+import { vapidKeys } from '@/server/comm/push';
 import { db } from '@/db';
 import { ActionButton } from '@/components/Form';
 import { Icon } from '@/components/Icon';
@@ -30,6 +32,7 @@ export default async function Today() {
         <ThemeToggle className="rp-icon-btn tap" />
       </header>
       <main className="rp-main">
+        <PushToggle portal="teacher" publicKey={(await vapidKeys(db)).publicKey} variant="card" />
         {drill && <Link className="ra-banner" href="/teacher/drill" style={{ ['--c' as string]: 'var(--color-bad)', color: 'inherit' }}><div><b>Fire drill in progress.</b> Open your roll call.</div></Link>}
         <section className={signedIn ? 'rp-hero' : 'ra-card'} aria-label="Signing in" style={{ flexDirection: 'row', display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ flex: 1 }}>

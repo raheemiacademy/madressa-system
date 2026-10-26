@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { PushToggle } from '@/app/_portal/PushToggle';
+import { vapidKeys } from '@/server/comm/push';
 import { redirect } from 'next/navigation';
 import { db } from '@/db';
 import { PortalHead } from '@/app/_portal/Head';
@@ -38,6 +40,7 @@ export default async function ParentHome({ searchParams }: { searchParams: Promi
         </Link>
       </PortalHead>
       <main className="rp-main">
+        <PushToggle portal="parent" publicKey={(await vapidKeys(db)).publicKey} variant="card" />
         {!kid ? <NoKids /> : (
           <>
             <KidSwitch kids={p.ctx.kids} current={kid} path="/parent" />

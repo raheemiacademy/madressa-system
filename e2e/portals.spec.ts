@@ -209,3 +209,14 @@ test('a Super admin can open the teacher portal as a teacher, and go back to the
   await page.goto('/teacher');
   await expect(page).toHaveURL(/\/teacher\/login$/); // the borrowed session has ended
 });
+
+test('parents and teachers can turn on phone notifications from More (and are offered them on Home)', async ({ browser }) => {
+  for (const who of ['parent', 'teacher'] as const) {
+    const { page, ctx } = await portal(browser, who);
+    await page.goto(`/${who}/more`);
+    const row = page.locator('.rp-push-row');
+    await expect(row.getByText('Phone notifications')).toBeVisible();
+    await expect(row.getByRole('button', { name: 'Turn on' }).or(row.getByText(/can’t show notifications|Home Screen|blocked/))).toBeVisible();
+    await ctx.close();
+  }
+});

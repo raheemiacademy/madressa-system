@@ -733,3 +733,10 @@ th[aria-sort] .ra-sort span { opacity: 1; color: var(--ra-accent-text); }
 .ra-wa-remind > summary { cursor: pointer; list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-height: 40px; }
 .ra-wa-remind > summary::-webkit-details-marker { display: none; }
 .ra-wa-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--color-ok); flex: none; }
+
+/* Phone notifications: the row on More and the card on Home */
+.rp-push-row, .rp-push-card { flex-direction: row; align-items: center; gap: 12px; flex-wrap: wrap; }
+.rp-push-row > div, .rp-push-card > div:nth-child(2) { flex: 1 1 200px; min-width: 0; }
+.rp-push-row b, .rp-push-card b { display: block; font-size: 15px; font-weight: 600; }
+.rp-push-row small, .rp-push-card small { display: block; font-size: 13px; color: var(--color-fg-muted); line-height: 1.45; }
+.rp-push-acts { display: flex; align-items: center; gap: 8px; }

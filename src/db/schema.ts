@@ -118,6 +118,28 @@ export const session = pgTable('session', {
   actingAdminId: integer('acting_admin_id').references(() => adminStaff.id, { onDelete: 'cascade' })
 }, (t) => [index('session_identity_idx').on(t.identityId)]);
 
+// Phones and browsers that asked for notifications (web push). Removed when the push service says the subscription has gone.
+export const pushSubscription = pgTable('push_subscription', {
+  id: serial('id').primaryKey(),
+  identityId: integer('identity_id').notNull().references(() => loginIdentity.id, { onDelete: 'cascade' }),
+  endpoint: text('endpoint').notNull().unique(),
+  p256dh: text('p256dh').notNull(),
+  auth: text('auth').notNull(),
+  userAgent: text('user_agent'),
+  createdAt: createdAt()
+}, (t) => [index('push_subscription_identity_idx').on(t.identityId)]);
+
+// Notifications waiting to go to someone's phones. Written in the same transaction as the message or homework, sent by the worker.
+export const pushQueue = pgTable('push_queue', {
+  id: serial('id').primaryKey(),
+  identityId: integer('identity_id').notNull().references(() => loginIdentity.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  body: text('body').notNull(),
+  url: text('url').notNull(),
+  createdAt: createdAt(),
+  sentAt: tz('sent_at')
+}, (t) => [index('push_queue_unsent_idx').on(t.sentAt)]);
+
 export const rateLimit = pgTable('rate_limit', {
   key: text('key').primaryKey(),
   hits: integer('hits').notNull(),

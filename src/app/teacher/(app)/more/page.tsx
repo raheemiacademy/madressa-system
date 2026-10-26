@@ -3,6 +3,9 @@ import { logoutAction } from '@/app/_auth/actions';
 import { PortalHead } from '@/app/_portal/Head';
 import { Icon } from '@/components/Icon';
 import { SoundToggle } from '@/components/SoundToggle';
+import { PushToggle } from '@/app/_portal/PushToggle';
+import { vapidKeys } from '@/server/comm/push';
+import { db } from '@/db';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { requireTeacher } from '@/server/next/portal';
 import { teacherLinks, teacherMenu } from '../menu';
@@ -35,6 +38,7 @@ export default async function More() {
           </>
         )}
         <ThemeToggle className="ra-card ra-toggle-row tap" label />
+        <PushToggle portal="teacher" publicKey={(await vapidKeys(db)).publicKey} variant="row" />
         <SoundToggle className="ra-card ra-toggle-row tap" />
         <form action={logoutAction.bind(null, 'teacher')}><button className="ra-btn tap" type="submit" style={{ width: '100%', minHeight: 48, justifyContent: 'center' }}>Sign out</button></form>
       </main>

@@ -85,6 +85,20 @@
       "when": 1792968704032,
       "tag": "0011_teacher_parent_seen",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792971138468,
+      "tag": "0012_push_subscriptions",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792971218559,
+      "tag": "0013_push_queue",
+      "breakpoints": true
     }
   ]
 }

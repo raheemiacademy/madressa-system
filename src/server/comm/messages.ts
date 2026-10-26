@@ -9,6 +9,7 @@ import { todayIso, type Actor } from '../people/common';
 import { appUrl } from '../password-links';
 import { readTab } from '../settings';
 import { enqueueMail } from './mail';
+import { queuePush } from './push';
 import { render } from './templates';
 
 export type PartyKind = (typeof PARTY_KINDS)[number];
@@ -84,6 +85,13 @@ async function notify(db: DbOrTx, threadId: number, from: Party, fromName: strin
   if (from.kind !== 'admin' && t?.withOffice && (await readTab(db, 'preferences')).emailOnPortalMessages) {
     const admins = await db.select({ name: adminStaff.name, email: adminStaff.email, rank: adminStaff.rank }).from(adminStaff).where(isNull(adminStaff.deletedAt));
     for (const a of admins.filter((x) => !t.faoRank || x.rank === t.faoRank)) targets.push({ name: a.name, email: a.email, portal: 'admin' });
+  }
+  // Phone notifications for the parents and teachers on it (admins use the live badges and sound).
+  const others = people.filter((p) => !(p.kind === from.kind && p.personId === from.id) && p.kind !== 'admin');
+  for (const portal of ['parent', 'teacher'] as const) {
+    const kind: 'contact' | 'teacher' = portal === 'parent' ? 'contact' : 'teacher';
+    const ids = others.filter((p) => p.kind === kind).map((p) => ({ kind, id: p.personId }));
+    if (ids.length) await queuePush(db, ids, { title: `New message from ${fromName}`, body: `${t?.subject ?? ''}: ${body}`.slice(0, 240), url: `/${portal}/messages/${threadId}` });
   }
   for (const x of targets.filter((x) => x.email)) {
     const link = x.portal === 'admin' ? `${appUrl()}/admin/messages/${threadId}` : `${appUrl()}/${x.portal}`;

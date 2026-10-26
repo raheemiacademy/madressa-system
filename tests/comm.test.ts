@@ -1,7 +1,10 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { sql } from '@/db';
-import { academicYear, adminStaff, alertSent, classAssignment, classTeacher, contact, invoice, loginIdentity, mailQueue, messageThread, payment, schoolClass, smsMessage, student, studentContact, teacher } from '@/db/schema';
+import { academicYear, adminStaff, alertSent, classAssignment, classTeacher, contact, holidayRequest, invoice, loginIdentity, mailQueue, messageThread, payment, pushQueue, schoolClass, setting, smsMessage, student, studentContact, teacher } from '@/db/schema';
+import { processPushQueue, pushOutbox, queuePush, savePushSubscription, vapidKeys } from '@/server/comm/push';
+import { saveHomework } from '@/server/learning/homework';
+import { respondToRequest } from '@/server/attendance/requests';
 import { login } from '@/server/auth';
 import { claimDay, runDaily } from '@/server/comm/jobs';
 import { logOutbox, processMailQueue } from '@/server/comm/mail';
@@ -178,6 +181,43 @@ describe('messages: ticks, deleting, teacher → parent alerts', () => {
     await db.update(contact).set({ mobile: '12' }).where(eq(contact.id, f.parent.id));
     expect(await remindFamilies(db, [{ studentId: f.kid.id }], () => '')).toEqual({ people: [], unusable: 1 });
     expect(listNames(['A', 'B', 'C', 'A'])).toBe('A, B and C');
+  });
+});
+
+describe('phone notifications', () => {
+  it('keeps one key pair, private half encrypted', async () => {
+    const k1 = await vapidKeys(db);
+    expect(await vapidKeys(db)).toEqual(k1);
+    const [row] = await db.select().from(setting).where(eq(setting.tab, 'push_keys'));
+    expect(JSON.stringify(row!.value)).toContain(k1.publicKey);
+    expect(JSON.stringify(row!.value)).not.toContain(k1.privateKey);
+  });
+
+  it('only people who turned them on get one, for messages, homework and holiday replies; the worker sends each once', async () => {
+    const f = await family();
+    await syncPortalLogin(db, 'parent', f.parent.id, f.parent.email, '');
+    const parent = { kind: 'contact' as const, id: f.parent.id };
+    expect(await queuePush(db, [parent], { title: 'T', body: 'B', url: '/parent' })).toBe(0); // not turned on yet
+    const [idn] = await db.select().from(loginIdentity).where(eq(loginIdentity.contactId, f.parent.id));
+    await savePushSubscription(db, idn!.id, { endpoint: 'https://push.example.org/device-1', keys: { p256dh: 'key', auth: 'auth' } }, 'test browser');
+
+    const m = await compose(db, f.actor, { contactIds: [String(f.parent.id)], subject: 'Trip', body: 'Bring a coat' });
+    expect(m.ok).toBe(true);
+    const hw = await saveHomework(db, f.actor, { classId: String(f.cls.id), title: 'Read surah', deadline: '2030-01-10T18:00', notifyContacts: 'on' });
+    expect(hw.ok).toBe(true);
+    const [req] = await db.insert(holidayRequest).values({ contactId: f.parent.id, startsOn: '2030-02-01', endsOn: '2030-02-03', request: 'Wedding' }).returning();
+    expect(await respondToRequest(db, { ...f.actor, identityId: f.actor.identityId }, req!.id, { action: 'decline', response: 'Sorry, not this time' })).toMatchObject({ ok: true });
+
+    pushOutbox.length = 0;
+    expect(await processPushQueue(db)).toBe(3);
+    expect(pushOutbox.map((x) => [x.title, x.url])).toEqual([
+      [expect.stringMatching(/^New message from /), expect.stringMatching(/^\/parent\/messages\/\d+$/)],
+      ['New homework: Read surah', '/parent/homework'],
+      ['Holiday request declined', '/parent/attendance']
+    ]);
+    expect(pushOutbox.every((x) => x.identityId === idn!.id)).toBe(true);
+    expect(await processPushQueue(db)).toBe(0); // each goes once
+    expect((await db.select().from(pushQueue)).every((r) => r.sentAt)).toBe(true);
   });
 });
 

@@ -771,3 +771,15 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
   - incidents, as before.
 
   The old WhatsApp page and Message templates still exist but aren't in the menu.
+- **Phone notifications (web push): approved 25/10/2026, adding the `web-push` library (3.6.7, with `@types/web-push`).**
+  - **Who:** parents and teachers turn them on per device from More (or the "Get notified" card on Home), which asks the phone's permission.
+  - **What sends one:**
+    - a new message to them (opens that conversation);
+    - homework set with "tell the parents" ticked (opens Homework);
+    - the school's answer to a holiday request (opens Attendance).
+  - **How it's sent:** like email, each notification is queued in the same transaction (`push_queue`) and the worker sends it within about 15 seconds. `push_subscription` holds each device. A device the push service says has gone is forgotten.
+  - **Where it sends:** `PUSH_DRIVER=webpush` sends for real (on for the preview); anything else only records it locally (`pushOutbox`, used by the tests).
+  - **Keys:** VAPID keys come from `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`, or the app makes a pair once and stores it, with the private half encrypted. Migrations 0012 and 0013.
+  - **Limits:**
+    - iPhones only allow notifications for apps added to the home screen (iOS 16.4+); the More page explains how.
+    - On the free Render preview the server sleeps when idle, so notifications go out once it's awake.
