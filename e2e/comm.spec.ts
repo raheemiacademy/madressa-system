@@ -110,6 +110,30 @@ test('SMS: queue texts to a group and see them in the logs; templates editor pre
   await page.getByRole('button', { name: 'Reset to built-in text' }).click();
 });
 
+test('an admin can copy a set-password link (no email needed) and the parent uses it to sign in', async ({ page, browser }) => {
+  await signIn(page);
+  await page.goto('/admin/contacts/new');
+  await page.getByLabel('Name', { exact: true }).fill('Linked Parent Example');
+  await page.getByLabel('Email (parent portal login)').fill('linked.parent@example.org');
+  await page.getByLabel('Mobile', { exact: true }).fill('07700 900555');
+  await page.getByRole('button', { name: 'Add contact' }).click();
+  await expect(page.getByText('linked.parent@example.org: invited, no password yet')).toBeVisible();
+  await page.getByRole('button', { name: 'Get a set-password link' }).click();
+  const field = page.getByRole('textbox', { name: /Send this to Linked Parent Example/ });
+  await expect(field).toHaveValue(/\/parent\/set-password\/[A-Za-z0-9_-]+$/);
+  await expect(page.getByRole('link', { name: 'Send on WhatsApp' })).toHaveAttribute('href', /^https:\/\/wa\.me\/447700900555\?text=Salaam%20Linked%20Parent%20Example/);
+  const path = new URL(await field.inputValue()).pathname;
+
+  const ctx = await browser.newContext();
+  const p = await ctx.newPage();
+  await p.goto(path);
+  await p.getByLabel('New password').fill('linked parent pw 1');
+  await p.getByLabel('Type it again').fill('linked parent pw 1');
+  await p.getByRole('button', { name: 'Save and sign in' }).click();
+  await expect(p).toHaveURL(/\/parent$/);
+  await ctx.close();
+});
+
 test('an invited teacher gets a set-password link on first sign-in and uses it once', async ({ page, browser }) => {
   await signIn(page);
   await page.goto('/admin/teachers/new');

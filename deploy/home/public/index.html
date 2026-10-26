@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Madrasah Manager</title>
+<meta name="description" content="Students, classes, registers, fees and messages for your madrasah, with apps for teachers and parents.">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap bar">
+    <a class="mark" href="/" aria-label="Madrasah Manager home"><img src="/icon.svg" alt="" width="28" height="28">Madrasah Manager</a>
+    <nav aria-label="Main">
+      <a href="#features">Features</a>
+      <a href="#demo">Demo</a>
+      <a href="#sign-in">Sign in</a>
+      <a class="btn small" href="#get-started">Get started</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero">
+    <div class="wrap">
+      <p class="eyebrow">For madrasahs and evening schools in the UK</p>
+      <h1>Run your madrasah in one place</h1>
+      <p class="lead">Students and families, classes, registers, fees and messages, with an app for your teachers and one for parents. No spreadsheets, no paper registers.</p>
+      <div class="actions">
+        <a class="btn" href="#get-started">Get started</a>
+        <a class="btn ghost" href="#demo">Try the demo</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="features" class="wrap section" aria-labelledby="features-h">
+    <h2 id="features-h">Everything the office does, in one system</h2>
+    <ul class="grid features">
+      <li><h3>Students and families</h3><p>Each student's details, classes, medical notes and contacts. Brothers and sisters linked, so families are kept together.</p></li>
+      <li><h3>Classes and timetable</h3><p>Classes, teachers and the weekly timetable. Move students between classes in a few clicks.</p></li>
+      <li><h3>Registers</h3><p>Teachers take the register on their phone. See who's absent or late, and answer parents' holiday and absence requests.</p></li>
+      <li><h3>Fees</h3><p>Class fees, invoices, payments and who is overdue. Send families a reminder on WhatsApp with the amount written in.</p></li>
+      <li><h3>Messages</h3><p>Message parents and teachers, with read ticks. Phone notifications for new messages and homework.</p></li>
+      <li><h3>Sabak and progress</h3><p>Homework, merits, incidents, exams and end-of-year reports, all kept with each student.</p></li>
+    </ul>
+  </section>
+
+  <section class="band" aria-labelledby="apps-h">
+    <div class="wrap section">
+      <h2 id="apps-h">Three apps, one system</h2>
+      <ul class="grid apps">
+        <li class="app admin"><h3>Admin</h3><p>For the office and the head, on a computer or a phone.</p></li>
+        <li class="app teacher"><h3>Teacher app</h3><p>Registers, sabak, merits and messages for their own classes only.</p></li>
+        <li class="app parent"><h3>Parent app</h3><p>Their children's attendance, homework, fees and messages. Nothing about anyone else's children.</p></li>
+      </ul>
+      <p class="note">The teacher and parent apps install from the browser to the phone's home screen. Nothing to download from an app store.</p>
+    </div>
+  </section>
+
+  <section class="wrap section" aria-labelledby="safe-h">
+    <h2 id="safe-h">Children's data, kept safe</h2>
+    <ul class="grid safe">
+      <li><h3>Your own copy</h3><p>Each madrasah has its own separate database and encryption keys, at its own address.</p></li>
+      <li><h3>Stored in the EU</h3><p>Hosted in France, with nightly backups. Built for UK GDPR.</p></li>
+      <li><h3>Only what they need</h3><p>Every page checks who is asking: teachers see their classes, parents see their own children.</p></li>
+    </ul>
+  </section>
+
+  <section id="demo" class="band" aria-labelledby="demo-h">
+    <div class="wrap section">
+      <h2 id="demo-h">Try the demo</h2>
+      <p>A sample madrasah with made-up students and families. Anyone can sign in, so please don't type real details into it.</p>
+      <ul class="grid demo">
+        <li class="app admin"><h3>Admin</h3><p>Email <code>admin@example.org</code><br>Password <code>Demo#123</code></p><a class="btn" href="https://demo.{{BASE}}/admin">Open admin</a></li>
+        <li class="app teacher"><h3>Teacher app</h3><p>Email <code>teacher1@example.org</code><br>Password <code>Demo#123</code></p><a class="btn" href="https://demo.{{BASE}}/teacher">Open teacher app</a></li>
+        <li class="app parent"><h3>Parent app</h3><p>Email <code>parent001@example.org</code><br>Password <code>Demo#123</code></p><a class="btn" href="https://demo.{{BASE}}/parent">Open parent app</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="get-started" class="wrap section narrow" aria-labelledby="start-h">
+    <h2 id="start-h">Get started</h2>
+    <p>Tell us about your madrasah and we'll set up your own copy, at its own address, and help you bring your students in.</p>
+    <p class="error" role="alert" hidden data-show="missing">Please fill in your madrasah's name, your name and a working email.</p>
+    <form method="post" action="/request" class="form">
+      <div class="field"><label for="madrasah">Madrasah name</label><input id="madrasah" name="madrasah" required maxlength="120" autocomplete="organization"></div>
+      <div class="field"><label for="name">Your name</label><input id="name" name="name" required maxlength="120" autocomplete="name"></div>
+      <div class="two">
+        <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" required maxlength="200" autocomplete="email" inputmode="email"></div>
+        <div class="field"><label for="phone">Phone <span class="opt">(optional)</span></label><input id="phone" name="phone" type="tel" maxlength="40" autocomplete="tel" inputmode="tel"></div>
+      </div>
+      <div class="field"><label for="students">Roughly how many students?</label><input id="students" name="students" maxlength="20" inputmode="numeric"></div>
+      <div class="field"><label for="message">Anything else <span class="opt">(optional)</span></label><textarea id="message" name="message" rows="3" maxlength="2000"></textarea></div>
+      <div class="hp" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
+      <button class="btn" type="submit">Send request</button>
+      <p class="small muted">We only use these details to contact you about setting up.</p>
+    </form>
+  </section>
+
+  <section id="sign-in" class="band" aria-labelledby="signin-h">
+    <div class="wrap section narrow">
+      <h2 id="signin-h">Sign in to your madrasah</h2>
+      <p>Already using Madrasah Manager? Type your madrasah's short name, the first part of its address.</p>
+      <p class="error" role="alert" hidden data-show="notfound">We couldn't find a madrasah called <b data-name></b>. Check the name, or ask your madrasah's office.</p>
+      <form method="get" action="/go" class="form inline">
+        <div class="field grow"><label for="go-name">Short name</label>
+          <div class="suffix"><input id="go-name" name="name" required maxlength="30" pattern="[A-Za-z0-9-]{2,30}" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="e.g. flc"><span>.{{BASE}}</span></div></div>
+        <button class="btn" type="submit">Go</button>
+      </form>
+      <p class="small muted">Teachers and parents: use the app your madrasah sent you, or add <code>/teacher</code> or <code>/parent</code> to its address.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot"><div class="wrap">Madrasah Manager</div></footer>
+<script>
+  // Shows the "missing details" or "not found" message after a redirect back here.
+  const q = new URLSearchParams(location.search);
+  if (q.has('missing')) document.querySelector('[data-show="missing"]').hidden = false;
+  if (q.has('notfound')) { document.querySelector('[data-show="notfound"]').hidden = false; document.querySelector('[data-name]').textContent = q.get('notfound') || '(blank)'; }
+</script>
+</body>
+</html>

@@ -15,6 +15,18 @@ Because the data is stored in France (EU), say so in each madrasah's privacy not
   secrets/pg_password  Postgres admin password
 ```
 
+## The home page
+
+The bare domain (now `213-32-71-244.sslip.io`, later your own) shows the Madrasah Manager website: what it does, the demo logins, a "Get started" form, and "Sign in to your madrasah", which takes someone from a short name like `flc` to `https://flc.<domain>/admin`.
+The page is `deploy/home/public/`; edit it and run `deploy/ship.sh`.
+
+```bash
+./madrasah home 213-32-71-244.sslip.io   # set it up, or move it to a new domain
+./madrasah requests                      # where to see "Get started" requests, and their password
+```
+
+Requests are listed at `https://<domain>/requests` (user `admin`, password from `home.env`). Nothing is emailed yet, so check it now and then.
+
 ## Signing in to the server
 
 From this computer, in Git Bash or PowerShell:
@@ -61,7 +73,9 @@ cat tenants/demo.passwords                       # each login's current password
 
 A new password signs that person out everywhere and is written to `tenants/<name>.passwords`, readable only by the ubuntu user. It stays when the app restarts or updates. People can still change their own password in the app; this file then shows the old one.
 
-Until you have a domain, an address like `demo.213-32-71-244.sslip.io` works: sslip.io points any such name at that IP.
+Until you have a domain, use `<name>.213-32-71-244.sslip.io` (sslip.io points any such name at this server), e.g. `./madrasah add flc flc.213-32-71-244.sslip.io`. Use `<name>.<domain>` so "Sign in to your madrasah" on the home page finds it.
+
+Teachers and parents get their first password from the admin: on their page, **Get a set-password link** makes a one-time link to copy or send on WhatsApp (or the admin types a password in their edit form, which they must change when they first sign in).
 
 ## Everyday commands
 

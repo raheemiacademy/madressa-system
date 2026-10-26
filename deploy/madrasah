@@ -4,6 +4,8 @@
 #   ./madrasah update                               build the app from ./src (sent by ship.sh) and restart every madrasah
 #   ./madrasah password <name> <email|--all> [pw]   new password (random unless given) for a sign-in or all, kept in tenants/<name>.passwords
 #   ./madrasah restart <name> | logs <name> | list
+#   ./madrasah home <domain>                        the home page at the bare domain (madrasahs are then <name>.<domain>)
+#   ./madrasah requests                             where to see "Get started" requests, and the password
 #   ./madrasah backup                               database dumps of every madrasah into ./backups (nightly from cron)
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")"
@@ -82,6 +84,20 @@ SQL
     echo "$new" >> "$f"
     echo "New password set for $(wc -l <<< "$new") sign-in(s), and they were signed out. To see them: cat $PWD/$f"
     ;;
+  home)
+    domain=${2:-}
+    [[ $domain =~ ^[a-z0-9.-]+\.[a-z]{2,}$ ]] || die "usage: ./madrasah home <domain>, like yourdomain.co.uk"
+    umask 077
+    [[ -s home.env ]] || echo "REQUESTS_PASSWORD=$(hex 12)" > home.env
+    printf '%s {\n\tencode zstd gzip\n\treverse_proxy home:8080\n}\n' "$domain" > sites/_home.caddy
+    docker compose up -d home
+    docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile
+    echo "Home page at https://$domain. Requests to join: ./madrasah requests"
+    ;;
+  requests)
+    host=$(sed -n '1s/ {$//p' sites/_home.caddy 2>/dev/null)
+    echo "Open https://$host/requests and sign in as \"admin\" with the password from: grep REQUESTS_PASSWORD $PWD/home.env"
+    ;;
   restart) [[ -e tenants/${2:-}.env ]] || die "no such madrasah"; start "$2" ;;
   logs) docker logs --tail 200 -f "ma-${2:?name}" ;;
   list)
@@ -96,5 +112,5 @@ SQL
       docker exec "ma-$n" tar czf - -C /data . > "backups/$n/$(date +%F)-files.tgz"
       find "backups/$n" -type f -mtime +$KEEP_DAYS -delete
     done ;;
-  *) sed -n '2,8p' "$0"; exit 1 ;;
+  *) sed -n '2,10p' "$0"; exit 1 ;;
 esac
