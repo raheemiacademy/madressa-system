@@ -1,0 +1,31 @@
+# Shared parts on the VPS: one Postgres for every madrasah (a database and user each) and Caddy for HTTPS.
+# The app copies themselves (each madrasah, and the main site) are started by ./madrasah (one container each) on the same network.
+name: madrasah
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./secrets/pg_password:/run/secrets/pg_password:ro
+    networks: [apps] # not published: only the app containers can reach it
+    shm_size: 256mb
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443", "443:443/udp"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./sites:/etc/caddy/sites:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [apps]
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
+networks:
+  apps:
+    name: madrasah_apps

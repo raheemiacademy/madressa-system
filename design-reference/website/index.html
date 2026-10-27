@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Madressa System — run your madressa in one place</title>
+<meta name="description" content="Registers, fees, parents and teachers in one system built for maktabs, mosques and Islamic schools. Free during early access.">
+<meta name="theme-color" content="#1C2147">
+<meta name="color-scheme" content="light">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'%3E%3Crect width='34' height='34' rx='8' fill='%231C2147'/%3E%3Crect x='9' y='9' width='16' height='16' rx='2' fill='%2384CEEB'/%3E%3Crect x='9' y='9' width='16' height='16' rx='2' fill='%2384CEEB' transform='rotate(45 17 17)'/%3E%3Ccircle cx='17' cy='17' r='4' fill='%231C2147'/%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-head on-ink">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="Madressa System home" translate="no">
+      <svg viewBox="0 0 34 34" aria-hidden="true"><rect x="8" y="8" width="18" height="18" rx="2" fill="#84CEEB"/><rect x="8" y="8" width="18" height="18" rx="2" fill="#84CEEB" transform="rotate(45 17 17)"/><circle cx="17" cy="17" r="4.5" fill="#1C2147"/></svg>
+      Madressa System
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="features.html">Features</a>
+      <a href="faq.html">FAQ</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <a class="btn btn-sky" href="#early-access"><span class="long">Start free trial</span><span class="short">Free trial</span></a>
+  </div>
+  <nav class="mobile-nav" aria-label="Main (mobile)">
+    <a href="features.html">Features</a><a href="faq.html">FAQ</a><a href="contact.html">Contact</a>
+  </nav>
+</header>
+
+<main id="main">
+  <!-- Hero -->
+  <section class="hero field-ink on-ink" aria-labelledby="hero-title">
+    <svg class="pattern" aria-hidden="true" width="100%" height="100%"><defs><pattern id="khatam-hero" width="112" height="112" patternUnits="userSpaceOnUse"><g fill="none" stroke="currentColor" stroke-width="2"><rect x="32" y="32" width="48" height="48"/><rect x="32" y="32" width="48" height="48" transform="rotate(45 56 56)"/><path d="M0 56h22M90 56h22M56 0v22M56 90v22"/></g></pattern></defs><rect width="100%" height="100%" fill="url(#khatam-hero)"/></svg>
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <h1 id="hero-title">Run your madressa in one place</h1>
+        <p class="lede">Registers, fees, parents and teachers together, for <strong>maktabs, mosques and Islamic schools</strong>. Not paper, spreadsheets and WhatsApp groups.</p>
+        <div class="hero-actions">
+          <a class="btn btn-sky" href="#early-access">Start free trial</a>
+          <a class="btn btn-quiet" href="#evening-tour">See an evening with it</a>
+        </div>
+        <p class="hero-note">Free during early access. No card needed.</p>
+        <p class="dates" data-today>Today</p>
+      </div>
+
+      <div>
+        <figure class="browser" data-ui style="margin:0" aria-label="The Madressa System dashboard during an evening of classes">
+          <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>yourmadressa.madressasystem.com</span></div>
+          <div class="app-shell">
+            <div class="app-side" aria-hidden="true">
+              <b>Madressa</b>
+              <span class="on">Dashboard</span><span>Students</span><span>Classes</span><span>Register</span><span>Fees</span><span>Messages</span><span>Homework</span><span>Reports</span>
+            </div>
+            <div class="app-main">
+              <div class="app-greet"><div>This evening</div><p id="ev-greet">Every register is in. Attendance is <b>93.2%</b> tonight.</p></div>
+              <div class="kpis">
+                <div class="kpi"><small>Teachers in</small><strong id="k-teachers">12</strong><em id="k-teachers-em">of 12 signed in</em></div>
+                <div class="kpi"><small>Registers</small><strong id="k-registers">8</strong><em id="k-registers-em">of 8 taken</em></div>
+                <div class="kpi"><small>Attendance</small><strong id="k-att">93.2%</strong><em id="k-att-em">+2.2 pts on last week</em></div>
+                <div class="kpi"><small>From parents</small><strong id="k-notes">4</strong><em id="k-notes-em">parent notices</em></div>
+              </div>
+              <div class="feed" id="ev-feed" aria-live="polite">
+                <h4>Happening now</h4>
+                <div class="feed-item"><time>17:25</time><span>Absence texts sent to 3 families</span></div>
+                <div class="feed-item"><time>17:18</time><span>All 8 registers complete</span></div>
+                <div class="feed-item"><time>17:12</time><span>Imran Chowdhury: “Zayd will be 15 minutes late.”</span></div>
+                <div class="feed-item"><time>17:04</time><span>Maktab 1A register taken: 27 of 28 present</span></div>
+              </div>
+            </div>
+          </div>
+        </figure>
+        <div class="evening" id="evening" hidden>
+          <div class="evening-head"><label for="ev-range">Drag through an evening of classes</label><output class="evening-time" for="ev-range">5:20 pm</output></div>
+          <input id="ev-range" type="range" min="0" max="42" step="1" value="10" aria-describedby="ev-help">
+          <div class="evening-ticks" aria-hidden="true"><span>4:30</span><span>5:30</span><span>6:30</span><span>7:30</span></div>
+          <p id="ev-help" class="vh">Moves the dashboard through an evening from 4:30 pm to 8:00 pm.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Before and after -->
+  <section class="section field-white" aria-labelledby="compare-title">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="compare-title" data-rise>Paper, spreadsheets and twelve group chats</h2>
+        <p data-rise style="--d:1">That’s how most madressas run today, held together by a few tired volunteers. Here’s what changes when it all lives in one place.</p>
+      </div>
+      <div class="compare-wrap" data-rise style="--d:2">
+        <table class="compare">
+          <caption class="vh">How running a madressa changes with Madressa System</caption>
+          <thead><tr><th scope="col">The job</th><th scope="col">Today</th><th scope="col">With Madressa System</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Registers</th><td class="old">A paper sheet per class, typed up later, if at all</td><td class="new">Taken on the teacher’s phone in a minute. Attendance is ready before the first lesson ends</td></tr>
+            <tr><th scope="row">Absences</th><td class="old">Parents message whichever teacher they know</td><td class="new">Parents report it in their app. It appears on that evening’s register</td></tr>
+            <tr><th scope="row">Fees</th><td class="old">A receipt book, a spreadsheet and awkward conversations at the door</td><td class="new">Invoices made for you, every payment recorded, polite reminders sent for what’s overdue</td></tr>
+            <tr><th scope="row">Parents</th><td class="old">Announcements lost in busy group chats</td><td class="new">Messages, homework and reports in one place for each family, with read receipts</td></tr>
+            <tr><th scope="row">Teachers</th><td class="old">Nobody is quite sure who turned up tonight</td><td class="new">Teachers sign in and out on a kiosk or their phone. Cover is easy to spot</td></tr>
+            <tr><th scope="row">Fire drill</th><td class="old">A clipboard and a lot of shouting</td><td class="new">One hold of a button gives every class a live roll call of who’s on site</td></tr>
+            <tr><th scope="row">End of year</th><td class="old">Reports written from memory in a weekend</td><td class="new">Attendance, homework and exam results pulled into each child’s report for you</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Evening tour -->
+  <section class="section field-lav" id="evening-tour" aria-labelledby="tour-title">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="tour-title" data-rise>One evening, start to finish</h2>
+        <p data-rise style="--d:1">Follow a weekday at a madressa: from teachers arriving to the last message home. This is the system doing each job at its hour.</p>
+      </div>
+      <div class="chapters">
+
+        <article class="chapter" aria-labelledby="c1">
+          <div class="chapter-copy" data-rise>
+            <p class="chapter-time" aria-hidden="true">4:45</p>
+            <h3 id="c1">Teachers sign in</h3>
+            <p>Teachers tap in on a tablet by the door, or on their own phone. The office sees who’s here, who’s late and which class needs cover.</p>
+            <ul><li>Kiosk PIN, phone or the office can log it</li><li>Weekly hours and absences for every teacher</li><li>DBS numbers and expiry dates kept with their record</li></ul>
+          </div>
+          <div class="chapter-pic" data-rise style="--d:2">
+            <div class="frag" data-ui>
+              <div class="frag-inner">
+                <div class="frag-title">Teacher sign-in <small>Thursday</small></div>
+                <ul class="rows">
+                  <li><span class="av" style="--g:#5680E9">BK</span><span class="grow">Ustadh Bilal Karim</span><span class="meta">16:41 · Kiosk</span></li>
+                  <li><span class="av" style="--g:#8860D0">HM</span><span class="grow">Ustadha Hafsa Malik</span><span class="meta">16:44 · Kiosk</span></li>
+                  <li><span class="av" style="--g:#5AB9EA">HR</span><span class="grow">Ustadh Hamza Rafiq</span><span class="meta">16:48 · Phone</span></li>
+                  <li><span class="av" style="--g:#5680E9">MA</span><span class="grow">Ustadha Maryam Ali</span><span class="meta">16:58 · Phone</span></li>
+                  <li><span class="av" style="--g:#4A5072">ZI</span><span class="grow">Ustadha Zainab Iqbal</span><span class="chip" style="--c:#C62828">Not in yet</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="chapter" aria-labelledby="c2">
+          <div class="chapter-copy" data-rise>
+            <p class="chapter-time" aria-hidden="true">5:00</p>
+            <h3 id="c2">Registers, in a minute</h3>
+            <p>Each teacher marks their class on their phone: present, late or absent. Children whose parents already sent a note are marked for them.</p>
+            <ul><li>Classic marks or DfE attendance codes</li><li>Authorised and unauthorised absences, minutes late</li><li>Monthly grids, attendance alerts and printable registers</li></ul>
+          </div>
+          <div class="chapter-pic" data-rise style="--d:2">
+            <div class="frag" data-ui>
+              <div class="frag-inner">
+                <div class="frag-title">Maktab 3B · October <small>View mode</small></div>
+                <table class="reg">
+                  <thead><tr><th scope="col">Student</th><th scope="col">Mon 19</th><th scope="col">Tue 20</th><th scope="col">Wed 21</th><th scope="col">Thu 22</th></tr></thead>
+                  <tbody>
+                    <tr><td>Maryam Akhtar</td><td><span class="mk P">P</span></td><td><span class="mk P">P</span></td><td><span class="mk P">P</span></td><td><span class="mk P">P</span></td></tr>
+                    <tr><td>Ayaan Malik</td><td><span class="mk P">P</span></td><td><span class="mk L">L</span></td><td><span class="mk P">P</span></td><td><span class="mk P">P</span></td></tr>
+                    <tr><td>Hamza Javed</td><td><span class="mk P">P</span></td><td><span class="mk P">P</span></td><td><span class="mk P">P</span></td><td><span class="mk L">L</span></td></tr>
+                    <tr><td>Inaya Saleem</td><td><span class="mk P">P</span></td><td><span class="mk P">P</span></td><td><span class="mk P">P</span></td><td><span class="mk N">N</span></td></tr>
+                    <tr><td>Mikail Raza</td><td><span class="mk U">U</span></td><td><span class="mk P">P</span></td><td><span class="mk P">P</span></td><td><span class="mk P">P</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="chapter" aria-labelledby="c3">
+          <div class="chapter-copy" data-rise>
+            <p class="chapter-time" aria-hidden="true">5:10</p>
+            <h3 id="c3">Parents tell you, not the group chat</h3>
+            <p>Parents send “absent today” or “running late” from their phone. It lands on the right register, and the office can reply in the same thread.</p>
+            <ul><li>Absence and late notices, holiday requests</li><li>Messages between parents, teachers and the office, with rules you control</li><li>Lock a thread when a conversation is finished</li></ul>
+          </div>
+          <div class="chapter-pic" data-rise style="--d:2">
+            <div class="frag" data-ui>
+              <div class="frag-inner">
+                <div class="frag-title">Fatima Siddiqui · Parent <small>16:47</small></div>
+                <div class="bubble">Assalamu alaikum. Yusuf has a dentist appointment this afternoon so he will miss class today. He’ll catch up on the homework at the weekend.</div>
+                <ul class="rows">
+                  <li><span class="grow">Marked on Maktab 2B register as <b>Notified</b></span><span class="chip" style="--c:#8860D0">Notified</span></li>
+                  <li><span class="grow">Office reply: “JazakAllah khair, noted.”</span><span class="meta">16:52</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="chapter" aria-labelledby="c4">
+          <div class="chapter-copy" data-rise>
+            <p class="chapter-time" aria-hidden="true">6:30</p>
+            <h3 id="c4">Homework goes home</h3>
+            <p>Teachers set homework for a class or a few children. Parents see it that evening and can upload a recording or a photo of the work.</p>
+            <ul><li>Deadlines, locking after the due date, file uploads</li><li>Reminders for work not handed in</li><li>A yearly record for every child</li></ul>
+          </div>
+          <div class="chapter-pic" data-rise style="--d:2">
+            <div class="frag" data-ui>
+              <div class="frag-inner">
+                <div class="frag-title">Surah Al-Mulk, ayat 1–10 <small>Due Thursday 17:00</small></div>
+                <ul class="rows">
+                  <li><span class="grow">Handed in</span><span class="meta">18 of 25</span></li>
+                  <li><span class="grow">Amina Hussain · recording.m4a</span><span class="chip" style="--c:#2F7D32">Handed in</span></li>
+                  <li><span class="grow">Zayd Chowdhury · photo.jpg</span><span class="chip" style="--c:#2F7D32">Handed in</span></li>
+                  <li><span class="grow">Musa Rahman</span><span class="chip" style="--c:#8860D0">Reminder sent</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="chapter" aria-labelledby="c5">
+          <div class="chapter-copy" data-rise>
+            <p class="chapter-time" aria-hidden="true">7:00</p>
+            <h3 id="c5">Fees, without the awkward chats</h3>
+            <p>Set your fees once per class. Invoices are made through the year, payments are recorded with receipts, and reminders go out for what’s overdue.</p>
+            <ul><li>Monthly, termly or per-session fee structures</li><li>Sibling discounts, adjustments and one-off contributions</li><li>Receipts by email and a clear history for every family</li></ul>
+          </div>
+          <div class="chapter-pic" data-rise style="--d:2">
+            <div class="frag" data-ui>
+              <div class="frag-inner">
+                <div class="frag-title">Fees this year <small>£8,420 outstanding</small></div>
+                <ul class="rows">
+                  <li><span class="grow">Yusuf Siddiqui</span><span class="meta">£45</span><span class="chip" style="--c:#5AB9EA">Processing</span></li>
+                  <li><span class="grow">Amina Hussain</span><span class="meta">£45</span><span class="chip" style="--c:#2F7D32">Cleared</span></li>
+                  <li><span class="grow">Hana Patel</span><span class="meta">£90</span><span class="chip" style="--c:#2F7D32">Cleared</span></li>
+                  <li><span class="grow">Musa Rahman</span><span class="meta">£135</span><span class="chip" style="--c:#C62828">Overdue</span></li>
+                  <li><span class="grow">Reminders for 46 overdue invoices</span><span class="chip" style="--c:#8860D0">Sent 19:02</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="chapter" aria-labelledby="c6">
+          <div class="chapter-copy" data-rise>
+            <p class="chapter-time" aria-hidden="true">Any time</p>
+            <h3 id="c6">Fire drill, in one hold</h3>
+            <p>Press and hold for two seconds. Every class gets a live roll call of the children and staff signed in today, and teachers mark their class safe from their phone.</p>
+            <ul><li>Hold-to-start, so it can’t be set off by accident</li><li>Built from tonight’s registers and teacher sign-ins</li><li>A saved record of every drill</li></ul>
+          </div>
+          <div class="chapter-pic" data-rise style="--d:2">
+            <div class="frag" data-ui style="background:#1C2147">
+              <div style="color:#fff;text-align:center;padding:12px 8px 4px">
+                <p style="font-family:var(--display);font-size:1.5rem">Start a fire drill</p>
+                <p style="color:#C3C7E2;font-size:.9375rem;margin-top:6px">Press and hold for 2 seconds</p>
+                <div class="hold" data-rise style="--d:3" aria-hidden="true"><span>Hold to start</span><span class="fill">Keep holding…</span></div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Three apps -->
+  <section class="section field-ink on-ink" aria-labelledby="apps-title">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="apps-title" data-rise>An app for the office, teachers and parents</h2>
+        <p data-rise style="--d:1;color:var(--on-ink-muted)">Each person sees only what they need. They open in the phone’s browser and can be added to the home screen. Nothing to download from an app store.</p>
+      </div>
+      <div class="phones">
+        <figure class="phone-fig" data-rise>
+          <div class="phone" data-ui aria-hidden="true">
+            <div class="ph-head"><div><small>Madressa admin</small><b>Thursday 22 October</b></div></div>
+            <div class="ph-body">
+              <div class="ph-hero"><big>Good evening</big><span>Attendance is 93.2% today. 46 invoices are overdue.</span></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div class="ph-card"><small style="color:#4A5072">Students</small><div style="font-family:var(--display);font-size:1.25rem">214</div></div>
+                <div class="ph-card"><small style="color:#4A5072">Outstanding</small><div style="font-family:var(--display);font-size:1.25rem">£8,420</div></div>
+              </div>
+              <div class="ph-card"><b>4</b> parents reported an absence today</div>
+              <div class="ph-card"><b>3</b> holiday requests to decide</div>
+              <div class="ph-card"><b>Unread messages</b><div class="ph-row"><span>Fatima Siddiqui</span><span style="color:#4A5072">17:42</span></div><div class="ph-row"><span>Ustadh Bilal Karim</span><span style="color:#4A5072">16:58</span></div></div>
+              <div class="ph-card" style="background:rgba(198,40,40,.06);border-color:rgba(198,40,40,.25);color:#B42318"><b>Fire drill</b> · hold to start</div>
+            </div>
+            <div class="ph-tabs"><span class="on">Home</span><span>Students</span><span>Fees</span><span>Messages</span></div>
+          </div>
+          <figcaption><h3>For the office</h3><p>Students, fees, messages and the fire drill, from anywhere. See the evening at a glance before you reach the mosque.</p></figcaption>
+        </figure>
+        <figure class="phone-fig" data-rise style="--d:1">
+          <div class="phone" data-ui aria-hidden="true">
+            <div class="ph-head"><div><small>Thu 22 Oct · 17:00</small><b>Maktab 3B register</b></div></div>
+            <div class="ph-body">
+              <div class="ph-card" style="padding:4px 14px">
+                <div class="ph-row"><span>Maryam Akhtar</span><span class="ph-seg"><i class="on">P</i><i>L</i><i>A</i></span></div>
+                <div class="ph-row"><span>Ayaan Malik</span><span class="ph-seg"><i class="on">P</i><i>L</i><i>A</i></span></div>
+                <div class="ph-row"><span>Hamza Javed</span><span class="ph-seg"><i>P</i><i class="on">L</i><i>A</i></span></div>
+                <div class="ph-row"><span>Inaya Saleem</span><span class="ph-seg"><i>P</i><i>L</i><i class="on a">A</i></span></div>
+                <div class="ph-row"><span>Mikail Raza</span><span class="ph-seg"><i class="on">P</i><i>L</i><i>A</i></span></div>
+                <div class="ph-row"><span>Sumaya Haider</span><span class="ph-seg"><i class="on">P</i><i>L</i><i>A</i></span></div>
+                <div class="ph-row"><span>Yahya Bashir</span><span class="ph-seg"><i class="on">P</i><i>L</i><i>A</i></span></div>
+                <div class="ph-row"><span>Zara Qadir</span><span class="ph-seg"><i class="on">P</i><i>L</i><i>A</i></span></div>
+                <div class="ph-row"><span>Eesa Rahim</span><span class="ph-seg"><i class="on">P</i><i>L</i><i>A</i></span></div>
+              </div>
+              <div class="ph-btn">Save register</div>
+            </div>
+            <div class="ph-tabs"><span>Today</span><span class="on">Register</span><span>Homework</span><span>Messages</span></div>
+          </div>
+          <figcaption><h3>For teachers</h3><p>Today’s classes, the register, homework, merits and messages. Signing in and out is one tap.</p></figcaption>
+        </figure>
+        <figure class="phone-fig" data-rise style="--d:2">
+          <div class="phone" data-ui aria-hidden="true">
+            <div class="ph-head"><div><small>Thursday 22 October</small><b>Hello, Fatima</b></div></div>
+            <div class="ph-body">
+              <div class="ph-hero"><span>Yusuf · Maktab 2B</span><big>Next class today, 5:00 pm</big><span>94.0% attendance · 1 homework due</span></div>
+              <div class="ph-card"><b>Report absent or late</b></div>
+              <div class="ph-card"><b>£45 due on 1 November</b><br><span style="color:#4A5072">November fees · both children</span></div>
+              <div class="ph-card"><b>From the school</b><br><span style="color:#4A5072">Half-term: no classes 26–30 October.</span></div>
+              <div class="ph-card"><b>Homework due today</b><br><span style="color:#4A5072">Surah Al-Mulk, ayat 1–10 · add a recording</span></div>
+              <div class="ph-card"><b>12 merits</b> this term<br><span style="color:#4A5072">Next badge: silver at 15</span></div>
+            </div>
+            <div class="ph-tabs"><span class="on">Home</span><span>Attendance</span><span>Fees</span><span>Homework</span></div>
+          </div>
+          <figcaption><h3>For parents</h3><p>Every child in one place: attendance, homework, fees, reports and messages, plus a quick way to say they’ll be absent.</p></figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- Switching + data -->
+  <section class="section field-white" aria-labelledby="switch-title">
+    <div class="wrap duo">
+      <div>
+        <h2 id="switch-title" data-rise>We move your records for you</h2>
+        <p class="lede" data-rise style="--d:1">Bring your spreadsheets, paper lists or an export from another system. We import students, parents, classes and fees, free of charge.</p>
+        <ol class="steps" data-rise style="--d:2">
+          <li><strong>Send us what you have</strong><span>Spreadsheets, exports or photos of the register. Whatever you keep today is fine.</span></li>
+          <li><strong>We set up your madressa</strong><span>Classes, timetables, fee structures and families, checked with you before anyone logs in.</span></li>
+          <li><strong>Invite your teachers and parents</strong><span>They get a link by email and set their own password. We’re on hand for the first weeks.</span></li>
+        </ol>
+      </div>
+      <div>
+        <h2 id="data-title" data-rise>Children’s data, handled properly</h2>
+        <p class="lede" data-rise style="--d:1">You are trusted with information about other people’s children. The system is built around keeping it safe.</p>
+        <ul class="points" data-rise style="--d:2">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg><div><strong>UK GDPR compliant</strong>Personal data is collected, stored and shared in line with UK GDPR.</div></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="m17 11 2 2 4-4"/></svg><div><strong>Parents see only their own children</strong>Teachers see only the classes they teach. Office staff get the access levels you choose.</div></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg><div><strong>Every important change is logged</strong>An audit trail records who changed what, so nothing happens quietly.</div></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg><div><strong>Nightly backups</strong>Your records are backed up every night and can be restored.</div></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Early access -->
+  <section class="section early on-ink" id="early-access" aria-labelledby="early-title">
+    <div class="wrap early-grid">
+      <div class="early-copy">
+        <h2 id="early-title" data-rise>Free while we’re in early access</h2>
+        <p data-rise style="--d:1">Madressa System is launching soon. Join now and your madressa uses it free until launch, with us setting it up alongside you.</p>
+        <ul data-rise style="--d:2">
+          <li>Every feature, for every class, teacher and parent</li>
+          <li>Free data import from your spreadsheets or current system</li>
+          <li>A direct line to the people building it. Your ideas shape what comes next</li>
+        </ul>
+        <p class="offer" data-rise style="--d:3">[OFFER]</p>
+      </div>
+      <form class="form" data-rise style="--d:1" action="/api/early-access" method="post" data-post data-email="[YOUR EMAIL]" data-ok="JazakAllah khair. You’re on the early-access list. We’ll email you soon to set up your madressa.">
+        <h3 class="full" style="font-size:1.75rem">Start your free trial</h3>
+        <div class="field full">
+          <label for="ea-school">Madressa or school name</label>
+          <input class="input" id="ea-school" name="school" type="text" autocomplete="organization" required data-required="Please enter your madressa’s name." aria-describedby="ea-school-err" enterkeyhint="next">
+          <p class="err" id="ea-school-err" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label for="ea-name">Your name</label>
+          <input class="input" id="ea-name" name="name" type="text" autocomplete="name" required data-required="Please enter your name." aria-describedby="ea-name-err" enterkeyhint="next">
+          <p class="err" id="ea-name-err" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label for="ea-role">Your role</label>
+          <select class="input" id="ea-role" name="role" aria-describedby="ea-role-err">
+            <option>Head teacher or imam</option><option>Administrator</option><option>Committee member</option><option>Teacher</option><option>Other</option>
+          </select>
+          <p class="err" id="ea-role-err"></p>
+        </div>
+        <div class="field">
+          <label for="ea-email">Email</label>
+          <input class="input" id="ea-email" name="email" type="email" autocomplete="email" autocapitalize="none" spellcheck="false" required data-required="Please enter your email." aria-describedby="ea-email-err" enterkeyhint="next">
+          <p class="err" id="ea-email-err" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label for="ea-size">Number of students <span class="hint">(roughly)</span></label>
+          <input class="input" id="ea-size" name="students" type="number" inputmode="numeric" min="1" max="20000" aria-describedby="ea-size-err" enterkeyhint="done">
+          <p class="err" id="ea-size-err" aria-live="polite"></p>
+        </div>
+        <div class="field full">
+          <label for="ea-type">What kind of school?</label>
+          <select class="input" id="ea-type" name="type" aria-describedby="ea-type-err">
+            <option>Evening or weekend madressa / maktab</option><option>Mosque classes</option><option>Full-time Islamic school</option><option>Hifz or alim academy</option>
+          </select>
+          <p class="err" id="ea-type-err"></p>
+        </div>
+        <div class="form-status" role="status" tabindex="-1"></div>
+        <button class="btn btn-primary full" type="submit" style="justify-self:stretch">Start free trial</button>
+        <p class="small full">We’ll only use these details to set up your trial and contact you about it.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section field-lav" aria-labelledby="faq-title">
+    <div class="wrap faq-grid">
+      <div class="faq-side">
+        <h2 id="faq-title" data-rise>Questions schools ask</h2>
+        <p data-rise style="--d:1">Something we haven’t answered? <a href="contact.html">Ask us directly</a> or read <a href="faq.html">all the questions</a>.</p>
+      </div>
+      <div class="faq-list" data-rise style="--d:1">
+        <details><summary>How much does it cost?</summary><div class="answer"><p>Nothing during early access. We’ll publish pricing before launch and tell early-access schools first, so you can decide whether to carry on. [OFFER]</p></div></details>
+        <details><summary>What happens when early access ends?</summary><div class="answer"><p>You choose whether to continue. Your records are yours: you can download students, contacts, fees and registers as spreadsheets at any time.</p></div></details>
+        <details><summary>Can you move our records from spreadsheets or another system?</summary><div class="answer"><p>Yes, and it’s free. Send us what you have and we’ll import your students, parents, classes and fees, then check everything with you before teachers and parents are invited.</p></div></details>
+        <details><summary>Is it UK GDPR compliant? Who can see the children’s details?</summary><div class="answer"><p>Yes. Parents see only their own children, teachers see only the classes they teach, and you decide what each office user can do. Important changes are recorded in an audit log.</p></div></details>
+        <details><summary>Do parents and teachers need to download an app?</summary><div class="answer"><p>No. Everything works in the phone’s web browser and can be added to the home screen like an app. It also works on tablets, laptops and desktop computers.</p></div></details>
+        <details><summary>Our volunteers aren’t very technical. Will they manage?</summary><div class="answer"><p>Taking a register is one tap per child, and parents report an absence in a few taps. We’ll help you set up and train your team in the first weeks.</p></div></details>
+      </div>
+    </div>
+  </section>
+
+  <!-- Closing -->
+  <section class="section field-white" aria-labelledby="close-title">
+    <div class="wrap closing">
+      <h2 id="close-title" data-rise>Give your teachers their evenings back</h2>
+      <div class="actions" data-rise style="--d:1">
+        <p>Less chasing, typing and searching. More time for the children and the Quran.</p>
+        <a class="btn btn-primary" href="#early-access">Start free trial</a>
+        <a href="features.html">See every feature</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-foot on-ink">
+  <svg class="pattern" aria-hidden="true" width="100%" height="100%"><defs><pattern id="khatam-foot" width="112" height="112" patternUnits="userSpaceOnUse"><g fill="none" stroke="currentColor" stroke-width="2"><rect x="32" y="32" width="48" height="48"/><rect x="32" y="32" width="48" height="48" transform="rotate(45 56 56)"/><path d="M0 56h22M90 56h22M56 0v22M56 90v22"/></g></pattern></defs><rect width="100%" height="100%" fill="url(#khatam-foot)"/></svg>
+  <div class="wrap">
+    <p class="foot-name" translate="no">Madressa System</p>
+    <div class="foot-grid">
+      <div><h3>Product</h3><ul><li><a href="features.html">Features</a></li><li><a href="index.html#evening-tour">An evening with it</a></li><li><a href="index.html#early-access">Start free trial</a></li></ul></div>
+      <div><h3>Help</h3><ul><li><a href="faq.html">FAQ</a></li><li><a href="contact.html">Contact</a></li></ul></div>
+      <div><h3>Contact</h3><ul><li><a href="mailto:[YOUR EMAIL]">[YOUR EMAIL]</a></li><li><a href="https://wa.me/[WHATSAPP NUMBER]">WhatsApp</a></li></ul></div>
+      <div><h3>Today</h3><p data-today>Today</p><p style="margin-top:8px">© <span data-year>2026</span> Madressa System</p></div>
+    </div>
+  </div>
+</footer>
+<script src="site.js" defer></script>
+</body>
+</html>

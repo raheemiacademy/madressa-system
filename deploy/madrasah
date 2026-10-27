@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+# Runs the madrasah copies on this server. Lives in /srv/madrasah; see deploy/README.md.
+#   ./madrasah add <name> <web address> [--demo]   new madrasah: its own database, keys, app container and HTTPS site
+#   ./madrasah update                               build the app from ./src (sent by ship.sh) and restart every madrasah
+#   ./madrasah password <name> <email|--all> [pw]   new password (random unless given) for a sign-in or all, kept in tenants/<name>.passwords
+#   ./madrasah restart <name> | logs <name> | list
+#   ./madrasah signups [name]                       early-access sign-ups from the homepage (on the main-site copy, "main")
+#   ./madrasah messages [name]                      contact-form messages from the main site, newest first
+#   ./madrasah backup                               database dumps of every madrasah into ./backups (nightly from cron)
+set -euo pipefail
+cd "$(dirname "$(readlink -f "$0")")"
+IMAGE=madrasah-app:latest
+KEEP_DAYS=14
+
+die() { echo "$*" >&2; exit 1; }
+hex() { openssl rand -hex "$1"; }
+tenants() { ls tenants/*.env 2>/dev/null | xargs -rn1 basename | sed 's/\.env$//'; }
+psql_su() { docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U postgres "$@"; }
+
+start() { # (re)creates one madrasah's app container from the current image
+  local n=$1
+  docker rm -f "ma-$n" >/dev/null 2>&1 || true
+  # shortcut: a few seconds offline while the new container migrates and starts; fine for test schools, use blue/green if that matters
+  docker run -d --name "ma-$n" --restart unless-stopped --network madrasah_apps \
+    --env-file "tenants/$n.env" -v "ma-$n-files:/data" --memory 900m --memory-swap 1400m "$IMAGE" >/dev/null
+  echo "started ma-$n"
+}
+
+case "${1:-}" in
+  add)
+    n=${2:-}; domain=${3:-}; demo=${4:-}
+    [[ $n =~ ^[a-z0-9][a-z0-9-]{1,29}$ ]] || die "name: 2-30 lowercase letters, digits or dashes"
+    [[ $domain =~ ^[a-z0-9.-]+\.[a-z]{2,}$ ]] || die "web address: like raheemi.example.co.uk"
+    [[ -e tenants/$n.env ]] && die "$n already exists"
+    docker image inspect "$IMAGE" >/dev/null 2>&1 || die "no app image yet: run ship.sh from your computer first"
+    db="ma_${n//-/_}"; pw=$(hex 24)
+    psql_su <<SQL
+create role $db login password '$pw';
+create database $db owner $db;
+revoke all on database $db from public;
+SQL
+    umask 077
+    {
+      echo "DATABASE_URL=postgres://$db:$pw@postgres:5432/$db"
+      echo "APP_URL=https://$domain"
+      echo "DATA_ENCRYPTION_KEY=$(hex 32)"
+      echo "BACKUP_ENCRYPTION_KEY=$(hex 32)"
+      echo "TRUST_PROXY=1"
+      echo "STORAGE_DRIVER=local"
+      echo "STORAGE_LOCAL_DIR=/data"
+      echo "EMAIL_DRIVER=log"
+      echo "SMS_DRIVER=log"
+      echo "PUSH_DRIVER=webpush"
+      if [[ $demo == --demo ]]; then
+        echo "SEED_SAMPLE_DATA=1"
+        echo "SEED_ADMIN_PASSWORD=$(hex 8)"
+      else
+        echo "SETUP_CODE=$(hex 6)"
+      fi
+    } > "tenants/$n.env"
+    printf '%s {\n\tencode zstd gzip\n\treverse_proxy ma-%s:3000\n}\n' "$domain" "$n" > "sites/$n.caddy"
+    start "$n"
+    docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile
+    echo "$n will be at https://$domain once it has started (about a minute)."
+    if [[ $demo == --demo ]]; then
+      for _ in $(seq 60); do docker logs "ma-$n" 2>&1 | grep -q 'Ready in' && break; sleep 3; done
+      "$0" password "$n" --all # every sample login gets its own password instead of the shared seed one
+    else echo "Setup code for its first admin (give it to them, at https://$domain/admin/setup): grep SETUP_CODE $PWD/tenants/$n.env"; fi
+    ;;
+  update)
+    [[ -d src ]] || die "no ./src: run ship.sh from your computer"
+    docker build -t "$IMAGE" src
+    for n in $(tenants); do start "$n"; done
+    docker image prune -f >/dev/null
+    ;;
+  password)
+    n=${2:-}; who=${3:-}
+    [[ -e tenants/$n.env && -n $who ]] || die "usage: ./madrasah password <madrasah> <email|--all> [password]"
+    umask 077; f=tenants/$n.passwords; touch "$f"
+    new=$(docker exec "ma-$n" npx tsx scripts/set-password.ts "$who" ${4:+"$4"}) || die "no sign-in found for $who"
+    while read -r portal email _; do # replace that sign-in's old line
+      awk -v p="$portal" -v e="$email" '!($1 == p && $2 == e)' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+    done <<< "$new"
+    echo "$new" >> "$f"
+    echo "New password set for $(wc -l <<< "$new") sign-in(s), and they were signed out. To see them: cat $PWD/$f"
+    ;;
+  messages)
+    db="ma_${2:-main}"; db=${db//-/_}
+    docker compose exec -T postgres psql -U postgres -d "$db" -x -c       "select to_char(created_at at time zone 'Europe/London', 'DD/MM/YYYY HH24:MI') as \"when\", reply_to as \"from\", subject, regexp_replace(regexp_replace(html, '</(tr|p)>', E'\n', 'g'), '<[^>]+>', ' ', 'g') as message from mail_queue where entity = 'contact_message' order by created_at desc" </dev/null
+    ;;
+  signups)
+    db="ma_${2:-main}"; db=${db//-/_}
+    docker compose exec -T postgres psql -U postgres -d "$db" -c       "select to_char(created_at at time zone 'Europe/London', 'DD/MM/YYYY HH24:MI') as \"when\", school, name, role, email, students, type from early_access_signup order by created_at desc" </dev/null
+    ;;
+  restart) [[ -e tenants/${2:-}.env ]] || die "no such madrasah"; start "$2" ;;
+  logs) docker logs --tail 200 -f "ma-${2:?name}" ;;
+  list)
+    for n in $(tenants); do
+      printf '%-24s %-40s %s\n' "$n" "$(sed -n 's/^APP_URL=//p' "tenants/$n.env")" "$(docker inspect -f '{{.State.Status}}' "ma-$n" 2>/dev/null || echo missing)"
+    done ;;
+  backup)
+    umask 077
+    for n in $(tenants); do
+      mkdir -p "backups/$n"
+      docker compose exec -T postgres pg_dump -U postgres -Fc "ma_${n//-/_}" > "backups/$n/$(date +%F).dump"
+      docker exec "ma-$n" tar czf - -C /data . > "backups/$n/$(date +%F)-files.tgz"
+      find "backups/$n" -type f -mtime +$KEEP_DAYS -delete
+    done ;;
+  *) sed -n '2,9p' "$0"; exit 1 ;;
+esac

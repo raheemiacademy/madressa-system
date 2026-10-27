@@ -9,6 +9,7 @@ import { todayIso, type Actor } from '../people/common';
 import { appUrl } from '../password-links';
 import { readTab } from '../settings';
 import { enqueueMail } from './mail';
+import { queuePush } from './push';
 import { render } from './templates';
 
 export type PartyKind = (typeof PARTY_KINDS)[number];
@@ -84,6 +85,13 @@ async function notify(db: DbOrTx, threadId: number, from: Party, fromName: strin
   if (from.kind !== 'admin' && t?.withOffice && (await readTab(db, 'preferences')).emailOnPortalMessages) {
     const admins = await db.select({ name: adminStaff.name, email: adminStaff.email, rank: adminStaff.rank }).from(adminStaff).where(isNull(adminStaff.deletedAt));
     for (const a of admins.filter((x) => !t.faoRank || x.rank === t.faoRank)) targets.push({ name: a.name, email: a.email, portal: 'admin' });
+  }
+  // Phone notifications for the parents and teachers on it (admins use the live badges and sound).
+  const others = people.filter((p) => !(p.kind === from.kind && p.personId === from.id) && p.kind !== 'admin');
+  for (const portal of ['parent', 'teacher'] as const) {
+    const kind: 'contact' | 'teacher' = portal === 'parent' ? 'contact' : 'teacher';
+    const ids = others.filter((p) => p.kind === kind).map((p) => ({ kind, id: p.personId }));
+    if (ids.length) await queuePush(db, ids, { title: `New message from ${fromName}`, body: `${t?.subject ?? ''}: ${body}`.slice(0, 240), url: `/${portal}/messages/${threadId}` });
   }
   for (const x of targets.filter((x) => x.email)) {
     const link = x.portal === 'admin' ? `${appUrl()}/admin/messages/${threadId}` : `${appUrl()}/${x.portal}`;
@@ -199,13 +207,15 @@ export async function inbox(db: DbOrTx, staff: { id: number; rank: string | null
     last: sql<{ name: string; body: string; kind: string; at: string } | null>`(select json_build_object('name', m.sender_name, 'body', left(m.body, 160), 'kind', m.sender_kind, 'at', m.created_at) from message m where m.thread_id = ${TID} order by m.id desc limit 1)`,
     others: sql<string | null>`(select string_agg(coalesce(a.name, t.name, c.name), ', ') from message_participant p left join admin_staff a on p.kind = 'admin' and a.id = p.person_id left join teacher t on p.kind = 'teacher' and t.id = p.person_id left join contact c on p.kind = 'contact' and c.id = p.person_id where p.thread_id = ${TID} and not (p.kind = 'admin' and p.person_id = ${staff.id}))`,
     mine: sql<{ lastReadAt: string | null; unreadOverride: boolean } | null>`(select json_build_object('lastReadAt', p.last_read_at, 'unreadOverride', p.unread_override) from message_participant p where p.thread_id = ${TID} and p.kind = 'admin' and p.person_id = ${staff.id})`,
-    newest: sql<string | null>`(select max(m.created_at) from message m where m.thread_id = ${TID} and not (m.sender_kind = 'admin' and m.sender_id = ${staff.id}))`
+    newest: sql<string | null>`(select max(m.created_at) from message m where m.thread_id = ${TID} and not (m.sender_kind = 'admin' and m.sender_id = ${staff.id}))`,
+    newCount: sql<number>`(select count(*)::int from message m where m.thread_id = ${TID} and not (m.sender_kind = 'admin' and m.sender_id = ${staff.id}) and m.created_at > coalesce((select p.last_read_at from message_participant p where p.thread_id = ${TID} and p.kind = 'admin' and p.person_id = ${staff.id}), '-infinity'::timestamptz))`
   }).from(messageThread).where(and(...conds)).orderBy(desc(messageThread.lastMessageAt)).limit(300);
-  return rows.map((r) => ({
-    ...r.t, last: r.last, others: r.others ?? '',
+  return rows.map((r) => {
     // Locked threads never show as unread (locking clears them from unread).
-    unread: !r.t.locked && f.box !== 'other' && (!!r.mine?.unreadOverride || (!!r.newest && (!r.mine?.lastReadAt || new Date(r.newest) > new Date(r.mine.lastReadAt))))
-  }));
+    const unread = !r.t.locked && f.box !== 'other' && (!!r.mine?.unreadOverride || (!!r.newest && (!r.mine?.lastReadAt || new Date(r.newest) > new Date(r.mine.lastReadAt))));
+    // How many messages are new to this person (a thread marked unread by hand counts as 1).
+    return { ...r.t, last: r.last, others: r.others ?? '', unread, unreadCount: unread ? Math.max(1, r.newCount) : 0 };
+  });
 }
 
 export const unreadCount = async (db: DbOrTx, staff: { id: number; rank: string | null; isSuper: boolean }) => (await inbox(db, staff, { box: 'inbox' })).filter((t) => t.unread).length;
@@ -264,3 +274,25 @@ export async function deleteRange(db: Db, actor: Actor, raw: unknown) {
     return { ok: true as const, n: gone.length };
   });
 }
+
+/** Admins: delete one message (it's gone for everyone). A conversation left with no messages is deleted too. Audited. */
+export async function deleteMessage(db: Db, actor: Actor, messageId: number) {
+  return db.transaction(async (tx) => {
+    const [m] = await tx.delete(message).where(eq(message.id, messageId)).returning({ threadId: message.threadId, sender: message.senderName });
+    if (!m) return false;
+    const [left] = await tx.select({ n: sql<number>`count(*)::int` }).from(message).where(eq(message.threadId, m.threadId));
+    if (!left?.n) await tx.update(messageThread).set({ deletedAt: new Date() }).where(eq(messageThread.id, m.threadId));
+    await audit(tx, actor, { action: `Deleted a message from ${m.sender}`, page: 'Messages', entity: 'message', entityId: messageId, details: { threadId: m.threadId } });
+    return true;
+  });
+}
+
+/** How many messages teachers have sent parents (conversations without the office) since this admin last looked at them. */
+export async function teacherParentNew(db: DbOrTx, staffId: number) {
+  const [r] = await db.select({ n: sql<number>`count(*)::int` }).from(message).innerJoin(messageThread, eq(messageThread.id, message.threadId))
+    .where(and(eq(messageThread.withOffice, false), isNull(messageThread.deletedAt), eq(message.senderKind, 'teacher'),
+      sql`${message.createdAt} > coalesce((select seen_teacher_parent_at from admin_staff where id = ${staffId}), (select created_at from admin_staff where id = ${staffId}))`));
+  return r?.n ?? 0;
+}
+
+export const markTeacherParentSeen = (db: DbOrTx, staffId: number) => db.update(adminStaff).set({ seenTeacherParentAt: new Date() }).where(eq(adminStaff.id, staffId));

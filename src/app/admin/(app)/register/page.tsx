@@ -51,9 +51,15 @@ export default async function Register({ searchParams }: { searchParams: Promise
         </div>
       )}
 
+      {/* The two register views come first, on their own; the tools follow. */}
+      <nav className="ra-views" aria-label="Register views">
+        <Link className="ra-view tap" href="/admin/register/daily"><Icon name="check" /><span><b>Daily register</b><small>Each class, week by week</small></span></Link>
+        <Link className="ra-view tap" href="/admin/register/monthly"><Icon name="calendar" /><span><b>Monthly register</b><small>The whole month at a glance</small></span></Link>
+      </nav>
+
       <div className="ra-more">
-        <span className="ra-more-l">More</span>
-        {[['/admin/register/daily', 'Daily register'], ['/admin/register/monthly', 'Monthly register'], ['/admin/register/stats', 'Attendance stats'], ['/admin/register/summary', 'Daily summary'],
+        <span className="ra-more-l">More tools</span>
+        {[['/admin/register/stats', 'Attendance stats'], ['/admin/register/summary', 'Daily summary'],
           ['/admin/register/requests', 'Holiday requests'], ['/admin/register/notices', 'Parent notices'], ['/admin/register/alerts', 'Attendance alerts'], ['/admin/register/doubles', 'Double entries'],
           ['/admin/register/delete', 'Delete register entries'], ['/admin/settings/attendance-codes', 'Attendance codes']].map(([h, l]) => <Link key={h} className="ra-btn" href={h!}>{l}</Link>)}
       </div>

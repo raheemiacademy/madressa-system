@@ -49,6 +49,21 @@ export async function deleteClass(db: Db, actor: Actor, id: number): Promise<{ o
   });
 }
 
+/** "Change order": moves a class one place up or down in its year's custom order, numbering the year 1, 2, 3… so gaps and ties go away. */
+export async function moveClass(db: Db, actor: Actor, id: number, dir: 'up' | 'down') {
+  return db.transaction(async (tx) => {
+    const [c] = await tx.select().from(schoolClass).where(eq(schoolClass.id, id));
+    if (!c) return false;
+    const list = await tx.select({ id: schoolClass.id }).from(schoolClass).where(eq(schoolClass.academicYearId, c.academicYearId)).orderBy(asc(schoolClass.sortOrder), asc(schoolClass.name));
+    const i = list.findIndex((r) => r.id === id), j = dir === 'up' ? i - 1 : i + 1;
+    if (j < 0 || j >= list.length) return false;
+    [list[i], list[j]] = [list[j]!, list[i]!];
+    for (const [n, r] of list.entries()) await tx.update(schoolClass).set({ sortOrder: n + 1 }).where(eq(schoolClass.id, r.id));
+    await audit(tx, actor, { action: `Moved class ${c.name} ${dir}`, page: 'Classes', entity: 'school_class', entityId: id });
+    return true;
+  });
+}
+
 /** Classes for one year, with live student counts (no stored count, so nothing to drift). */
 export const listClasses = (db: DbOrTx, yearId: number) => db.select({
   c: schoolClass, yearGroup: yearGroup.label, teacher: teacher.name,

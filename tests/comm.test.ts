@@ -1,15 +1,20 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { sql } from '@/db';
-import { academicYear, adminStaff, alertSent, classAssignment, classTeacher, contact, invoice, loginIdentity, mailQueue, messageThread, payment, schoolClass, smsMessage, student, studentContact, teacher } from '@/db/schema';
+import { academicYear, adminStaff, alertSent, classAssignment, classTeacher, contact, holidayRequest, invoice, loginIdentity, mailQueue, messageThread, payment, pushQueue, schoolClass, setting, smsMessage, student, studentContact, teacher } from '@/db/schema';
+import { processPushQueue, pushOutbox, queuePush, savePushSubscription, vapidKeys } from '@/server/comm/push';
+import { saveHomework } from '@/server/learning/homework';
+import { respondToRequest } from '@/server/attendance/requests';
 import { login } from '@/server/auth';
 import { claimDay, runDaily } from '@/server/comm/jobs';
 import { logOutbox, processMailQueue } from '@/server/comm/mail';
-import { bulkThreads, compose, deleteRange, inbox, openThread, reply, routeAllowed, startFromPortal } from '@/server/comm/messages';
+import { bulkThreads, compose, deleteMessage, deleteRange, inbox, markTeacherParentSeen, openThread, reply, routeAllowed, startFromPortal, teacherParentNew } from '@/server/comm/messages';
+import { partyThread } from '@/server/portal/messages';
 import { recipients, saveNewsletter, sendNewsletter } from '@/server/comm/newsletters';
 import { sendReceipts, studentLeftEmails } from '@/server/comm/notify';
 import { csvRecipients, groupRecipients, normaliseNumber, processSmsQueue, queueSms, smsOutbox, whatsappLink } from '@/server/comm/sms';
 import { fill, getTemplate, render, saveTemplate } from '@/server/comm/templates';
+import { listNames, remindFamilies, whatsappList } from '@/server/comm/whatsapp';
 import { syncPortalLogin } from '@/server/people/logins';
 import { requestPasswordLink, redeemPasswordLink } from '@/server/password-links';
 import { db, makeStaff, resetDb } from './helpers';
@@ -92,6 +97,8 @@ describe('messages', () => {
     const parentThread = (await inbox(db, me, { box: 'inbox', who: 'contacts' }))[0]!;
     expect(await reply(db, { kind: 'contact', id: f.parent.id, name: 'Parent Comm' }, parentThread.id, 'Thanks!')).toEqual({ ok: true });
     expect((await inbox(db, me, { box: 'inbox' })).find((t) => t.id === parentThread.id)!.unread).toBe(true);
+    expect(await reply(db, { kind: 'contact', id: f.parent.id, name: 'Parent Comm' }, parentThread.id, 'And another thing')).toEqual({ ok: true });
+    expect((await inbox(db, me, { box: 'inbox' })).find((t) => t.id === parentThread.id)!.unreadCount).toBe(2); // the badge says 2
     const open = await openThread(db, f.staff.id, parentThread.id);
     expect(open!.messages[0]!.readBy).toEqual(['Parent Comm']);
     expect((await inbox(db, me, { box: 'inbox' })).find((t) => t.id === parentThread.id)!.unread).toBe(false);
@@ -99,7 +106,7 @@ describe('messages', () => {
     expect(await reply(db, { kind: 'contact', id: f.parent.id, name: 'Parent Comm' }, parentThread.id, 'One more')).toMatchObject({ ok: false });
     expect((await inbox(db, me, { box: 'locked' })).map((t) => t.id)).toContain(parentThread.id);
     expect(await bulkThreads(db, f.actor, [parentThread.id], 'unlock')).toBe(1);
-    expect(await deleteRange(db, f.actor, { from: '2000-01-01', to: '2100-01-01', person: `contact:${f.parent.id}` })).toMatchObject({ ok: true, n: 3 });
+    expect(await deleteRange(db, f.actor, { from: '2000-01-01', to: '2100-01-01', person: `contact:${f.parent.id}` })).toMatchObject({ ok: true, n: 4 }); // compose, two replies, and the locking reply
     expect((await db.select().from(messageThread).where(eq(messageThread.id, parentThread.id)))[0]!.deletedAt).not.toBeNull();
     expect((await db.select().from(mailQueue)).map((m) => m.toEmail).sort()).toEqual(expect.arrayContaining(['parent.comm@example.org', 'teacher.comm@example.org']));
   });
@@ -122,6 +129,98 @@ describe('messages', () => {
   });
 });
 
+describe('messages: ticks, deleting, teacher → parent alerts', () => {
+  it('ticks turn blue once the office has read a parent’s message, and back for the parent', async () => {
+    const f = await family();
+    await setSetting(f.actor, 'messaging', { contactsToAdmins: 'on' });
+    const p = { kind: 'contact' as const, id: f.parent.id, name: 'Parent Comm' };
+    const r = await startFromPortal(db, p, { kind: 'admin', id: 0 }, 'Late tomorrow', 'Kid will be late');
+    if (!r.ok) throw new Error(r.error);
+    expect((await partyThread(db, p, r.id))!.messages[0]).toMatchObject({ mine: true, read: false }); // delivered, grey
+    await openThread(db, f.staff.id, r.id); // an admin reads it
+    expect((await partyThread(db, p, r.id))!.messages[0]).toMatchObject({ mine: true, read: true }); // read, blue
+    expect(await reply(db, { kind: 'admin', id: f.staff.id, name: 'Admin' }, r.id, 'Thanks')).toEqual({ ok: true });
+    const office = (await openThread(db, f.staff.id, r.id))!.messages.at(-1)!;
+    expect(office.notReadBy).toEqual(['Parent Comm']); // the admin's reply: not read yet
+    await partyThread(db, p, r.id);
+    expect((await openThread(db, f.staff.id, r.id))!.messages.at(-1)!.notReadBy).toEqual([]);
+  });
+
+  it('admins can delete one message; the last one takes the conversation with it', async () => {
+    const f = await family();
+    const r = await compose(db, f.actor, { teacherIds: [String(f.teacher.id)], subject: 'Rota', body: 'First' });
+    if (!r.ok) throw new Error();
+    const id = r.ids[0]!;
+    await reply(db, { kind: 'teacher', id: f.teacher.id, name: 'Teacher Comm' }, id, 'Second');
+    const [first, second] = (await openThread(db, f.staff.id, id))!.messages;
+    expect(await deleteMessage(db, f.actor, first!.id)).toBe(true);
+    expect((await openThread(db, f.staff.id, id))!.messages.map((m) => m.body)).toEqual(['Second']);
+    expect(await deleteMessage(db, f.actor, first!.id)).toBe(false); // already gone
+    await deleteMessage(db, f.actor, second!.id);
+    expect(await openThread(db, f.staff.id, id)).toBeNull();
+  });
+
+  it('counts teacher messages to parents as new for each admin until they look', async () => {
+    const f = await family();
+    await db.insert(classTeacher).values({ classId: f.cls.id, teacherId: f.teacher.id, canMessage: true });
+    await setSetting(f.actor, 'messaging', { teachersToPrimaryContacts: 'on' });
+    expect(await teacherParentNew(db, f.staff.id)).toBe(0);
+    const r = await startFromPortal(db, { kind: 'teacher', id: f.teacher.id, name: 'Teacher Comm' }, { kind: 'contact', id: f.parent.id }, 'Homework', 'Please check the reading');
+    expect(r.ok).toBe(true);
+    expect(await teacherParentNew(db, f.staff.id)).toBe(1);
+    await markTeacherParentSeen(db, f.staff.id);
+    expect(await teacherParentNew(db, f.staff.id)).toBe(0);
+  });
+
+  it('WhatsApp reminders: one message per family covering all their children, numbers it can’t use counted', async () => {
+    const f = await family();
+    const [kid2] = await db.insert(student).values({ firstName: 'Sister', surname: 'Comm', status: 'Current' }).returning();
+    await db.insert(studentContact).values({ studentId: kid2!.id, contactId: f.parent.id, type: 'Parent', isPrimary: true });
+    const r = await remindFamilies(db, [{ studentId: f.kid.id, name: 'Kid' }, { studentId: kid2!.id, name: 'Sister' }], (first, mine) => `Salaam ${first}: ${listNames(mine.map((m) => m.name))}`);
+    expect(r).toMatchObject({ unusable: 0, people: [{ name: 'Parent Comm', number: '447700900111', text: 'Salaam Parent: Kid and Sister' }] });
+    await db.update(contact).set({ mobile: '12' }).where(eq(contact.id, f.parent.id));
+    expect(await remindFamilies(db, [{ studentId: f.kid.id }], () => '')).toEqual({ people: [], unusable: 1 });
+    expect(listNames(['A', 'B', 'C', 'A'])).toBe('A, B and C');
+  });
+});
+
+describe('phone notifications', () => {
+  it('keeps one key pair, private half encrypted', async () => {
+    const k1 = await vapidKeys(db);
+    expect(await vapidKeys(db)).toEqual(k1);
+    const [row] = await db.select().from(setting).where(eq(setting.tab, 'push_keys'));
+    expect(JSON.stringify(row!.value)).toContain(k1.publicKey);
+    expect(JSON.stringify(row!.value)).not.toContain(k1.privateKey);
+  });
+
+  it('only people who turned them on get one, for messages, homework and holiday replies; the worker sends each once', async () => {
+    const f = await family();
+    await syncPortalLogin(db, 'parent', f.parent.id, f.parent.email, '');
+    const parent = { kind: 'contact' as const, id: f.parent.id };
+    expect(await queuePush(db, [parent], { title: 'T', body: 'B', url: '/parent' })).toBe(0); // not turned on yet
+    const [idn] = await db.select().from(loginIdentity).where(eq(loginIdentity.contactId, f.parent.id));
+    await savePushSubscription(db, idn!.id, { endpoint: 'https://push.example.org/device-1', keys: { p256dh: 'key', auth: 'auth' } }, 'test browser');
+
+    const m = await compose(db, f.actor, { contactIds: [String(f.parent.id)], subject: 'Trip', body: 'Bring a coat' });
+    expect(m.ok).toBe(true);
+    const hw = await saveHomework(db, f.actor, { classId: String(f.cls.id), title: 'Read surah', deadline: '2030-01-10T18:00', notifyContacts: 'on' });
+    expect(hw.ok).toBe(true);
+    const [req] = await db.insert(holidayRequest).values({ contactId: f.parent.id, startsOn: '2030-02-01', endsOn: '2030-02-03', request: 'Wedding' }).returning();
+    expect(await respondToRequest(db, { ...f.actor, identityId: f.actor.identityId }, req!.id, { action: 'decline', response: 'Sorry, not this time' })).toMatchObject({ ok: true });
+
+    pushOutbox.length = 0;
+    expect(await processPushQueue(db)).toBe(3);
+    expect(pushOutbox.map((x) => [x.title, x.url])).toEqual([
+      [expect.stringMatching(/^New message from /), expect.stringMatching(/^\/parent\/messages\/\d+$/)],
+      ['New homework: Read surah', '/parent/homework'],
+      ['Holiday request declined', '/parent/attendance']
+    ]);
+    expect(pushOutbox.every((x) => x.identityId === idn!.id)).toBe(true);
+    expect(await processPushQueue(db)).toBe(0); // each goes once
+    expect((await db.select().from(pushQueue)).every((r) => r.sentAt)).toBe(true);
+  });
+});
+
 describe('newsletters and SMS', () => {
   it('newsletters go once to each address in the audience, with the body cleaned', async () => {
     const f = await family();
@@ -134,6 +233,18 @@ describe('newsletters and SMS', () => {
     const [m] = await db.select().from(mailQueue);
     expect(m!.html).toContain('Hello Parent Comm');
     expect(m!.html).not.toContain('onerror');
+  });
+
+  it('lists WhatsApp recipients once each with the message filled in, counting numbers it can.t use', async () => {
+    const f = await family();
+    const [noMobile] = await db.insert(contact).values({ name: 'Bad Number', email: 'badnumber@example.org', mobile: '12' }).returning();
+    await db.insert(studentContact).values({ studentId: f.kid.id, contactId: noMobile!.id, type: 'Parent', isPrimary: true });
+    const r = await whatsappList(db, 'currentPrimary', 'Salaam {NAME}, from {SCHOOL_NAME}');
+    expect(r.unusable).toBe(1);
+    expect(r.people).toHaveLength(1);
+    expect(r.people[0]).toMatchObject({ name: 'Parent Comm', number: '447700900111' });
+    expect(r.people[0]!.text).toMatch(/^Salaam Parent, from /);
+    expect((await whatsappList(db, 'teachers', 'Hi {NAME}')).people.map((p) => p.text)).toEqual(['Hi Teacher']);
   });
 
   it('normalises numbers, builds WhatsApp links, queues and sends texts with the log driver', async () => {

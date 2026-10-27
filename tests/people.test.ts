@@ -4,17 +4,20 @@ import { sql } from '@/db';
 import { academicYear, auditLog, classAssignment, contact, loginIdentity, schoolClass, siblingLink, student, studentContact, teacher, timetableSlot, yearGroup } from '@/db/schema';
 import { decrypt } from '@/server/crypto';
 import { setSetting } from './setting-helper';
-import { copyClassesToYear, copyTimings, addSlot, fixMaintenance, maintenanceReport, migrateStudents, moveStudents, saveClass } from '@/server/people/classes';
+import { copyClassesToYear, copyTimings, addSlot, fixMaintenance, listClasses, maintenanceReport, migrateStudents, moveClass, moveStudents, saveClass } from '@/server/people/classes';
 import { ageOn } from '@/server/people/common';
 import { conflicts, copyAddressToStudents, massAssign, saveContact } from '@/server/people/contacts';
 import { csvDate, csvIds, parseCsv, toCsv } from '@/server/people/csv';
 import { parseAnswer, saveField, listFields } from '@/server/people/custom-fields';
+import { applyMapping, FULL_NAME, guessMapping, usesTemplate } from '@/server/people/column-match';
 import { checkRows, commitRows } from '@/server/people/imports';
 import { formWindow, submitApplication } from '@/server/people/registration';
 import { globalSearch } from '@/server/people/search';
 import { findSiblings, saveFoundSiblings } from '@/server/people/siblings';
 import { bulkUpdate, deleteStudents, getStudent, listStudents, listFilters, saveStudent } from '@/server/people/students';
-import { getTeacher, saveTeacher, setHours } from '@/server/people/teachers';
+import { getTeacher, openTeacherPortalAs, saveTeacher, setHours } from '@/server/people/teachers';
+import { syncPortalLogin } from '@/server/people/logins';
+import { validateSession } from '@/server/auth';
 import { db, makeStaff, resetDb } from './helpers';
 
 beforeEach(resetDb);
@@ -177,6 +180,22 @@ describe('siblings', () => {
 });
 
 describe('teachers', () => {
+  it('lets a Super admin open the teacher portal as a teacher, marked and audited', async () => {
+    const { actor, staff } = await makeStaff({ isSuper: true });
+    const [t] = await db.insert(teacher).values({ name: 'Sample Portal Teacher', email: 'portal.teacher@example.org' }).returning();
+    expect(await openTeacherPortalAs(db, actor, staff.id, t!.id)).toMatchObject({ ok: false, error: expect.stringContaining('no portal login') });
+    await syncPortalLogin(db, 'teacher', t!.id, t!.email, '');
+    const r = await openTeacherPortalAs(db, actor, staff.id, t!.id);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const s = await validateSession(db, 'teacher', r.token);
+    expect(s).toMatchObject({ actingAdminId: staff.id, identity: { teacherId: t!.id } });
+    expect(await validateSession(db, 'admin', r.token)).toBeNull(); // only good for the teacher portal
+    expect((await db.select().from(auditLog)).some((a) => a.action === 'Opened the teacher portal as Sample Portal Teacher')).toBe(true);
+    await db.update(loginIdentity).set({ allowLogin: false }).where(eq(loginIdentity.teacherId, t!.id));
+    expect(await openTeacherPortalAs(db, actor, staff.id, t!.id)).toMatchObject({ ok: false, error: expect.stringContaining('blocked') });
+  });
+
   it('encrypts NI number, bank details and medical info, and hashes the kiosk PIN', async () => {
     const { actor } = await setup();
     const r = await saveTeacher(db, actor, { name: 'Sample Teacher', niNumber: 'qq 12 34 56 c', bankAccount: '12345678', bankSortCode: '12-34-56', medical: 'Asthma', kioskPin: '4321' },
@@ -257,6 +276,33 @@ describe('classes', () => {
   });
 });
 
+describe('student list sorting', () => {
+  it('sorts by any column either way, youngest first for age, blanks last', async () => {
+    const { actor } = await setup();
+    for (const [first, dob] of [['Older', '2015-01-01'], ['Younger', '2019-01-01'], ['Undated', '']] as const) await saveStudent(db, actor, base({ firstName: first, surname: 'Sort', dob }), [], null);
+    const names = async (o: Record<string, string>) => (await listStudents(db, listFilters.parse({ q: 'Sort', ...o }), 50)).rows.map((r) => r.firstName);
+    expect(await names({ sort: 'age', dir: 'asc' })).toEqual(['Younger', 'Older', 'Undated']);
+    expect(await names({ sort: 'age', dir: 'desc' })).toEqual(['Older', 'Younger', 'Undated']);
+    expect(await names({ sort: 'id', dir: 'desc' })).toEqual(['Undated', 'Younger', 'Older']);
+    expect(await names({ sort: 'nonsense' })).toEqual(['Older', 'Undated', 'Younger']); // falls back to name order
+  });
+});
+
+describe('class order', () => {
+  it('moves a class up or down and numbers the year 1, 2, 3', async () => {
+    const { actor, year } = await setup();
+    const names = async () => (await listClasses(db, year.id)).map((r) => r.c.name);
+    const before = await names();
+    const last = (await listClasses(db, year.id)).at(-1)!.c.id;
+    expect(await moveClass(db, actor, last, 'down')).toBe(false); // already last
+    expect(await moveClass(db, actor, last, 'up')).toBe(true);
+    const after = await names();
+    expect(after.at(-1)).toBe(before.at(-2));
+    expect(after.at(-2)).toBe(before.at(-1));
+    expect((await listClasses(db, year.id)).map((r) => r.c.sortOrder)).toEqual(before.map((_, i) => i + 1));
+  });
+});
+
 describe('imports and exports', () => {
   it('reads UK dates and rejects impossible ones', () => {
     expect(csvDate('07/03/2018')).toBe('2018-03-07');
@@ -285,6 +331,24 @@ describe('imports and exports', () => {
     expect(s).toMatchObject({ firstName: 'Test', dob: '2018-02-01', source: 'import' });
     expect(await openClasses(s!.id)).toHaveLength(1);
     expect(await db.select().from(studentContact)).toHaveLength(1);
+  });
+
+  it('matches their own headings, then links siblings to one parent by email', async () => {
+    const { actor, year } = await setup();
+    const { headers, rows } = parseCsv([
+      'Name,Date of Birth,Mother Name,Mother Mobile,Parent Email,Notes',
+      'Test Ali Khan,01/02/2018,Sample Mum,07700 900123,Mum@Example.org,x',
+      'Test Sara Khan,03/04/2019,Sample Mum,07700 900123,mum@example.org,'
+    ].join('\n'));
+    expect(usesTemplate('students', headers)).toBe(false);
+    const m = guessMapping('students', headers);
+    expect(m).toEqual({ name: FULL_NAME, date_of_birth: 'dob', mother_name: 'contact_name', mother_mobile: 'contact_mobile', parent_email: 'contact_email', notes: 'notes' });
+    const res = await checkRows(db, 'students', applyMapping(rows, m), year.id);
+    expect(res.every((r) => r.ok)).toBe(true);
+    expect(await commitRows(db, actor, 'students', res, year.id)).toMatchObject({ added: 2 });
+    expect((await db.select().from(student)).map((s) => [s.firstName, s.surname])).toEqual([['Test Ali', 'Khan'], ['Test Sara', 'Khan']]);
+    expect(await db.select().from(contact)).toHaveLength(1);
+    expect(await db.select().from(studentContact)).toHaveLength(2);
   });
 
   it('export/import edit updates by ID instead of duplicating', async () => {

@@ -3,20 +3,20 @@ import { TextArea, TextField } from '@/components/Fields';
 import { ActionButton, Form } from '@/components/Form';
 import { requireAdmin } from '@/server/next/actor';
 import { listSmsTemplates } from '@/server/comm/sms';
-import { CommTabs } from '../../newsletters/CommTabs';
+import Link from 'next/link';
 import { deleteSmsTemplateAction, saveSmsTemplateAction } from '../actions';
 
-export const metadata = { title: 'SMS templates' };
+export const metadata = { title: 'Message templates' };
 const VARS = '{SCHOOL_NAME}, {NAME}, {STUDENT_NAME}, {DATE}, {AMOUNT}, {CODE}';
 
 export default async function SmsTemplates() {
-  const admin = await requireAdmin('sms');
+  await requireAdmin('sms');
   const rows = await listSmsTemplates(db);
   const cats = [...new Set(rows.map((r) => r.category))];
   return (
     <div className="ra-page">
-      <div className="ra-page-h"><div><h1>SMS templates</h1><p>Ready-made texts by category. System templates are used by the school’s automatic texts; you can reword them but not delete them.</p></div></div>
-      <CommTabs admin={admin} current="/admin/sms/templates" />
+      <div className="ra-page-h"><div><h1>Message templates</h1><p>Ready-made WhatsApp messages by category. System templates are the school’s standard wording (for example after an incident); you can reword them but not delete them.</p></div>
+        <div className="ra-toolbar"><Link className="ra-btn" href="/admin/whatsapp">WhatsApp</Link></div></div>
       {cats.map((c) => (
         <section key={c} className="ra-card" aria-labelledby={`cat-${c}`}>
           <div className="ra-card-h"><div><h2 id={`cat-${c}`}>{c}</h2></div></div>

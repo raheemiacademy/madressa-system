@@ -5,15 +5,18 @@ import { db } from '@/db';
 import { PAYMENT_METHODS, PAYMENT_STATUSES } from '@/db/schema';
 import { Chip } from '@/components/Chip';
 import { HBarChart, TrendChart } from '@/components/charts';
+import { HideFeesToggle } from '@/components/HideFeesToggle';
+import { HIDE_FEES_COOKIE } from '@/lib/hide-fees';
 import { Icon, type IconName } from '@/components/Icon';
 import { formatCalendarDate, formatInstant, greeting } from '@/lib/dates';
 import { formatPence } from '@/lib/money';
 import { STEPS } from '@/lib/onboarding-steps';
+import { LATEST } from '@/lib/releases';
 import { formatChange, initials, plural } from '@/lib/text';
 import { resolveYear } from '@/server/academic-years';
 import { weeklyTrend } from '@/server/attendance/registers';
 import { countNotices, countPendingRequests } from '@/server/attendance/requests';
-import { ageGroups, attendanceFigures, outstandingWeekAgo, parentFigures, studentFigures, teacherSignIns, unreadMessages } from '@/server/dashboard';
+import { attendanceFigures, outstandingWeekAgo, parentFigures, studentFigures, teacherSignIns, unreadMessages } from '@/server/dashboard';
 import { dashboard as feesDashboard, paymentList } from '@/server/fees/reports';
 import { requireAdmin } from '@/server/next/actor';
 import { todayIso } from '@/server/people/common';
@@ -57,17 +60,22 @@ function Panel({ id, cls, title, note, action, height, anim, children }: { id: s
   );
 }
 
-/** §1 Dashboard: today's figures, banners, attendance, age groups, unread messages, teacher sign-in, and (with fees access) payments and fees by type. */
+/**
+ * §1 Dashboard: today's figures, banners, unread messages, teacher sign-in, attendance, and (with fees access) payments and fees by type.
+ * "Hide fees" leaves every money figure out of the page on this device. (Students by age group moved to the Students page.)
+ */
 export default async function Dashboard({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
   const admin = await requireAdmin();
   // A new madrasah's setup checklist comes first, for the Super admins who do the setting up.
   const [setup, sp] = await Promise.all([admin.staff.isSuper ? setupProgress(db) : null, searchParams]);
   const jar = await cookies();
-  const [local, { year }] = await Promise.all([readTab(db, 'local'), resolveYear(db, Number(jar.get('year_id')?.value) || null)]);
+  const [local, fire, { year }] = await Promise.all([readTab(db, 'local'), readTab(db, 'fire'), resolveYear(db, Number(jar.get('year_id')?.value) || null)]);
   const tz = local.timezone as string;
   const now = new Date();
   const today = todayIso(now);
   const fees = adminCan(admin.staff, 'fees');
+  const feesHidden = fees && !!jar.get(HIDE_FEES_COOKIE)?.value;
+  const money = fees && !feesHidden;
   const me = { id: admin.staff.id, rank: admin.staff.rank, isSuper: admin.staff.isSuper };
   const anim = jar.get('ra_dash_seen') ? '' : ' ra-anim';
   const quick: [string, IconName, string][] = [
@@ -79,39 +87,46 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       <SeenOnce />
       {setup && sp.welcome === '1' && <Welcome school={(await getProfile(db))?.name ?? 'Your madrasah'} name={admin.name.split(/\s+/)[0]!} firstHref={STEPS[0].href} />}
       {setup && !setup.hidden && <SetupChecklist p={setup} />}
+      {admin.staff.seenRelease !== LATEST.version && sp.welcome !== '1' && (
+        <div className="ra-banner" role="status" style={{ ['--c' as string]: 'var(--ra-violet)' }}>
+          <div><b>New update: {LATEST.title}.</b> {LATEST.summary}</div><Link className="ra-link" href="/admin/whats-new">See what’s new</Link>
+        </div>
+      )}
       <div className={`ra-hero${anim}`}>
         <div className="ra-hero-date">{formatInstant(now, 'EEEE d MMMM', tz)}</div>
         <h1>{greeting(now, tz)}, {admin.name.split(/\s+/)[0]}</h1>
         <PanelBoundary>
           <Suspense fallback={<p><span className="ra-skel" style={{ display: 'block', height: '3em', maxWidth: '64ch' }} role="status" aria-label="Loading today’s summary" /></p>}>
-            <HeroLine today={today} yearId={year?.id ?? null} fees={fees} />
+            <HeroLine today={today} yearId={year?.id ?? null} fees={money} /* shares the figures query with the tiles below */ />
           </Suspense>
         </PanelBoundary>
         <div className="ra-quick">
           {quick.slice(0, 1).map(([h, i, l]) => <Link key={h} href={h}><Icon name={i} />{l}</Link>)}
           {fees && <AddFeesButton label="Record payment" className="" plus />}
           {quick.slice(1).map(([h, i, l]) => <Link key={h} href={h}><Icon name={i} />{l}</Link>)}
+          {fees && <HideFeesToggle hidden={feesHidden} />}
         </div>
       </div>
 
       <PanelBoundary>
-        <Suspense fallback={<div className="ra-kpis" role="status" aria-label="Loading today’s figures">{Array.from({ length: fees ? 5 : 4 }, (_, i) => <div key={i} className="ra-kpi ra-skel" style={{ height: 112 }} />)}</div>}>
-          <Headline today={today} yearId={year?.id ?? null} yearStart={year?.startsOn ?? today} fees={fees} anim={anim} />
+        <Suspense fallback={<div className="ra-kpis" role="status" aria-label="Loading today’s figures">{Array.from({ length: money ? 5 : 4 }, (_, i) => <div key={i} className="ra-kpi ra-skel" style={{ height: 112 }} />)}</div>}>
+          <Headline today={today} yearId={year?.id ?? null} yearStart={year?.startsOn ?? today} fees={money} anim={anim} />
         </Suspense>
       </PanelBoundary>
 
       <div className="ra-grid">
-        <Panel id="d-att" cls="ra-c8" title="Weekly attendance" note="Share of register sessions marked present or late, this year" height={230} anim={anim}>
-          <Trend from={year?.startsOn ?? null} to={year ? (today < year.endsOn ? today : year.endsOn) : null} />
-        </Panel>
-        <Panel id="d-age" cls="ra-c4" title="Students by age group" note="Current students" height={200} anim={anim}><Ages today={today} /></Panel>
-        <Panel id="d-msg" cls="ra-c7" title="Unread messages" note="From parents and teachers" height={200} anim="" action={<Link className="ra-link" href="/admin/messages">Open inbox</Link>}>
+        <Panel id="d-msg" cls="ra-c7 ra-m-first" title="Unread messages" note="From parents and teachers" height={200} anim="" action={<Link className="ra-link" href="/admin/messages">Open inbox</Link>}>
           <Messages me={me} />
         </Panel>
+        {/* Phone app: the fire drill sits under the figures and messages (design-reference/mobile/Main). */}
+        {(fire.buttonPlaces as string[]).length > 0 && <Link className="ra-drill-row ra-c12 ra-m-only ra-m-first tap" href="/admin/fire-drill"><Icon name="fire" /><span>Fire drill</span><small>Hold to start</small></Link>}
         <Panel id="d-tl" cls="ra-c5" title="Teacher sign-in" note="Today, from kiosk and teacher portal" height={200} anim="" action={<Link className="ra-link" href="/admin/teacher-logs">All logs</Link>}>
           <SignIns today={today} />
         </Panel>
-        {fees && (
+        <Panel id="d-att" cls="ra-c12" title="Weekly attendance" note="Share of register sessions marked present or late, this year" height={230} anim={anim}>
+          <Trend from={year?.startsOn ?? null} to={year ? (today < year.endsOn ? today : year.endsOn) : null} />
+        </Panel>
+        {money && (
           <>
             <Panel id="d-pay" cls="ra-c7" title="Recent payments" note="Latest ten, all invoice types" height={260} anim="" action={<Link className="ra-link" href="/admin/fees">Fees dashboard</Link>}>
               <Payments />
@@ -127,13 +142,10 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
 async function HeroLine({ today, yearId, fees }: { today: string; yearId: number | null; fees: boolean }) {
   const h = await headline(today, yearId, fees);
-  const a = h.attendance, f = h.fees;
+  const a = h.attendance;
   return (
     <p>
       {a.pct === null ? 'No registers have been taken yet today.' : <>Attendance today is <b>{pct1(a.pct)}</b>{a.change !== null && <> ({formatChange(a.change, 'pts')} on last week)</>}.</>}
-      {f && (f.overdue > 0
-        ? <> <b>{f.overdue.toLocaleString('en-GB')}</b> {f.overdue === 1 ? 'invoice is' : 'invoices are'} overdue, with <b>{formatPence(f.outstanding)}</b> outstanding. Sending reminders is the job for today.</>
-        : <> No invoices are overdue{f.outstanding > 0 && <>, and <b>{formatPence(f.outstanding)}</b> is still to come in</>}.</>)}
     </p>
   );
 }
@@ -141,13 +153,14 @@ async function HeroLine({ today, yearId, fees }: { today: string; yearId: number
 async function Headline({ today, yearId, yearStart, fees, anim }: { today: string; yearId: number | null; yearStart: string; fees: boolean; anim: string }) {
   const [h, parents] = await Promise.all([headline(today, yearId, fees), parentFigures(db, yearStart)]);
   const due = h.signIns.rows.length;
-  const tiles: [string, string, IconName, ReactNode, ReactNode][] = [
-    ['--ra-indigo', 'Current students', 'users', h.students.current.toLocaleString('en-GB'), <><Delta v={h.students.change} unit="count" good="up" /> since last week · {h.students.waiting.toLocaleString('en-GB')} waiting</>],
+  // Each tile opens the page with the detail behind its figure.
+  const tiles: [string, string, IconName, ReactNode, ReactNode, string][] = [
+    ['--ra-indigo', 'Current students', 'users', h.students.current.toLocaleString('en-GB'), <><Delta v={h.students.change} unit="count" good="up" /> since last week · {h.students.waiting.toLocaleString('en-GB')} waiting</>, '/admin/students'],
     ['--ra-blue', 'Attendance today', 'check', h.attendance.pct === null ? '—' : pct1(h.attendance.pct),
-      h.attendance.pct === null ? 'No registers taken yet today' : h.attendance.change === null ? 'No register on this day last week' : <><Delta v={h.attendance.change} unit="pts" good="up" /> vs same day last week</>],
-    ...(h.fees ? [['--ra-violet', 'Fees outstanding', 'pound', formatPence(h.fees.outstanding), <><Delta v={h.fees.change} unit="pence" good="down" /> since last week</>] as [string, string, IconName, ReactNode, ReactNode]] : []),
-    ['--ra-sky', 'Parents on portal', 'phone', parents.active.toLocaleString('en-GB'), `of ${plural(parents.total, 'parent contact')}`],
-    ['--ra-lav', 'Teachers signed in', 'clock', h.signIns.signedIn.toLocaleString('en-GB'), due ? `of ${due.toLocaleString('en-GB')} teaching today` : 'No one is due in today']
+      h.attendance.pct === null ? 'No registers taken yet today' : h.attendance.change === null ? 'No register on this day last week' : <><Delta v={h.attendance.change} unit="pts" good="up" /> vs same day last week</>, '/admin/register'],
+    ...(h.fees ? [['--ra-violet', 'Fees outstanding', 'pound', formatPence(h.fees.outstanding), <><Delta v={h.fees.change} unit="pence" good="down" /> since last week</>, '/admin/fees'] as [string, string, IconName, ReactNode, ReactNode, string]] : []),
+    ['--ra-sky', 'Parents on portal', 'phone', parents.active.toLocaleString('en-GB'), `of ${plural(parents.total, 'parent contact')}`, '/admin/tools/portals'],
+    ['--ra-lav', 'Teachers signed in', 'clock', h.signIns.signedIn.toLocaleString('en-GB'), due ? `of ${due.toLocaleString('en-GB')} teaching today` : 'No one is due in today', '/admin/teacher-logs']
   ];
   return (
     <>
@@ -166,12 +179,12 @@ async function Headline({ today, yearId, yearStart, fees, anim }: { today: strin
         </div>
       )}
       <div className="ra-kpis">
-        {tiles.map(([c, label, icon, val, sub], i) => (
-          <div key={label} className={`ra-kpi${anim}`} style={{ ...tint(c), ['--i' as string]: i + 1 }}>
+        {tiles.map(([c, label, icon, val, sub, href], i) => (
+          <Link key={label} href={href} className={`ra-kpi ra-kpi-link${anim}`} style={{ ...tint(c), ['--i' as string]: i + 1 }}>
             <div className="ra-kpi-top">{label}<span className="ra-kpi-ic"><Icon name={icon} /></span></div>
             <div className="ra-kpi-val">{val}</div>
             <div className="ra-kpi-sub">{sub}</div>
-          </div>
+          </Link>
         ))}
       </div>
     </>
@@ -181,23 +194,6 @@ async function Headline({ today, yearId, yearStart, fees, anim }: { today: strin
 async function Trend({ from, to }: { from: string | null; to: string | null }) {
   if (!from || !to || to < from) return <p className="ra-empty">No registers taken yet this year.</p>;
   return <TrendChart data={await weeklyTrend(db, from, to)} empty="No registers taken yet this year." />;
-}
-
-async function Ages({ today }: { today: string }) {
-  const rows = await ageGroups(db, today);
-  const other = rows.some((r) => r.unspecified);
-  return (
-    <>
-      {rows.length > 0 && <div className="ra-legend"><span><i style={{ background: 'var(--ra-indigo)' }} />Boys</span><span><i style={{ background: 'var(--ra-violet)' }} />Girls</span>{other && <span><i style={{ background: 'var(--ra-lav)' }} />Not recorded</span>}</div>}
-      <HBarChart empty="No current students yet."
-        label={`Students by age group: ${rows.map((r) => `${r.group} ${r.boys} boys, ${r.girls} girls${r.unspecified ? `, ${r.unspecified} not recorded` : ''}`).join('; ')}`}
-        rows={rows.map((r) => ({
-          label: r.group, end: (r.boys + r.girls + r.unspecified).toLocaleString('en-GB'),
-          segs: [{ name: 'Boys', value: r.boys, colour: '--ra-indigo' }, { name: 'Girls', value: r.girls, colour: '--ra-violet' }, { name: 'Not recorded', value: r.unspecified, colour: '--ra-lav' }],
-          tip: [`Boys ${r.boys}`, `Girls ${r.girls}`, ...(r.unspecified ? [`Not recorded ${r.unspecified}`] : [])]
-        }))} />
-    </>
-  );
 }
 
 async function Messages({ me }: { me: { id: number; rank: string | null; isSuper: boolean } }) {
@@ -215,7 +211,7 @@ async function Messages({ me }: { me: { id: number; rank: string | null; isSuper
                 <span className="ra-msg-subj" style={{ display: 'block' }}><span className="sr-only">Unread: </span>{t.subject}</span>
                 <span className="ra-msg-prev" style={{ display: 'block' }}>{t.last?.body ?? ''}</span>
               </span>
-              <span className="ra-msg-side">{formatInstant(t.lastMessageAt, 'dd/MM HH:mm')}<span className="ra-dot" aria-hidden="true" /></span>
+              <span className="ra-msg-side">{formatInstant(t.lastMessageAt, 'dd/MM HH:mm')}{t.unreadCount > 0 && <span className="ra-msg-count">{t.unreadCount}<span className="sr-only"> unread</span></span>}</span>
             </Link>
           </li>
         ))}

@@ -4,9 +4,22 @@ import { PW, signIn } from './sign-in';
 
 
 async function axe(page: Page) {
+  // Banners fade in; measure contrast once they have finished.
+  await page.waitForFunction(() => document.getAnimations().every((an) => an.playState !== 'running'));
   const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   expect(r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
 }
+
+test('on a madrasah copy (no MARKETING_SITE) / still goes to the admin app, and there are no marketing pages or endpoints', async ({ page, request }) => {
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/admin\/login$/);
+  await signIn(page);
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/admin$/);
+  expect((await request.post('/api/early-access', { data: { school: 'x' } })).status()).toBe(404);
+  expect((await request.post('/api/contact', { data: { name: 'x' } })).status()).toBe(404);
+  for (const path of ['/features', '/faq', '/contact']) expect((await request.get(path)).status()).toBe(404);
+});
 
 test('wrong password shows one generic message; right password reaches the dashboard', async ({ page }) => {
   await page.goto('/admin/settings');

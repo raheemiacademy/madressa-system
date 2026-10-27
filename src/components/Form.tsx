@@ -11,12 +11,15 @@ type Action = (prev: FormState, fd: FormData) => Promise<FormState>;
  * A card form bound to a server action. Field components pick up their errors from the result,
  * so pages can stay server components. The action redirects or returns { ok, message, errors }.
  */
-export function Form({ action, children, submit = 'Save changes', card = true, resetOnSuccess = false, savebar = true, id, encType }: {
+export function Form({ action, children, submit = 'Save changes', card = true, resetOnSuccess = false, savebar = true, id, encType, onSuccess }: {
   action: Action; children: React.ReactNode; submit?: string; card?: boolean; resetOnSuccess?: boolean; savebar?: boolean; id?: string; encType?: string;
+  onSuccess?: (state: NonNullable<FormState>) => void;
 }) {
   const [state, act, pending] = useActionState<FormState, FormData>(action, undefined);
   const ref = useRef<HTMLFormElement>(null);
   useEffect(() => { if (state?.ok && resetOnSuccess) ref.current?.reset(); }, [state, resetOnSuccess]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per result, not when the callback's identity changes
+  useEffect(() => { if (state?.ok) onSuccess?.(state); }, [state]);
   return (
     <form ref={ref} id={id} action={act} noValidate className={card ? 'ra-card ra-form' : 'ra-form'} encType={encType}>
       <FormErrors.Provider value={state?.errors}>

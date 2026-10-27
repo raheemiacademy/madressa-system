@@ -64,6 +64,48 @@
       "when": 1792878586634,
       "tag": "0008_onboarding",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792882885374,
+      "tag": "0009_whats_new",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792961612239,
+      "tag": "0010_teacher_view_as",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792968704032,
+      "tag": "0011_teacher_parent_seen",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792971138468,
+      "tag": "0012_push_subscriptions",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792971218559,
+      "tag": "0013_push_queue",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793058001345,
+      "tag": "0014_early_access",
+      "breakpoints": true
     }
   ]
 }

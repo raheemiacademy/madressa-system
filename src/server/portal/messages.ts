@@ -27,12 +27,23 @@ export async function partyThread(db: DbOrTx, me: Party, threadId: number) {
   const [row] = await db.select({ t: messageThread }).from(messageParticipant).innerJoin(messageThread, eq(messageThread.id, messageParticipant.threadId))
     .where(and(eq(messageParticipant.threadId, threadId), eq(messageParticipant.kind, me.kind), eq(messageParticipant.personId, me.id), isNull(messageThread.deletedAt)));
   if (!row) return null;
-  const msgs = await db.select().from(message).where(eq(message.threadId, threadId)).orderBy(asc(message.id));
+  const [msgs, people] = await Promise.all([
+    db.select().from(message).where(eq(message.threadId, threadId)).orderBy(asc(message.id)),
+    db.select().from(messageParticipant).where(eq(messageParticipant.threadId, threadId))
+  ]);
   await db.update(messageParticipant).set({ lastReadAt: new Date(), unreadOverride: false })
     .where(and(eq(messageParticipant.threadId, threadId), eq(messageParticipant.kind, me.kind), eq(messageParticipant.personId, me.id)));
+  // Ticks on your own messages: read once every other parent or teacher on it has read it, and (to the office) any admin has.
+  const others = people.filter((p) => !(p.kind === me.kind && p.personId === me.id));
+  const readBy = (p: typeof others[number], at: Date) => !!p.lastReadAt && p.lastReadAt >= at;
+  const isRead = (at: Date) => others.filter((p) => p.kind !== 'admin').every((p) => readBy(p, at))
+    && (!row.t.withOffice || others.some((p) => p.kind === 'admin' && readBy(p, at)));
   return {
     thread: row.t,
-    messages: msgs.map((m) => ({ id: m.id, body: m.body, name: m.senderName, mine: m.senderKind === me.kind && m.senderId === me.id, office: m.senderKind === 'admin', at: formatInstant(m.createdAt, 'dd/MM/yyyy HH:mm'), attachmentFileId: m.attachmentFileId }))
+    messages: msgs.map((m) => {
+      const mine = m.senderKind === me.kind && m.senderId === me.id;
+      return { id: m.id, body: m.body, name: m.senderName, mine, read: mine && isRead(m.createdAt), office: m.senderKind === 'admin', at: formatInstant(m.createdAt, 'dd/MM/yyyy HH:mm'), attachmentFileId: m.attachmentFileId };
+    })
   };
 }
 

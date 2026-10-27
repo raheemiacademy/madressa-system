@@ -10,7 +10,6 @@ import { listTeachers } from '@/server/people/teachers';
 import { TeachersTable } from './TeachersTable';
 
 export const metadata = { title: 'Teachers' };
-const DAY = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default async function Teachers({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   const admin = await requireAdmin();
@@ -34,8 +33,8 @@ export default async function Teachers({ searchParams }: { searchParams: Promise
           <Link className="ra-filter" href="?" aria-current={!status ? 'page' : undefined}>All <b>{all.length}</b></Link>
           {counts.map((c) => <Link key={c.s} className="ra-filter" href={`?status=${encodeURIComponent(c.s)}`} aria-current={status === c.s ? 'page' : undefined}>{c.s} <b>{c.n}</b></Link>)}
         </nav>
-        <TeachersTable rows={rows.map((t) => ({ id: t.id, name: t.name, status: t.status, days: (t.days ?? []).map((d) => DAY[d]!).join(', '), email: t.email }))}
-          canEdit={adminCan(admin.staff, 'edit')} canDelete={adminCan(admin.staff, 'delete')} />
+        <TeachersTable rows={rows.map((t) => ({ id: t.id, name: t.name, status: t.status, email: t.email }))}
+          canEdit={adminCan(admin.staff, 'edit')} canDelete={adminCan(admin.staff, 'delete')} canViewAs={admin.staff.isSuper} />
       </section>
     </div>
   );

@@ -63,6 +63,8 @@ export const adminStaff = pgTable('admin_staff', {
   dbsIssuedOn: date('dbs_issued_on', { mode: 'string' }),
   dbsExpiresOn: date('dbs_expires_on', { mode: 'string' }),
   isSuper: boolean('is_super').notNull().default(false),
+  seenRelease: text('seen_release'), // the newest "What's new" release this person has opened
+  seenTeacherParentAt: tz('seen_teacher_parent_at'), // when they last opened Messages → Teacher ↔ parent (newer teacher messages to parents count as new)
   canEdit: boolean('can_edit').notNull().default(false),
   canDelete: boolean('can_delete').notNull().default(false),
   feesAccess: boolean('fees_access').notNull().default(false),
@@ -111,8 +113,32 @@ export const session = pgTable('session', {
   expiresAt: tz('expires_at').notNull(),
   lastSeenAt: tz('last_seen_at').notNull().defaultNow(),
   ip: text('ip'),
-  userAgent: text('user_agent')
+  userAgent: text('user_agent'),
+  // Set when a Super admin opened this teacher-portal session to use the portal as that teacher; ends if the admin is removed.
+  actingAdminId: integer('acting_admin_id').references(() => adminStaff.id, { onDelete: 'cascade' })
 }, (t) => [index('session_identity_idx').on(t.identityId)]);
+
+// Phones and browsers that asked for notifications (web push). Removed when the push service says the subscription has gone.
+export const pushSubscription = pgTable('push_subscription', {
+  id: serial('id').primaryKey(),
+  identityId: integer('identity_id').notNull().references(() => loginIdentity.id, { onDelete: 'cascade' }),
+  endpoint: text('endpoint').notNull().unique(),
+  p256dh: text('p256dh').notNull(),
+  auth: text('auth').notNull(),
+  userAgent: text('user_agent'),
+  createdAt: createdAt()
+}, (t) => [index('push_subscription_identity_idx').on(t.identityId)]);
+
+// Notifications waiting to go to someone's phones. Written in the same transaction as the message or homework, sent by the worker.
+export const pushQueue = pgTable('push_queue', {
+  id: serial('id').primaryKey(),
+  identityId: integer('identity_id').notNull().references(() => loginIdentity.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  body: text('body').notNull(),
+  url: text('url').notNull(),
+  createdAt: createdAt(),
+  sentAt: tz('sent_at')
+}, (t) => [index('push_queue_unsent_idx').on(t.sentAt)]);
 
 export const rateLimit = pgTable('rate_limit', {
   key: text('key').primaryKey(),
@@ -1308,3 +1334,15 @@ export const onboarding = pgTable('onboarding', {
   updatedAt: tz('updated_at').notNull().defaultNow()
 }, (t) => [check('onboarding_one', sql`${t.id} = 1`)]);
 
+
+// Marketing homepage: early-access sign-ups from the public form. No IP is kept (it's only used for the rate limit).
+export const earlyAccessSignup = pgTable('early_access_signup', {
+  id: serial('id').primaryKey(),
+  school: text('school').notNull(),
+  name: text('name').notNull(),
+  role: text('role').notNull(),
+  email: text('email').notNull(),
+  students: integer('students'),
+  type: text('type').notNull(),
+  createdAt: createdAt()
+}, (t) => [index('early_access_signup_created_idx').on(t.createdAt)]);

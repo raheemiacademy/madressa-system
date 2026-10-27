@@ -3,12 +3,15 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { db } from '@/db';
 import { loginIdentity, STUDENT_STATUSES } from '@/db/schema';
+import { HBarChart } from '@/components/charts';
 import { Icon } from '@/components/Icon';
 import { plural } from '@/lib/text';
 import { resolveYear } from '@/server/academic-years';
 import { requireAdmin } from '@/server/next/actor';
 import { adminCan } from '@/server/permissions';
 import { listClasses } from '@/server/people/classes';
+import { ageGroups } from '@/server/dashboard';
+import { todayIso } from '@/server/people/common';
 import { countsByAge, listFilters, listStudents } from '@/server/people/students';
 import { readTab } from '@/server/settings';
 import { StudentsTable } from './StudentsTable';
@@ -16,8 +19,8 @@ import { StudentsTable } from './StudentsTable';
 export const metadata = { title: 'Students' };
 
 const TOOLS: [string, string][] = [
-  ['/admin/students/move', 'Move student classes'], ['/admin/students/portal-access', 'Parent portal access'], ['/admin/students/download', 'Download students'],
-  ['/admin/students/walk-home', 'Walk-home consents'], ['/admin/import/students', 'Import students'], ['/admin/import/students?edit=1', 'Export/import edit'],
+  // Import, Download and Move classes are the buttons at the top, so they aren't repeated here.
+  ['/admin/students/walk-home', 'Walk-home consents'], ['/admin/import/students?edit=1', 'Export/import edit'],
   ['/admin/students/registration', 'Registration pages'], ['/admin/students/siblings', 'Manage siblings'], ['/admin/contacts', 'Manage contacts'],
   ['/admin/students/data-forms', 'Data update forms'], ['/admin/students/duplicates', 'Find duplicate students'], ['/admin/students/multi-class', 'Multiple class students']
 ];
@@ -28,8 +31,8 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
   const f = listFilters.parse(sp);
   const [{ year }, prefs] = await Promise.all([resolveYear(db, Number((await cookies()).get('year_id')?.value) || null), readTab(db, 'preferences')]);
   const perPage = Number(prefs.studentsPerPage) || 50;
-  const [list, byAge, classes, [portal]] = await Promise.all([
-    listStudents(db, f, perPage), countsByAge(db), year ? listClasses(db, year.id) : [],
+  const [list, byAge, genders, classes, [portal]] = await Promise.all([
+    listStudents(db, f, perPage), countsByAge(db), ageGroups(db, todayIso()), year ? listClasses(db, year.id) : [],
     db.select({ n: sql<number>`count(*)::int` }).from(loginIdentity).where(and(eq(loginIdentity.portal, 'parent'), year ? gte(loginIdentity.lastLoginAt, new Date(`${year.startsOn}T00:00:00Z`)) : undefined))
   ]);
   const totals = byAge.reduce((t, r) => ({ current: t.current + r.current, waiting: t.waiting + r.waiting }), { current: 0, waiting: 0 });
@@ -52,9 +55,9 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
       </div>
 
       <div className="ra-kpis">
-        <div className="ra-kpi" style={{ ['--c' as string]: 'var(--ra-indigo)' }}><div className="ra-kpi-top">Current</div><div className="ra-kpi-val">{totals.current.toLocaleString('en-GB')}</div><div className="ra-kpi-sub">Enrolled and attending</div></div>
-        <div className="ra-kpi" style={{ ['--c' as string]: 'var(--ra-blue)' }}><div className="ra-kpi-top">Waiting list</div><div className="ra-kpi-val">{totals.waiting.toLocaleString('en-GB')}</div><div className="ra-kpi-sub">From the application form</div></div>
-        <div className="ra-kpi" style={{ ['--c' as string]: 'var(--ra-sky)' }}><div className="ra-kpi-top">Parents on portal</div><div className="ra-kpi-val">{(portal?.n ?? 0).toLocaleString('en-GB')}</div><div className="ra-kpi-sub">Logged in this year</div></div>
+        <Link className="ra-kpi ra-kpi-link" href="/admin/students?status=Current#ms-h" style={{ ['--c' as string]: 'var(--ra-indigo)' }}><div className="ra-kpi-top">Current</div><div className="ra-kpi-val">{totals.current.toLocaleString('en-GB')}</div><div className="ra-kpi-sub">Enrolled and attending</div></Link>
+        <Link className="ra-kpi ra-kpi-link" href={`/admin/students?status=${encodeURIComponent('Waiting List')}#ms-h`} style={{ ['--c' as string]: 'var(--ra-blue)' }}><div className="ra-kpi-top">Waiting list</div><div className="ra-kpi-val">{totals.waiting.toLocaleString('en-GB')}</div><div className="ra-kpi-sub">From the application form</div></Link>
+        <Link className="ra-kpi ra-kpi-link" href="/admin/tools/portals" style={{ ['--c' as string]: 'var(--ra-sky)' }}><div className="ra-kpi-top">Parents on portal</div><div className="ra-kpi-val">{(portal?.n ?? 0).toLocaleString('en-GB')}</div><div className="ra-kpi-sub">Logged in this year</div></Link>
       </div>
 
       <div className="ra-more">
@@ -71,6 +74,19 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
               <tbody>{byAge.map((r) => <tr key={r.label}><td className="wrap">{r.label}</td><td className="num">{r.current}</td><td className="num">{r.waiting}</td></tr>)}</tbody>
             </table>
           )}
+          {genders.length > 0 && (
+            <>
+              <h3 style={{ margin: '8px 0 0', fontSize: 14, fontWeight: 600 }}>Boys and girls</h3>
+              <div className="ra-legend"><span><i style={{ background: 'var(--ra-indigo)' }} />Boys</span><span><i style={{ background: 'var(--ra-violet)' }} />Girls</span>{genders.some((r) => r.unspecified) && <span><i style={{ background: 'var(--ra-lav)' }} />Not recorded</span>}</div>
+              <HBarChart empty="No current students yet."
+                label={`Current students by age group: ${genders.map((r) => `${r.group} ${r.boys} boys, ${r.girls} girls${r.unspecified ? `, ${r.unspecified} not recorded` : ''}`).join('; ')}`}
+                rows={genders.map((r) => ({
+                  label: r.group, end: (r.boys + r.girls + r.unspecified).toLocaleString('en-GB'),
+                  segs: [{ name: 'Boys', value: r.boys, colour: '--ra-indigo' }, { name: 'Girls', value: r.girls, colour: '--ra-violet' }, { name: 'Not recorded', value: r.unspecified, colour: '--ra-lav' }],
+                  tip: [`Boys ${r.boys}`, `Girls ${r.girls}`, ...(r.unspecified ? [`Not recorded ${r.unspecified}`] : [])]
+                }))} />
+            </>
+          )}
         </section>
 
         <section className="ra-card ra-c8" aria-labelledby="ms-h">
@@ -78,6 +94,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
           <form className="ra-toolbar" role="search" action="/admin/students">
             <input className="ra-input grow" type="search" name="q" defaultValue={f.q} placeholder="Search name, ID or class" aria-label="Search students" style={{ maxWidth: 340 }} />
             {f.status !== 'All' && <input type="hidden" name="status" value={f.status} />}
+            {(f.sort !== 'name' || f.dir !== 'asc') && <><input type="hidden" name="sort" value={f.sort} /><input type="hidden" name="dir" value={f.dir} /></>}
             <button className="ra-btn">Search</button>
           </form>
           <nav className="ra-filters" aria-label="Filter by status">
@@ -102,7 +119,8 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
           <StudentsTable
             rows={list.rows.map((r) => ({ id: r.id, name: `${r.firstName} ${r.surname}`, gender: r.gender, classes: r.classes, age: r.age, yearGroup: r.yearGroup, status: r.status, hasMedical: r.hasMedical }))}
             classes={classes.map((c) => ({ value: String(c.c.id), label: c.c.name }))} statuses={[...STUDENT_STATUSES]}
-            canEdit={canEdit} canDelete={adminCan(admin.staff, 'delete')} canFees={adminCan(admin.staff, 'fees')} filtered={filtered} />
+            canEdit={canEdit} canDelete={adminCan(admin.staff, 'delete')} canFees={adminCan(admin.staff, 'fees')} filtered={filtered}
+            sort={{ key: f.sort, dir: f.dir, hrefs: Object.fromEntries((['id', 'name', 'gender', 'class', 'age', 'status'] as const).map((k) => [k, qs({ sort: k, dir: f.sort === k && f.dir === 'asc' ? 'desc' : 'asc', page: undefined })])) }} />
           {pages > 1 && (
             <nav className="ra-pager" aria-label="Pages">
               {f.page > 1 ? <Link className="ra-btn" href={qs({ page: f.page - 1 })}>Previous</Link> : <span />}

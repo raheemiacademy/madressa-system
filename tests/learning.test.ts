@@ -8,6 +8,7 @@ import { examResults, gradeFor, parseMark, saveExam, saveGradeSystem, saveResult
 import { lockTopic, post, saveCategory } from '@/server/learning/forums';
 import { incomplete, saveHomework, sendReminders, setCompleted, yearReport } from '@/server/learning/homework';
 import { saveIncident } from '@/server/learning/incidents';
+import { incidentWhatsapp } from '@/server/comm/whatsapp';
 import { achievementInput, awardMerits, certificatePdf, issueCertificates, reached, saveCompetition, saveTeam, standings, studentTotals } from '@/server/learning/merits';
 import { createSale, saveProduct } from '@/server/learning/products';
 import { db, makeStaff, resetDb } from './helpers';
@@ -103,6 +104,10 @@ describe('incidents', () => {
     expect(r).toMatchObject({ ok: true, emailed: 1, texted: 1 });
     expect((await db.select().from(mailQueue))[0]!.subject).toBe('Incident report: Kid0 Learn');
     expect((await db.select().from(smsMessage))[0]!.body).toContain('Kid0 Learn');
+    const wa = await incidentWhatsapp(db, r.ok ? r.id : 0);
+    expect(wa).toEqual([expect.objectContaining({ name: 'Parent 0', number: '447700900500' })]);
+    expect(wa[0]!.text).toContain('Kid0 Learn');
+    expect(await incidentWhatsapp(db, 999999)).toEqual([]);
   });
 });
 

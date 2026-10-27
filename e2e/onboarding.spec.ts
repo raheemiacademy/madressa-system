@@ -20,10 +20,17 @@ test('welcome, setup checklist, step banner, hide and show again', async ({ page
   await page.goto('/admin/settings/profile?setup=1');
   await expect(page.getByText('Setup step 1 of 6: Madrasah details.')).toBeVisible();
   await page.goto('/admin');
-  await card.getByRole('button', { name: /Hide for now|Close/ }).click();
-  await expect(card).toHaveCount(0);
+  // Both buttons are safe to press twice; retry in case the first click lands before the page has hydrated.
+  await expect(async () => {
+    await card.getByRole('button', { name: /Hide for now|Close/ }).click({ timeout: 2000 });
+    await expect(card).toHaveCount(0, { timeout: 2000 });
+  }).toPass();
   await page.goto('/admin/tools/system');
-  await page.getByRole('button', { name: 'Show the setup steps on the dashboard' }).click();
+  const show = page.getByRole('button', { name: 'Show the setup steps on the dashboard' });
+  await expect(async () => {
+    await show.click({ timeout: 2000 });
+    await expect(show).toHaveCount(0, { timeout: 2000 });
+  }).toPass();
   await page.goto('/admin');
   await expect(card).toBeVisible();
 });
@@ -31,6 +38,7 @@ test('welcome, setup checklist, step banner, hide and show again', async ({ page
 test('step 6 invites parents and teachers, and the step ticks itself off', async ({ page }) => {
   await signIn(page);
   await page.goto('/admin/tools/portals?setup=6');
+  await expect(page.getByRole('link', { name: 'Open parent portal (opens in a new tab)' })).toHaveAttribute('href', '/parent');
   await expect(page.getByText('Setup step 6 of 6: Invite parents and teachers.')).toBeVisible();
   page.once('dialog', (d) => d.accept());
   await page.getByRole('button', { name: 'Invite parents and teachers' }).click();

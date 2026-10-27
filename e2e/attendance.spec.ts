@@ -2,12 +2,15 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { signIn } from './sign-in';
 
-/** The most recent Monday strictly before today, in UK dates (seeded registers sit on Mondays). */
+/** The most recent term-time Monday strictly before today, in UK dates (seeded registers sit on Mondays). */
 function lastMonday() {
   const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/London' }));
-  do d.setDate(d.getDate() - 1); while (d.getDay() !== 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const iso = () => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  do d.setDate(d.getDate() - 1); while (d.getDay() !== 1 || SEEDED_HOLIDAY_MONDAYS.includes(iso()));
+  return iso();
 }
+// The seed's half term and winter break have no classes.
+const SEEDED_HOLIDAY_MONDAYS = ['2026-10-26', '2026-12-21', '2026-12-28'];
 
 test('take a register, then authorise an absence from the grid', async ({ page }) => {
   await signIn(page);
@@ -42,10 +45,14 @@ test('mark a student absent across dates, and accept a holiday request', async (
 
   await page.goto('/admin/register/requests');
   const req = page.getByRole('article').first();
-  await req.getByLabel('Response').selectOption('accept-authorised');
-  await req.getByLabel('Message to the parent').fill('Approved, have a safe trip.');
-  await req.getByRole('button', { name: 'Send response' }).click();
+  await req.getByRole('button', { name: 'Authorise', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Authorise this holiday' });
+  await expect(dialog.getByLabel('Message to the parent (optional)')).toHaveValue('Your holiday request has been authorised.');
+  await dialog.getByLabel('Message to the parent (optional)').fill('Approved, have a safe trip.');
+  await dialog.getByRole('button', { name: 'Authorise' }).click();
+  await expect(dialog).toBeHidden();
   await expect(req.getByText('Accepted (authorised)')).toBeVisible();
+  await expect(req.getByText('Response: Approved, have a safe trip.')).toBeVisible();
 });
 
 test('parent notice shows in the bell badge and on the notices page', async ({ page }) => {
@@ -55,6 +62,18 @@ test('parent notice shows in the bell badge and on the notices page', async ({ p
   await expect(page.getByRole('cell', { name: 'Dentist appointment' })).toBeVisible();
   await page.getByRole('button', { name: 'Mark seen' }).click();
   await expect(page.getByText('Seen', { exact: true })).toBeVisible();
+});
+
+test('teacher logs: pick a teacher, update their week in a pop-up', async ({ page }) => {
+  await signIn(page);
+  await page.goto('/admin/teacher-logs');
+  await page.getByRole('button', { name: /^Sample Teacher Two/ }).click();
+  const dialog = page.getByRole('dialog', { name: 'Sample Teacher Two' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('textbox', { name: /note on/ }).first().fill('Covered by a colleague');
+  await dialog.getByRole('button', { name: 'Save Sample’s logs' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole('status').filter({ hasText: /^Sample Teacher Two: Saved \d+ logs?\.$/ })).toBeVisible();
 });
 
 test('teacher logs: prefill from working hours and save; kiosk sign-in with a PIN', async ({ page, browser }) => {

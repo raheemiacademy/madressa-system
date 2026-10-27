@@ -5,6 +5,7 @@ import { fileObject, homework, homeworkStudent, homeworkTemplate, schoolClass, s
 import { formatInstant, ukLocal } from '@/lib/dates';
 import { optionalText, zodErrors } from '@/lib/validate';
 import { audit } from '../audit';
+import { queuePush } from '../comm/push';
 import { classStudentsOn } from '../attendance/registers';
 import { enqueueMail } from '../comm/mail';
 import { primaryContacts } from '../comm/notify';
@@ -43,6 +44,8 @@ export async function saveHomework(db: Db, actor: Actor, raw: unknown, fileId: s
     let emailed = 0;
     if (v.notifyContacts) {
       const kids = await tx.select({ id: student.id, firstName: student.firstName, surname: student.surname }).from(student).where(inArray(student.id, ids));
+      const contactIds = [...new Set((await primaryContacts(tx, ids)).map((pc) => pc.id))];
+      await queuePush(tx, contactIds.map((id) => ({ kind: 'contact' as const, id })), { title: `New homework: ${v.title}`, body: `${c.name} · due ${when(deadlineAt)}`, url: '/parent/homework' });
       const bcc = String((await readTab(tx, 'homework')).bcc || '') || null;
       for (const pc of (await primaryContacts(tx, ids)).filter((x) => x.email)) {
         const k = kids.find((x) => x.id === pc.studentId)!;

@@ -28,8 +28,7 @@ export default async function Portals() {
   const base = appUrl();
   const rows: [string, string, boolean, { name: string; at: Date | null }[] | null, string][] = [
     ['Parent portal', '/parent', !parentTab.disabled, parents, '/admin/settings/parentPortal'],
-    ['Teacher portal', '/teacher', true, teachers, '/admin/settings/teacherPortal'],
-    ['Student portal', '/student', false, null, '/admin/settings/studentPortal']
+    ['Teacher portal', '/teacher', true, teachers, '/admin/settings/teacherPortal']
   ];
   return (
     <div className="ra-page">
@@ -45,13 +44,16 @@ export default async function Portals() {
       {rows.map(([name, path, on, users, settings]) => (
         <section key={path} className="ra-card" aria-labelledby={`p-${path.slice(1)}`}>
           <div className="ra-card-h"><div><h2 id={`p-${path.slice(1)}`}>{name} <Chip colour={on ? 'var(--color-ok)' : 'var(--color-fg-muted)'}>{on ? 'Open' : path === '/student' ? 'Not in use yet' : 'Closed'}</Chip></h2>
-            <div className="ra-note">{base}{path} · installs as an app on phones</div></div><Link className="ra-link" href={settings}>Settings</Link></div>
+            <div className="ra-note"><a href={path} target="_blank" rel="noopener" style={{ overflowWrap: 'anywhere' }}>{base}{path}</a> · installs as an app on phones</div></div>
+            <div className="ra-toolbar"><a className="ra-btn" href={path} target="_blank" rel="noopener">Open {name.toLowerCase()}<span className="sr-only"> (opens in a new tab)</span></a>
+              {path === '/parent' && <Link className="ra-btn" href="/admin/students/portal-access">Who sees each child</Link>}<Link className="ra-link" href={settings}>Settings</Link></div></div>
           {users && (users.length === 0 ? <p className="ra-empty">Nobody has signed in in the last 30 days.</p> : (
-            <>
-              <p style={{ margin: '0 0 8px' }}><b>{users.length === 1 ? '1 person' : `${users.length} people`}</b> signed in in the last 30 days.</p>
-              <div className="ra-table-wrap" style={{ maxHeight: 320 }}><table className="ra-table"><thead><tr><th>Name</th><th>Last signed in</th></tr></thead>
+            // Closed by default: with hundreds of parents the list would fill the page.
+            <details className="ra-collapse">
+              <summary><b>{users.length === 1 ? '1 person' : `${users.length} people`}</b> signed in in the last 30 days <span className="ra-link">Show who</span></summary>
+              <div className="ra-table-wrap" style={{ maxHeight: 320 }} tabIndex={0} role="region" aria-label={`${name} sign-ins`}><table className="ra-table"><thead><tr><th>Name</th><th>Last signed in</th></tr></thead>
                 <tbody>{users.map((u, i) => <tr key={i}><td className="wrap">{u.name}</td><td>{u.at ? formatInstant(u.at, 'dd/MM/yyyy HH:mm') : '—'}</td></tr>)}</tbody></table></div>
-            </>
+            </details>
           ))}
         </section>
       ))}

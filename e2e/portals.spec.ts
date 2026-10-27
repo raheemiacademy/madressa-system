@@ -7,7 +7,12 @@ const sql = postgres(process.env.DATABASE_URL_TEST ?? '', { max: 1, onnotice: ()
 test.afterAll(() => sql.end());
 const setTab = async (tab: string, value: Record<string, unknown>) => { await sql`insert into setting (tab, value) values (${tab}, ${sql.json(value as never)}) on conflict (tab) do update set value = excluded.value`; };
 const id = async (surname: string) => (await sql<{ id: number }[]>`select id from student where surname = ${surname}`)[0]!.id;
-const lastMonday = () => { const d = new Date(); while (d.getDay() !== 1) d.setDate(d.getDate() - 1); return d.toLocaleDateString('en-CA', { timeZone: 'Europe/London' }); };
+// The most recent Monday in term time (the seed's half term and winter break have no classes).
+const lastMonday = () => {
+  const d = new Date(), iso = () => d.toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+  while (d.getDay() !== 1 || ['2026-10-26', '2026-12-21', '2026-12-28'].includes(iso())) d.setDate(d.getDate() - 1);
+  return iso();
+};
 
 async function portal(browser: Browser, who: 'parent' | 'teacher') {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
@@ -148,3 +153,75 @@ for (const scheme of ['light', 'dark'] as const) {
     }
   });
 }
+
+test('on a computer the portals have a sidebar instead of the bottom tabs, and pass axe', async ({ browser }) => {
+  test.setTimeout(120_000);
+  for (const who of ['parent', 'teacher'] as const) {
+    const { page, ctx } = await portal(browser, who);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/${who}`);
+    const side = page.getByRole('navigation', { name: 'Sections' });
+    await expect(page.getByRole('navigation', { name: 'Main' })).toBeHidden();
+    await expect(side.getByRole('link', { name: who === 'parent' ? 'Home' : 'Today', exact: true })).toHaveAttribute('aria-current', 'page');
+    // Items from the More page are in the sidebar too.
+    await side.getByRole('link', { name: 'Forums' }).click();
+    await expect(page).toHaveURL(new RegExp(`/${who}/forums$`));
+    await expect(side.getByRole('link', { name: 'Forums' })).toHaveAttribute('aria-current', 'page');
+    for (const scheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme: scheme });
+      for (const path of [`/${who}`, `/${who}/homework`, `/${who}/messages`]) {
+        await page.goto(path);
+        await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'));
+        const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+        expect(r.violations.map((x) => `${scheme} ${path} ${x.id}: ${x.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
+      }
+    }
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/${who}`);
+    await page.getByRole('button', { name: 'Dark mode' }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'Dark mode' })).toHaveAttribute('aria-pressed', 'true');
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.getByRole('complementary', { name: 'Main menu' }).getByRole('button', { name: 'Sign out' }).click();
+    await expect(page).toHaveURL(new RegExp(`/${who}/login$`));
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.getByRole('navigation', { name: 'Sections' })).toHaveCount(0);
+    await ctx.close();
+  }
+});
+
+test('the Portals page keeps each sign-in list closed until asked', async ({ page }) => {
+  await signIn(page);
+  await page.goto('/admin/tools/portals');
+  const parents = page.getByRole('region', { name: /^Parent portal/ }).getByRole('group');
+  await expect(parents.getByRole('columnheader', { name: 'Last signed in' })).toBeHidden();
+  await parents.getByText('Show who').click();
+  await expect(parents.getByRole('columnheader', { name: 'Last signed in' })).toBeVisible();
+  await page.getByRole('link', { name: 'Who sees each child' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Parent portal access' })).toBeVisible();
+});
+
+test('a Super admin can open the teacher portal as a teacher, and go back to the admin', async ({ page }) => {
+  await signIn(page);
+  await page.goto('/admin/teachers');
+  await page.getByRole('button', { name: 'Open the teacher portal as Sample Teacher One' }).click();
+  await expect(page).toHaveURL(/\/teacher$/);
+  await expect(page.getByRole('status').filter({ hasText: 'You’re using the teacher portal as Sample Teacher One' })).toBeVisible();
+  await page.getByRole('button', { name: 'Back to admin' }).click();
+  await expect(page).toHaveURL(/\/admin\/teachers\/\d+$/);
+  await page.goto('/teacher');
+  await expect(page).toHaveURL(/\/teacher\/login$/); // the borrowed session has ended
+});
+
+test('parents and teachers can turn on phone notifications from More (and are offered them on Home)', async ({ browser }) => {
+  for (const who of ['parent', 'teacher'] as const) {
+    const { page, ctx } = await portal(browser, who);
+    await page.goto(`/${who}/more`);
+    const row = page.locator('.rp-push-row');
+    await expect(row.getByText('Phone notifications')).toBeVisible();
+    await expect(row.getByRole('button', { name: 'Turn on' }).or(row.getByText(/can’t show notifications|Home Screen|blocked/))).toBeVisible();
+    await ctx.close();
+  }
+});

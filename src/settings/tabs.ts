@@ -31,8 +31,8 @@ export const PALETTE_COLOURS = opts(['lav', 'Lavender'], ['sky', 'Sky'], ['blue'
 
 export const REFERENCE_VARIABLES = ['CONTACT_ID', 'DATE_YMD', 'DATE_DMY', 'DATE_MDY', 'D', 'M', 'Y', 'STUDENT_IDS', 'NUMBER_OF_INVOICES'] as const;
 
-const PARENT_SECTIONS = ['Fees', 'Attendance', 'Term Reports', 'Exam Results', 'Student Diaries', 'Homework', 'Events', 'Incidents', 'Holiday Requests', 'Merits', 'Products', 'Files'];
-const TEACHER_SECTIONS = ['Registers', 'Diary', 'Teacher Logs', 'Forums', 'Merits', 'Homework', 'Incidents', 'Exams', 'Progressive Tests', 'EOTY Reports', 'Events', 'Docs & Files', 'Holiday Requests'];
+const PARENT_SECTIONS = ['Fees', 'Attendance', 'Term Reports', 'Exam Results', 'Homework', 'Events', 'Incidents', 'Holiday Requests', 'Merits', 'Products', 'Files'];
+const TEACHER_SECTIONS = ['Registers', 'Teacher Logs', 'Forums', 'Merits', 'Homework', 'Incidents', 'Exams', 'Progressive Tests', 'EOTY Reports', 'Events', 'Docs & Files', 'Holiday Requests'];
 const asOpts = (xs: string[]) => xs.map((x) => ({ value: x, label: x }));
 
 const timeZones = (): Opt[] => {
@@ -205,7 +205,6 @@ export const TABS: Tab[] = [
       yes('disabled', 'Disable the parent portal'),
       { type: 'textarea', name: 'disabledMessage', label: 'Message shown while disabled', full: true, max: 1000 },
       yes('walkHomeConsent', 'Ask for walk-home consent'),
-      yes('forceDirectDebit', 'Make parents set up direct debit'),
       yes('forceConfirmDetails', 'Make parents confirm student details'),
       { type: 'checks', name: 'hiddenSections', label: 'Hide sections', full: true, default: [], options: asOpts(PARENT_SECTIONS) },
       { type: 'checks', name: 'contactTypesAllowed', label: 'Contact types that can use the portal', full: true, default: ['Parent'], options: asOpts(['Parent', 'Sibling', 'Emergency', 'Other']) }

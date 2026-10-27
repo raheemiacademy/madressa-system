@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { WhatsAppReminders } from '@/components/WhatsAppReminders';
+import { remindFamilies } from '@/server/comm/whatsapp';
 import { db } from '@/db';
 import { Form } from '@/components/Form';
 import { formatInstant } from '@/lib/dates';
@@ -15,6 +17,8 @@ export default async function Incomplete({ searchParams }: { searchParams: Promi
   const sp = await searchParams;
   const { options } = await yearAndClasses();
   const rows = await incomplete(db, { classId: Number(sp.class) || undefined, from: date(sp.from), to: date(sp.to) });
+  const wa = await remindFamilies(db, rows, (first, mine) =>
+    `Salaam ${first}, a reminder that ${mine.map((r) => `${r.firstName} hasn’t handed in “${r.title}” yet (it was due ${formatInstant(r.deadlineAt, 'dd/MM')})`).join(', and ')}. Please help them finish it. JazakAllahu khairan.`);
   return (
     <div className="ra-page">
       <div className="ra-page-h"><div><h1>Incomplete homework</h1><p>Students who haven’t finished active homework that’s past its deadline</p></div>
@@ -25,6 +29,7 @@ export default async function Incomplete({ searchParams }: { searchParams: Promi
         <div className="ra-field"><label htmlFor="in-to">Due to</label><input className="ra-input" id="in-to" type="date" name="to" defaultValue={date(sp.to) ?? ''} /></div>
         <button className="ra-btn">Filter</button>
       </form>
+      <WhatsAppReminders title="Remind families on WhatsApp" list={wa} />
       <section className="ra-card" aria-label="Incomplete homework">
         {rows.length === 0 ? <p className="ra-empty">Everyone is up to date.</p> : (
           <Form action={remindersAction} card={false} savebar={false} submit="Send reminders">

@@ -685,3 +685,112 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
   It's safe to run again: people who already have a password aren't emailed. It's audited.
 - **The System page's ops checklist is now called "Go-live checklist"**, so it isn't confused with the setup steps.
 
+
+## 17. Next round (25/10/2026)
+
+- **WhatsApp in place of text messages (your request).** Paid SMS is switched off for now. Communication → WhatsApp picks who (the same groups as texts: current students' primary contacts, chosen classes, teachers, the waiting list, parents without a portal login, all contacts) and a message, optionally from a template, with `{NAME}` filled per person.
+  - **Click-to-send, as you chose.** Each person gets a `wa.me` button that opens WhatsApp (the app on a phone, WhatsApp Web on a computer) with the message written. The admin presses send. The system sends nothing and needs no WhatsApp Business account, so no new dependency, cost or third-party data processor.
+  - The incident page has "Tell the parents on WhatsApp", using the system incident template. The incident form's "text the primary contacts" box is gone.
+  - SMS templates are now "Message templates" and feed WhatsApp. The SMS code, routes and data stay, so texts can come back by unhiding them.
+- **Import from any spreadsheet (smart matching now, AI later, as you chose).** Uploading a file whose headings aren't the template's adds a "Match your columns" step. The system guesses from the heading words (for example "Mobile", "Parent name", "DOB" or "Full name", which is split at the last space); the admin checks and corrects the guesses, then sees the usual preview. Matching runs on the server, and only known fields are accepted.
+  - Brothers and sisters imported with the same parent email now share one parent record instead of making duplicates.
+  - "Moving from another system" (`/admin/import/guide`) explains exporting from IBEAMS, Excel, Google Sheets and paper records, in order: classes, then students.
+- **Hidden for later (your request):** text messages, the online payment gateways (Stripe/GoCardless: families pay by cash or bank transfer), the student portal, and the Student Diary. Their Settings tabs, menu items and links are hidden. The routes and data are kept, so nothing is lost. They're listed in FUTURE.md.
+- **What's new (`/admin/whats-new`, your request).** Each update gets a plain-language entry in `src/lib/releases.ts` (New / Better / Fixed / Removed), newest first. The dashboard shows "New update" to each admin until they open the page; `admin_staff.seen_release` (migration 0009) remembers this. Updates are installed by whoever hosts the system, so there's no "update" button; the page says which version is running. The System page shows the same version. A new madrasah's first admin starts with the current release marked as seen.
+- **The admin on a phone is laid out as an app (your request, 25/10/2026),** following the admin screens in `design-reference/mobile` (Main, AdminStudents, AdminFees). When the screen is 640px or narrower:
+  - the sidebar and the sideways-scrolling menu are replaced by a bottom tab bar: Home, Students, Fees (for staff with fees access), Messages (with the unread count) and More;
+  - the header shows the school's mark, the page name (on Home, the school and today's date), a search button and notifications;
+  - the full menu, the year switcher, the fire drill and "Sign out" move to **More** (`/admin/more`);
+  - on the dashboard, the figures sit two to a row, the quick actions form a two-by-two grid, and unread messages and the fire drill come straight after the figures;
+  - rows of tool buttons and filter pills scroll sideways instead of wrapping.
+
+  Wider screens are unchanged. Tables keep their columns, which now fit at 390px, so bulk selection still works on a phone.
+- **Parent and teacher portals on a computer (your request, 25/10/2026).** On screens wider than 860px, each portal gets a sidebar like the admin's: the school's name, "Parent portal" or "Teacher portal", the main tabs, everything from the More page, the school's links, and Sign out. Pages use the extra width. Phones and tablets keep the bottom tab bar. Both the sidebar and the More page read their items from one list per portal (`menu.ts`), so they always match.
+- **Accent colours and flat styling (your choice, 25/10/2026,** from the "Portal accent colours" design). Each app has its own accent from the palette: admin indigo, teacher blue, parent violet; sky is kept for the student portal. They are the tokens `--ra-accent` and `--ra-accent-on-ink`, set on `.rp-teacher` and `.rp-parent`.
+  - The accent shows on the logo tile, the current tab (a bar and a pill behind the icon) or sidebar item, progress bars, and the figures on the dark top card.
+  - Accent colours are never used as text on white: blue and sky fail contrast. Avatars use the primary blue for the same reason.
+  - All gradients are gone: the sidebar, top cards, sign-in background, logo tiles and progress bars are solid colours.
+- **Dark mode switch (your request).** Admin has it in the header (and on More on a phone); the portals have it in the sidebar and on their More page. It saves the choice on that device (the `ra_theme` cookie) and applies it before the page paints. Until someone uses it, the school's theme setting (admin) or the device's own setting decides.
+- **Dashboard and screen tidy-ups (your requests, 25/10/2026).**
+  - **Dashboard layout:**
+    - The greeting card no longer mentions fees; it gives today's attendance only.
+    - Unread messages and Teacher sign-in now sit above Weekly attendance, which is full width.
+    - "Students by age group" (boys and girls) moved to the Students page, under the age-group table.
+  - **Hide fees** (on the dashboard's greeting card and the Fees page): for screens other people can see. It's saved on that device (the `ra_hide_fees` cookie). When it's on, the pages leave money out entirely; nothing is just blurred:
+    - the Fees outstanding tile, Recent payments and Fees by type on the dashboard;
+    - the totals, the monthly chart, totals by type and the payments list on the Fees page.
+
+    Record payment, the fee tools and the fees search stay.
+  - **Holiday requests:** two big buttons, Authorise (green) and Unauthorise (red). "Ask for more information" and "Decline" are links underneath. Each one opens a short pop-up with an optional message to the parent, pre-filled for the two main answers.
+  - **Portals page:** each portal's address is a link, and there's an "Open … portal" button. The list of who signed in starts closed ("Show who"), so hundreds of parents don't fill the page.
+  - **Classes page:** "Switch/rename classes" was removed; a class is renamed on its own edit page. The bulk rename page still exists but isn't linked. "Duplicate class timings" and "Classrooms & subjects" moved into the Timetable page; Subjects is also under Exams.
+  - **Classes page:**
+    - The filter box and button are now a plain search bar that filters as you type.
+    - Each class card opens its class wherever you click on it, with a slight lift on hover. Keyboard users still tab to the class name, and the whole card gets the focus ring.
+    - "Change order" (`/admin/classes/order`) sets the custom order with Move up / Move down, and numbers the classes 1, 2, 3. The number field on a class's edit page still works.
+  - **Clickable figure tiles:** each dashboard figure opens the page behind it (Students, Register, Fees, Portals, Teacher logs). On the Students page, Current and Waiting list open the student list filtered to that status, and Parents on portal opens Portals. They lift slightly on hover, like the class cards.
+  - **Unread messages show a count instead of a dot** on the dashboard and the Messages page: the number of new messages from others in that conversation since you last opened it. A conversation marked unread by hand shows 1.
+  - The Students page's "More tools" no longer repeats "Move student classes"; the "Move classes" button is at the top.
+  - **Students page "More tools" trimmed (your request):** Download students, Import students and Move student classes repeated the buttons at the top, so they're gone from the row. "Parent portal access" moved to System → Portals, as a "Who sees each child" button on the Parent portal card; the page shows under System → Portals.
+  - **Sorting the student list:** the column headings (ID, Name, Gender, Class, Age, Status) sort the whole list on the server, across every page. Pressing the same heading again reverses it. Blanks go last, and Age goes youngest first. The sort is kept while you search, filter or change page.
+- **Teachers page and teacher portal access (your requests, 25/10/2026).**
+  - The Work days column is gone from the teacher list. The CSV export still includes it.
+  - Icon buttons in the teacher and student lists show a short label ("Edit", "Profile", "Working hours"…) on hover and on keyboard focus.
+  - **Open their teacher portal** (Super admins only): on the teacher's row and profile. It opens the teacher portal as that teacher in a session marked with the admin (`session.acting_admin_id`, migration 0010).
+    - The portal shows a banner on every page, with **Back to admin**, which ends that session.
+    - Opening it is audited, and anything done meanwhile is recorded as "Teacher (via Admin)".
+    - It needs the teacher to have a portal login (an email on their record) that isn't blocked. A teacher who hasn't chosen a password yet can still be viewed.
+- **Register:**
+  - Marks are coloured at a glance: present green, late yellow, absences red (authorised, notified and unauthorised are deepening shades). The letters stay.
+  - Daily register and Monthly register are two big buttons of their own, apart from the other tools.
+- **Teacher logs → Update this week (your request):** a list of teachers, each showing "N of M days logged". Pressing a name opens a pop-up with just that teacher's days (absent, time in, time out, note). Saving closes it and confirms. Saving only touches the days in the pop-up.
+- **Fees dashboard → Class fees (your request):** a card on the right lists every class with its full-year fee per student and the structure it uses. Edit opens that structure; for the default structure the button's name says it's shared with other classes. "Set fees" opens the class's fees section if it isn't billed. Hidden along with the other figures when Hide fees is on.
+  Pressing a class's name opens **Fees for that class**: Full overview filtered to the students in it now, including anyone not invoiced yet (£0), with the class totals.
+- **Fees dashboard figures open their lists (your request):**
+  - Invoiced opens the new **All invoices** page (`/admin/fees/invoices`). It lists every invoice this year with filters (student name, type, status, class, due dates), a sort (due date either way, student, amount, balance owed) and totals for what's shown.
+  - Received opens All fees received, most recent first.
+  - Outstanding opens Outstanding and reminders with everything still to pay.
+  - Overdue opens the same page filtered to overdue.
+- **Messages (your requests, 25/10/2026).**
+  - **Opening a conversation** marks it read, and the page refreshes the header's counts straight away. Previously the count could lag by a page.
+  - **Read ticks** (WhatsApp-style): grey means delivered, blue means read.
+    - On the office's messages, blue means every parent or teacher on the conversation has read it.
+    - On a parent's or teacher's own messages, blue means the other person has read it, or (for a message to the office) any admin has.
+  - **Search:** a single search bar with a filter (Everyone, or one teacher or contact) replaces "Advanced search".
+  - **Deleting:** admins with Delete access can delete one message (a bin icon on it) or a whole conversation (a button). A conversation left empty goes too. Both ask first and are audited.
+  - **Teacher → parent messages:** these count as new for each admin until they open Messages → Teacher ↔ parent. They're added to the Messages badge, and the tab shows how many. Stored per admin in `admin_staff.seen_teacher_parent_at` (migration 0011).
+  - **Live counts and sound:** pages ask for the current counts every 20 seconds while the tab is open (`/admin/api/badges`, `/teacher/api/badges`, `/parent/api/badges`). The badges update, and a short chime plays when messages, holiday requests or parent absence/late notices go up.
+    - The chime is made in the browser, with no sound file.
+    - "Sounds" on/off, per device, is in the admin account menu and on every More page.
+  - **Phone notifications** when the app is closed need web push and a new library, so they're waiting on your OK (FUTURE.md 16).
+- **Newsletters and WhatsApp left the Communication menu (your request).** Newsletters is on the to-do list (FUTURE.md 15). WhatsApp is now used for reminders where they're needed: a "Remind … on WhatsApp" card with one ready-written message per family (main contacts with a usable mobile) on:
+  - Fees → Outstanding and reminders (each family's total owed);
+  - a student's Fees page;
+  - Register → Attendance alerts;
+  - Homework → Incomplete homework;
+  - incidents, as before.
+
+  The old WhatsApp page and Message templates still exist but aren't in the menu.
+- **Phone notifications (web push): approved 25/10/2026, adding the `web-push` library (3.6.7, with `@types/web-push`).**
+  - **Who:** parents and teachers turn them on per device from More (or the "Get notified" card on Home), which asks the phone's permission.
+  - **What sends one:**
+    - a new message to them (opens that conversation);
+    - homework set with "tell the parents" ticked (opens Homework);
+    - the school's answer to a holiday request (opens Attendance).
+  - **How it's sent:** like email, each notification is queued in the same transaction (`push_queue`) and the worker sends it within about 15 seconds. `push_subscription` holds each device. A device the push service says has gone is forgotten.
+  - **Where it sends:** `PUSH_DRIVER=webpush` sends for real (on for the preview); anything else only records it locally (`pushOutbox`, used by the tests).
+  - **Keys:** VAPID keys come from `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`, or the app makes a pair once and stores it, with the private half encrypted. Migrations 0012 and 0013.
+  - **Limits:**
+    - iPhones only allow notifications for apps added to the home screen (iOS 16.4+); the More page explains how.
+    - On the free Render preview the server sleeps when idle, so notifications go out once it's awake.
+- **Marketing homepage and early access (your brief, 27/10/2026).** A port of `design-reference/website/`: the homepage, then `/features`, `/faq` and `/contact` (27/10/2026), copy word for word.
+  - **Where it shows:** only on the copy that serves the main domain, which sets `MARKETING_SITE=1` (approved). Every madrasah's own copy keeps `/` going to `/admin` and has no `/api/early-access`. Sign-in cookies are scoped to `/admin`, `/teacher` and `/parent`, so `/` can't see who is signed in; nothing in auth changed.
+  - **Styles:** `src/styles/marketing.css`, every rule under `.ms`; the reference's colours are `.ms` tokens in `tokens.css`, values unchanged. Light only, as designed.
+  - **Font:** the reference's Fraunces has the optical-size axis and the app's doesn't, and both would share the name "Fraunces". So the homepage loads the reference's own file (Fraunces 400, opsz, latin, 35 KB, SIL OFL) with `next/font/local` under its own name (approved). Inter comes from the app as before.
+  - **Entrances:** content is visible at rest. Elements already on screen at load never animate; the rest play in just before they scroll into view, so nothing depends on an observer firing.
+  - **Sign-ups:** `early_access_signup` (migration 0014, approved), no IP stored. 5 per IP per hour through the existing `rate_limit`. Each one queues an email to `EARLY_ACCESS_NOTIFY_EMAIL`; nothing is sent while `EMAIL_DRIVER=log`.
+  - **Avatar contrast (your choice):** in the teacher sign-in mock-up, BK and MA use the darker indigo (`--action`, 5.6:1 with white) and HR has ink text on blue (7:1), instead of the reference's 3.7:1 and 2.2:1.
+  - **Offer box contrast (your choice):** its white tint is 10% instead of the reference's 12%, so the text passes 4.5:1 (about 4.6:1, was 4.36:1).
+  - **Inner pages:** same rule as the homepage: only with `MARKETING_SITE=1`, a 404 on every madrasah's copy. The FAQ page's `[OFFER]` is the homepage's offer sentence (one constant, `OFFER`).
+  - **Contact form:** `POST /api/contact` (`{ name, email, school, topic, message }`), 5 per IP per hour. No new table: each message is emailed to `EARLY_ACCESS_NOTIFY_EMAIL` through the mail queue, which keeps the copy (`./madrasah messages` lists them). With no notify address it answers 503, so the visitor is told to email instead and nothing is lost silently.
+  - **Status focus fix:** after a send, focus now moves to the status message once it has rendered. Before, it was focused while still empty and hidden, so focus fell to the page (the homepage form had this too).

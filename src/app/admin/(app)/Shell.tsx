@@ -4,6 +4,10 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useTransition } from 'react';
 import { Icon } from '@/components/Icon';
+import { LiveBadges } from '@/components/LiveBadges';
+import { SoundToggle } from '@/components/SoundToggle';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { TabBar, type Tab } from '@/app/_portal/TabBar';
 import { STEPS } from '@/lib/onboarding-steps';
 import { initials } from '@/lib/text';
 import { logoutAction } from '@/app/_auth/actions';
@@ -12,25 +16,35 @@ import { chooseYear } from './shell-actions';
 import { DrillStart } from './fire-drill/DrillStart';
 
 type Props = {
-  school: string; logoSrc: string | null; userName: string; userEmail: string;
+  school: string; logoSrc: string | null; userName: string; userEmail: string; todayLabel: string;
   years: { id: number; title: string }[]; yearId: number | null;
   drillPlaces: string[]; drillRunning: boolean; notifications: number; unreadMessages: number; areas: ('fees' | 'comm')[];
   children: React.ReactNode;
 };
 
-export function Shell({ school, logoSrc, userName, userEmail, years, yearId, drillPlaces, drillRunning, notifications, unreadMessages, areas, children }: Props) {
+export function Shell({ school, logoSrc, userName, userEmail, todayLabel, years, yearId, drillPlaces, drillRunning, notifications, unreadMessages, areas, children }: Props) {
   const pathname = usePathname();
   const crumb = crumbFor(pathname);
+  const home = pathname === '/admin';
+  // Phone app (design-reference/mobile/Main): ≤5 tabs at the bottom; everything else is under More.
+  const tabs: Tab[] = [
+    { href: '/admin', label: 'Home', icon: 'home' }, { href: '/admin/students', label: 'Students', icon: 'users' },
+    ...(areas.includes('fees') ? [{ href: '/admin/fees', label: 'Fees', icon: 'pound' } as Tab] : []),
+    { href: '/admin/messages', label: 'Messages', icon: 'mail', badge: unreadMessages }, { href: '/admin/more', label: 'More', icon: 'more' }
+  ];
+  const mark = (
+    <span className="ra-brand-mark">
+      {/* eslint-disable-next-line @next/next/no-img-element -- school-uploaded logo of unknown size */}
+      {logoSrc ? <img src={logoSrc} alt="" /> : <Icon name="school" size={20} />}
+    </span>
+  );
   return (
     <div className="ra">
       <a className="skip-link" href="#main">Skip to content</a>
       <div className="ra-shell">
         <aside className="ra-side" aria-label="Main menu">
           <Link className="ra-brand" href="/admin">
-            <span className="ra-brand-mark">
-              {/* eslint-disable-next-line @next/next/no-img-element -- school-uploaded logo of unknown size */}
-              {logoSrc ? <img src={logoSrc} alt="" /> : <Icon name="school" size={20} />}
-            </span>
+            {mark}
             <span className="ra-brand-text"><span className="ra-brand-name">{school}</span><span className="ra-brand-sub">School admin</span></span>
           </Link>
           <nav className="ra-nav" aria-label="Sections">
@@ -55,23 +69,30 @@ export function Shell({ school, logoSrc, userName, userEmail, years, yearId, dri
         </aside>
         <div className="ra-main">
           <header className="ra-top">
-            <div className="ra-crumb"><small>{crumb.group}</small><strong>{crumb.title}</strong></div>
+            <Link className="ra-top-mark" href="/admin" aria-label={`${school}: dashboard`}>{mark}</Link>
+            {home
+              ? <div className="ra-crumb"><small><span className="ra-d-only">{crumb.group}</span><span className="ra-m-only">{school}</span></small><strong><span className="ra-d-only">{crumb.title}</span><span className="ra-m-only">{todayLabel}</span></strong></div>
+              : <div className="ra-crumb"><small>{crumb.group}</small><strong>{crumb.title}</strong></div>}
             <SearchBox />
+            <Link className="ra-icon-btn ra-m-only" href="/admin/search" aria-label="Search"><Icon name="search" /></Link>
             <div className="ra-top-actions">
               <YearSwitcher years={years} yearId={yearId} />
-              {drillPlaces.includes('header') && <Link className="ra-btn" href="/admin/fire-drill">Fire drill</Link>}
+              {drillPlaces.includes('header') && <Link className="ra-btn ra-d-only" href="/admin/fire-drill">Fire drill</Link>}
               <Link className="ra-icon-btn" href="/admin/register" aria-label={notifications ? `${notifications} ${notifications === 1 ? 'notification' : 'notifications'}: parent notices and holiday requests` : 'Notifications'}>
                 <Icon name="bell" />{notifications > 0 && <span className="ra-badge" aria-hidden="true">{notifications}</span>}
               </Link>
-              <Link className="ra-icon-btn" href="/admin/messages" aria-label={unreadMessages ? `${unreadMessages} unread ${unreadMessages === 1 ? 'message' : 'messages'}` : 'Messages'}>
+              <Link className="ra-icon-btn ra-d-only" href="/admin/messages" aria-label={unreadMessages ? `${unreadMessages} unread ${unreadMessages === 1 ? 'message' : 'messages'}` : 'Messages'}>
                 <Icon name="mail" />{unreadMessages > 0 && <span className="ra-badge" aria-hidden="true">{unreadMessages}</span>}
               </Link>
+              <ThemeToggle className="ra-icon-btn" />
               <AccountMenu name={userName} email={userEmail} />
             </div>
           </header>
           {drillRunning && !pathname.startsWith('/admin/fire-drill') && <div className="ra-banner ra-alert" role="alert" style={{ margin: '12px 28px 0' }}><div><b>A fire drill is running.</b></div><Link className="ra-link" href="/admin/fire-drill">Open roll call</Link></div>}
           <Suspense fallback={null}><SetupBanner /></Suspense>
           <main id="main" tabIndex={-1} className="ra-content">{children}</main>
+          <div className="ra-tabbar"><TabBar tabs={tabs} /></div>
+          <LiveBadges url="/admin/api/badges" counts={{ messages: unreadMessages, notifications }} />
         </div>
       </div>
     </div>
@@ -101,12 +122,12 @@ function SearchBox() {
   );
 }
 
-function YearSwitcher({ years, yearId }: { years: Props['years']; yearId: number | null }) {
+export function YearSwitcher({ years, yearId }: { years: Props['years']; yearId: number | null }) {
   const router = useRouter();
   const [pending, start] = useTransition();
-  if (!years.length) return <select className="ra-select" aria-label="Academic year" disabled><option>No years yet</option></select>;
+  if (!years.length) return <select className="ra-select ra-year" aria-label="Academic year" disabled><option>No years yet</option></select>;
   return (
-    <select className="ra-select" name="year" aria-label="Academic year" value={yearId ?? ''} disabled={pending}
+    <select className="ra-select ra-year" name="year" aria-label="Academic year" value={yearId ?? ''} disabled={pending}
       onChange={(e) => { const id = Number(e.target.value); start(async () => { await chooseYear(id); router.refresh(); }); }}>
       {years.map((y) => <option key={y.id} value={y.id}>{y.title}</option>)}
     </select>
@@ -125,10 +146,11 @@ function AccountMenu({ name, email }: { name: string; email: string }) {
   };
   return (
     <>
-      <button ref={btn} type="button" className="ra-avatar" popoverTarget="account-menu" aria-label={`${initials(name)}, account menu for ${name}`}
+      <button ref={btn} type="button" className="ra-avatar ra-d-only" popoverTarget="account-menu" aria-label={`${initials(name)}, account menu for ${name}`}
         onClick={() => requestAnimationFrame(place)}>{initials(name)}</button>
       <div ref={menu} id="account-menu" popover="auto" className="ra-menu">
         <p><strong style={{ color: 'var(--color-fg)', display: 'block' }}>{name}</strong>{email}</p>
+        <SoundToggle className="ra-menu-toggle" />
         <form action={logoutAction.bind(null, 'admin')}><button type="submit">Sign out</button></form>
       </div>
     </>

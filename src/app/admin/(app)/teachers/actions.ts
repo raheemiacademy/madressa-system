@@ -6,8 +6,9 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { teacher } from '@/db/schema';
 import { formObject, type FormState } from '@/lib/validate';
-import { actorOf, requireAdmin } from '@/server/next/actor';
-import { deleteTeachers, emergencyFromForm, saveTeacher, setHours } from '@/server/people/teachers';
+import { actorOf, requestMeta, requireAdmin } from '@/server/next/actor';
+import { setSessionCookie } from '@/server/next/session-cookie';
+import { deleteTeachers, emergencyFromForm, openTeacherPortalAs, saveTeacher, setHours } from '@/server/people/teachers';
 import { storeUpload } from '@/server/storage';
 
 export async function saveTeacherAction(id: number | undefined, _p: FormState, fd: FormData): Promise<FormState> {
@@ -56,4 +57,13 @@ export async function hoursAction(_p: FormState, fd: FormData): Promise<FormStat
   }
   revalidatePath('/admin', 'layout');
   return { ok: true, message: 'Working hours saved.' };
+}
+
+/** Super admins: open the teacher portal as this teacher (see openTeacherPortalAs). */
+export async function viewAsTeacherAction(id: number): Promise<{ error?: string } | void> {
+  const a = await requireAdmin('super');
+  const r = await openTeacherPortalAs(db, actorOf(a), a.staff.id, id, await requestMeta());
+  if (!r.ok) return { error: r.error };
+  await setSessionCookie('teacher', r.token);
+  redirect('/teacher');
 }

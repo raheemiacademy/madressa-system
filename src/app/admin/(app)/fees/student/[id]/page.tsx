@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { WhatsAppReminders } from '@/components/WhatsAppReminders';
+import { remindFamilies } from '@/server/comm/whatsapp';
 import { notFound } from 'next/navigation';
 import { and, asc, eq } from 'drizzle-orm';
 import { db } from '@/db';
@@ -44,6 +46,9 @@ export default async function StudentFees({ params, searchParams }: { params: Pr
   ]);
   const pays = await paymentsFor(db, rows.map((r) => r.id));
   const t = totals(rows);
+  const owed = rows.filter((r) => r.balance > 0);
+  const wa = owed.length ? await remindFamilies(db, owed, (first, mine, school) =>
+    `Salaam ${first}, this is a reminder from ${school} that ${formatPence(mine.reduce((s, r) => s + r.balance, 0))} is still to pay for ${name}. You can pay by cash or bank transfer. JazakAllahu khairan.`) : null;
   const canDelete = adminCan(admin.staff, 'delete');
   const moveOptions = (from: number) => rows.filter((r) => r.id !== from).map((r) => ({ value: String(r.id), label: `#${r.id} · ${r.description ?? r.type}` }));
   const q = (v: Record<string, string | undefined>) => `?${new URLSearchParams(Object.entries({ view, type, ...v }).filter(([, x]) => x) as [string, string][])}`;
@@ -64,6 +69,8 @@ export default async function StudentFees({ params, searchParams }: { params: Pr
         <div className="ra-kpi"><div className="ra-kpi-top">Total received</div><div className="ra-kpi-val">{formatPence(t.received)}</div><div className="ra-kpi-sub">{t.pending ? `${formatPence(t.pending)} pending` : 'Cleared payments'}</div></div>
         <div className="ra-kpi"><div className="ra-kpi-top">Total overdue</div><div className={`ra-kpi-val${t.overdue ? ' ra-warn' : ''}`}>{formatPence(t.overdue)}</div><div className="ra-kpi-sub">Overdue invoices only</div></div>
       </div>
+
+      {wa && <div className="no-print"><WhatsAppReminders title="Remind on WhatsApp" list={wa} /></div>}
 
       <nav className="ra-filters no-print" aria-label="Fees view">
         {Object.entries(VIEWS).map(([k, l]) => <Link key={k} className="ra-filter" aria-current={view === k ? 'page' : undefined} href={q({ view: k })}>{l}</Link>)}

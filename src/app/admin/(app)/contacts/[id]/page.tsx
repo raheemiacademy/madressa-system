@@ -17,7 +17,8 @@ import { copyAddressAction, deleteContactAction } from '../actions';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { normaliseNumber, whatsappMessages } from '@/server/comm/sms';
 import { describeLogin } from '@/server/password-links';
-import { sendLoginLinkAction } from '../../login-actions';
+import { copyLoginLinkAction, sendLoginLinkAction } from '../../login-actions';
+import { LoginLinkButton } from '../../LoginLinkButton';
 
 export const metadata = { title: 'Contact' };
 
@@ -54,7 +55,8 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
             {cf.fields.map((f) => <span key={f.id} style={{ display: 'contents' }}><dt>{f.label}</dt><dd>{answerText(cf.values[f.id]) || '—'}</dd></span>)}
           </dl>
           {canEdit && c.login && <div className="ra-toolbar"><ActionButton action={setBlockedAction.bind(null, id, !blocked)} label={blocked ? 'Unblock portal' : 'Block portal'} confirm={blocked ? undefined : `Block ${c.name} from the parent portal?`} />
-            {!blocked && <ActionButton action={sendLoginLinkAction.bind(null, 'parent', id)} label="Email a set-password link" />}</div>}
+            {!blocked && <><ActionButton action={sendLoginLinkAction.bind(null, 'parent', id)} label="Email a set-password link" />
+              <LoginLinkButton action={copyLoginLinkAction.bind(null, 'parent', id)} name={c.name} whatsapp={wa?.slice(1)} /></>}</div>}
           <div className="ra-toolbar"><Link className="ra-btn" href={`/admin/messages/new?contact=${id}`}><Icon name="mail" />Message</Link></div>
           {wa && <WhatsAppButton number={wa.slice(1)} name={c.name} messages={waMessages} />}
         </section>

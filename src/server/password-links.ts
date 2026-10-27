@@ -31,13 +31,19 @@ async function personName(db: DbOrTx, idn: typeof loginIdentity.$inferSelect) {
   return '';
 }
 
-/** Emails a one-time link that verifies the address and sets a password. Older unused links stop working. */
-export async function sendPasswordLink(db: DbOrTx, idn: typeof loginIdentity.$inferSelect, createdBy: number | null = null) {
-  if (!isLinkPortal(idn.portal)) return false;
+/** A one-time link that verifies the address and sets a password. Older unused links stop working. */
+export async function makePasswordLink(db: DbOrTx, idn: typeof loginIdentity.$inferSelect) {
+  if (!isLinkPortal(idn.portal)) return null;
   const raw = randomBytes(32).toString('base64url');
   await db.update(authToken).set({ usedAt: new Date() }).where(and(eq(authToken.identityId, idn.id), isNull(authToken.usedAt)));
   await db.insert(authToken).values({ identityId: idn.id, tokenHash: sha256(raw), expiresAt: new Date(Date.now() + LINK_HOURS * 3_600_000) });
-  const link = `${appUrl()}/${idn.portal}/set-password/${raw}`;
+  return `${appUrl()}/${idn.portal}/set-password/${raw}`;
+}
+
+/** Emails the person a set-password link. */
+export async function sendPasswordLink(db: DbOrTx, idn: typeof loginIdentity.$inferSelect, createdBy: number | null = null) {
+  if (!isLinkPortal(idn.portal)) return false;
+  const link = (await makePasswordLink(db, idn))!;
   const mail = await render(db, 'portals.set-password', { NAME: await personName(db, idn), PORTAL: PORTAL_NAME[idn.portal], LINK: link, HOURS: String(LINK_HOURS) });
   await enqueueMail(db, [{ to: idn.email, subject: mail.subject, html: mail.html, entity: 'login_identity', entityId: idn.id, createdBy }]);
   await log(db, idn.portal === 'teacher' ? 'teacher' : 'contact', 'Emailed a set-password link', idn.id);

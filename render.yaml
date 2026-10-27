@@ -39,3 +39,5 @@ services:
         value: log
       - key: SMS_DRIVER
         value: log
+      - key: PUSH_DRIVER
+        value: webpush # real phone notifications (you asked for them); keys are made and kept by the app

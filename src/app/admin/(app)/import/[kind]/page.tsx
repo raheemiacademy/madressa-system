@@ -1,9 +1,11 @@
 import { isNull } from 'drizzle-orm';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { db } from '@/db';
 import { teacher } from '@/db/schema';
 import { SelectField } from '@/components/Fields';
 import { requireAdmin } from '@/server/next/actor';
+import { targetsFor } from '@/server/people/column-match';
 import { COLUMNS, type ImportKind } from '@/server/people/imports';
 import { listYearGroups } from '@/server/people/year-groups';
 import { ImportFlow } from './ImportFlow';
@@ -31,8 +33,9 @@ export default async function ImportPage({ params, searchParams }: { params: Pro
   return (
     <div className="ra-page">
       <div className="ra-page-h"><div><h1>{edit ? `Export/import edit: ${kind}` : TITLE[kind]}</h1>
-        <p>{edit ? 'Download every record with its ID, change it in Excel, then upload it here. Rows with an ID update that record.' : 'Download the template, fill it in, then upload it. Nothing is saved until you confirm the preview.'}</p></div>
+        <p>{edit ? 'Download every record with its ID, change it in Excel, then upload it here. Rows with an ID update that record.' : 'Upload your own spreadsheet (CSV or Excel) or our template. You’ll match the columns, see a preview, and nothing is saved until you confirm.'}</p></div>
         <div className="ra-toolbar">
+          <Link className="ra-btn" href="/admin/import/guide">Moving from another system?</Link>
           <a className="ra-btn" href={`/admin/import/${kind}/template`}>Download template</a>
           {(kind === 'students' || kind === 'contacts') && <a className="ra-btn" href={`/admin/import/${kind}/template?existing=1`}>Download existing {kind}</a>}
         </div></div>
@@ -42,7 +45,7 @@ export default async function ImportPage({ params, searchParams }: { params: Pro
           <tbody>{cols.map((c) => <tr key={c.name}><td><code>{c.name}</code>{c.required ? ' (required)' : ''}</td><td className="wrap" style={{ maxWidth: '60ch' }}>{c.help}</td></tr>)}</tbody></table>
         <p className="ra-note">Dates can be DD/MM/YYYY or YYYY-MM-DD. Columns you leave out are left blank (or unchanged when updating by ID).</p>
       </details>
-      <ImportFlow kind={kind} extra={extra} />
+      <ImportFlow kind={kind} extra={extra} targets={targetsFor(kind)} />
     </div>
   );
 }

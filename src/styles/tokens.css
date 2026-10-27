@@ -42,7 +42,13 @@
   --fs-title: 1.75rem;
   --fw-medium: 500;
   --ra-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+
+  /* Each app's accent (flat, from the palette): admin indigo; the portals override it below */
+  --ra-accent: var(--ra-indigo);
+  --ra-accent-on-ink: var(--ra-sky);
 }
+.rp-teacher { --ra-accent: var(--ra-blue); --ra-accent-on-ink: var(--ra-blue); }
+.rp-parent { --ra-accent: var(--ra-violet); --ra-accent-on-ink: var(--ra-lav); }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -80,3 +86,26 @@
 }
 
 @media (pointer: coarse) { :root { --ra-ctl: 44px; } }
+
+/* Marketing homepage (MARKETING_SITE=1, src/styles/marketing.css). Its own palette, exactly as design-reference/website/styles.css;
+   scoped to .ms so it never touches the admin app or the portals. Light only. */
+.ms, body:has(.ms) {
+  --indigo: #5680E9; --sky: #84CEEB; --blue: #5AB9EA; --lav: #C1C8E4; --violet: #8860D0;
+  --ink: #1C2147;            /* text on light, and the dark field */
+  --ink-2: #252B5C;          /* tone step inside the dark field */
+  --ground: #F7F8FC;         /* page ground */
+  --field: #E9ECF7;          /* lavender field (tone step) */
+  --white: #FFFFFF;
+  --muted: #4A5072;          /* secondary text on light, 7:1 */
+  --on-ink: #FFFFFF;
+  --on-ink-muted: #C3C7E2;   /* 9:1 on ink */
+  --action: #4364B6;         /* buttons and links on light, 5.6:1 with white */
+  --action-hover: #36539C;
+  --ok: #2F7D32; --bad: #C62828;
+  /* Single-use values from the reference, named */
+  --sky-hover: #A3DBF1; --rule: #D6DAEC; --input-line: #CDD2E6; --early-text: #E6EAF8; --ok-text: #1F5E22; --bad-text: #8E1C1C;
+  --toc-hover: #313874;
+  /* Inside the product mock-ups (data-ui) */
+  --ui-fg: #1F2340; --ui-ground: #F2F3F9; --ui-bar: #E4E7F3; --ui-line: #E3E5F0; --ui-rule: #EEF0F6; --ui-bubble: #EEF0F8;
+  --ui-phone: #F5F6FB; --ui-bezel: #0F1330; --ui-drill: #B42318;
+}

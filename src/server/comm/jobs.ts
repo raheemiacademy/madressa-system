@@ -10,6 +10,7 @@ import { collectDirectDebits } from '../portal/fees';
 import { todayIso } from '../people/common';
 import { readTab } from '../settings';
 import { processMailQueue } from './mail';
+import { processPushQueue } from './push';
 import { sendAttendanceAlerts } from './notify';
 import { processSmsQueue } from './sms';
 
@@ -37,10 +38,10 @@ export async function runDaily(db: Db, now = new Date()) {
   return true;
 }
 
-/** One worker pass: send due emails and texts, then the daily jobs. Each part's failure is logged, not fatal. */
+/** One worker pass: send due emails, phone notifications and texts, then the daily jobs. Each part's failure is logged, not fatal. */
 export async function tick(db: Db) {
   await db.insert(workerHeartbeat).values({ process: 'worker', lastBeat: new Date() }).onConflictDoUpdate({ target: workerHeartbeat.process, set: { lastBeat: new Date() } });
-  for (const [name, step] of [['mail', processMailQueue], ['sms', processSmsQueue], ['daily', runDaily]] as const) {
+  for (const [name, step] of [['mail', processMailQueue], ['push', processPushQueue], ['sms', processSmsQueue], ['daily', runDaily]] as const) {
     try { await step(db); } catch (e) { console.error(`[worker] ${name} failed:`, (e as Error).message); await log(db, 'system', `Worker step “${name}” failed: ${(e as Error).message}`); }
   }
 }

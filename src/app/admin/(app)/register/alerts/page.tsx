@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { WhatsAppReminders } from '@/components/WhatsAppReminders';
+import { remindFamilies } from '@/server/comm/whatsapp';
 import { db } from '@/db';
 import { pct1 } from '@/lib/attendance';
 import { formatCalendarDate } from '@/lib/dates';
@@ -16,6 +18,8 @@ export default async function Alerts() {
   const admin = await requireAdmin();
   const r = await alertCandidates(db, todayIso());
   const s = r.settings;
+  const wa = await remindFamilies(db, r.low.map((a) => ({ studentId: a.student.id, name: a.student.firstName, pct: pct1(a.summary.standardPct) })), (first, mine, school) =>
+    `Salaam ${first}, ${mine.map((k) => `${k.name}’s attendance at ${school} is ${k.pct}`).join(', and ')} over the last ${String(s.intervalDays)} days. Please get in touch if there’s anything we should know. JazakAllahu khairan.`);
   return (
     <div className="ra-page">
       <div className="ra-page-h"><div><h1>Attendance alerts</h1><p>Students whose attendance crosses your alert settings over the last {String(s.intervalDays)} days (since {formatCalendarDate(r.from)}).</p></div>
@@ -32,6 +36,7 @@ export default async function Alerts() {
             <tbody>{r.low.map((a) => <tr key={a.student.id}><td className="wrap"><Link href={`/admin/register/student/${a.student.id}`}>{a.student.firstName} {a.student.surname}</Link></td><td className="num">{pct1(a.summary.standardPct)}</td><td className="wrap">{a.reasons.join(', ')}</td></tr>)}</tbody></table>
         )}
       </section>
+      <WhatsAppReminders title="Message these families on WhatsApp" list={wa} />
       {s.highAttendance ? (
         <section className="ra-card" aria-labelledby="hi-h">
           <div className="ra-card-h"><div><h2 id="hi-h">High attendance</h2><div className="ra-note">At or above {String(s.highPct)}%</div></div></div>

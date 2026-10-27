@@ -1,4 +1,4 @@
-import { eq, inArray, isNull } from 'drizzle-orm';
+import { eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Db } from '@/db';
 import { academicYear, CONTACT_TYPES, contact, GENDERS, schoolClass, STUDENT_STATUSES, student, studentContact, TEACHER_STATUSES, teacher, yearGroup } from '@/db/schema';
 import { audit } from '../audit';
@@ -139,8 +139,10 @@ export async function commitRows(db: Db, actor: Actor, kind: ImportKind, results
         if (isLeftStatus(row!.status)) await closeAssignments(tx, row!.id, row!.leftDate ?? today);
         else if (classId) await assignClass(tx, row!.id, classId, row!.startDate ?? today);
         if (!id && contactName) {
-          const [c] = await tx.insert(contact).values({ name: contactName, email: contactEmail, mobile: contactMobile }).returning();
-          await tx.insert(studentContact).values({ studentId: row!.id, contactId: c!.id, type: 'Parent', relation: contactRelation, isPrimary: true });
+          // Siblings usually repeat the same parent: reuse a contact with the same email instead of making a duplicate.
+          const [same] = contactEmail ? await tx.select({ id: contact.id }).from(contact).where(sql`lower(${contact.email}) = ${contactEmail.toLowerCase()}`).limit(1) : [];
+          const [c] = same ? [same] : await tx.insert(contact).values({ name: contactName, email: contactEmail, mobile: contactMobile }).returning({ id: contact.id });
+          await tx.insert(studentContact).values({ studentId: row!.id, contactId: c!.id, type: 'Parent', relation: contactRelation, isPrimary: true }).onConflictDoNothing();
         }
       } else if (kind === 'contacts') {
         const { id, studentIds, type, relation, isPrimary, ...v } = d as ContactRow;

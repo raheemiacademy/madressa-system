@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Contact — Madressa System</title>
+<meta name="description" content="Talk to the Madressa System team by email, WhatsApp or the contact form.">
+<meta name="theme-color" content="#1C2147">
+<meta name="color-scheme" content="light">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 34'%3E%3Crect width='34' height='34' rx='8' fill='%231C2147'/%3E%3Crect x='9' y='9' width='16' height='16' rx='2' fill='%2384CEEB'/%3E%3Crect x='9' y='9' width='16' height='16' rx='2' fill='%2384CEEB' transform='rotate(45 17 17)'/%3E%3Ccircle cx='17' cy='17' r='4' fill='%231C2147'/%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-head on-ink">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="Madressa System home" translate="no">
+      <svg viewBox="0 0 34 34" aria-hidden="true"><rect x="8" y="8" width="18" height="18" rx="2" fill="#84CEEB"/><rect x="8" y="8" width="18" height="18" rx="2" fill="#84CEEB" transform="rotate(45 17 17)"/><circle cx="17" cy="17" r="4.5" fill="#1C2147"/></svg>
+      Madressa System
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="features.html">Features</a>
+      <a href="faq.html">FAQ</a>
+      <a href="contact.html" aria-current="page">Contact</a>
+    </nav>
+    <a class="btn btn-sky" href="index.html#early-access"><span class="long">Start free trial</span><span class="short">Free trial</span></a>
+  </div>
+  <nav class="mobile-nav" aria-label="Main (mobile)">
+    <a href="features.html">Features</a><a href="faq.html">FAQ</a><a href="contact.html" aria-current="page">Contact</a>
+  </nav>
+</header>
+
+<main id="main">
+  <section class="page-hero field-ink on-ink" aria-labelledby="page-title">
+    <svg class="pattern" aria-hidden="true" width="100%" height="100%"><defs><pattern id="khatam-hero" width="112" height="112" patternUnits="userSpaceOnUse"><g fill="none" stroke="currentColor" stroke-width="2"><rect x="32" y="32" width="48" height="48"/><rect x="32" y="32" width="48" height="48" transform="rotate(45 56 56)"/><path d="M0 56h22M90 56h22M56 0v22M56 90v22"/></g></pattern></defs><rect width="100%" height="100%" fill="url(#khatam-hero)"/></svg>
+    <div class="wrap">
+      <div style="display:flex;flex-direction:column;gap:28px">
+        <h1 id="page-title">Talk to us</h1>
+        <p class="lede">Questions about your madressa, moving your records, or early access. A real person replies.</p>
+      </div>
+      <p class="dates" data-today>Today</p>
+    </div>
+  </section>
+
+  <section class="section field-lav" aria-labelledby="ways-title">
+    <div class="wrap contact-grid">
+      <div style="display:flex;flex-direction:column;gap:26px">
+        <h2 id="ways-title" data-rise>Pick whatever’s easiest</h2>
+        <div class="contact-ways" data-rise style="--d:1">
+          <a class="way" href="mailto:[YOUR EMAIL]?subject=Madressa%20System%20question">
+            <i><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></i>
+            <span><strong>Email</strong><span>[YOUR EMAIL]</span></span>
+          </a>
+          <a class="way" href="https://wa.me/[WHATSAPP NUMBER]">
+            <i><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.5-4.5A8 8 0 1 1 9 19z"/></svg></i>
+            <span><strong>WhatsApp</strong><span>[WHATSAPP NUMBER]</span></span>
+          </a>
+        </div>
+        <p data-rise style="--d:2">Ready to try it? <a href="index.html#early-access">Start your free trial</a> instead and we’ll get in touch to set you up.</p>
+      </div>
+
+      <form class="form" data-rise style="--d:1" action="/api/contact" method="post" data-post data-email="[YOUR EMAIL]" data-ok="JazakAllah khair. Your message is with us and we’ll reply by email.">
+        <h2 class="full" style="font-size:clamp(1.75rem,3vw,2.5rem)">Send a message</h2>
+        <div class="field">
+          <label for="c-name">Your name</label>
+          <input class="input" id="c-name" name="name" type="text" autocomplete="name" required data-required="Please enter your name." aria-describedby="c-name-err" enterkeyhint="next">
+          <p class="err" id="c-name-err" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label for="c-email">Email</label>
+          <input class="input" id="c-email" name="email" type="email" autocomplete="email" autocapitalize="none" spellcheck="false" required data-required="Please enter your email." aria-describedby="c-email-err" enterkeyhint="next">
+          <p class="err" id="c-email-err" aria-live="polite"></p>
+        </div>
+        <div class="field full">
+          <label for="c-school">Madressa or school <span class="hint">(optional)</span></label>
+          <input class="input" id="c-school" name="school" type="text" autocomplete="organization" aria-describedby="c-school-err" enterkeyhint="next">
+          <p class="err" id="c-school-err"></p>
+        </div>
+        <div class="field full">
+          <label for="c-topic">What’s it about?</label>
+          <select class="input" id="c-topic" name="topic" aria-describedby="c-topic-err">
+            <option>A question about features</option><option>Moving our records</option><option>Data protection</option><option>Early access</option><option>Something else</option>
+          </select>
+          <p class="err" id="c-topic-err"></p>
+        </div>
+        <div class="field full">
+          <label for="c-msg">Message</label>
+          <textarea class="input" id="c-msg" name="message" required data-required="Please write your message." aria-describedby="c-msg-err"></textarea>
+          <p class="err" id="c-msg-err" aria-live="polite"></p>
+        </div>
+        <div class="form-status" role="status" tabindex="-1"></div>
+        <button class="btn btn-primary" type="submit">Send message</button>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer class="site-foot on-ink">
+  <svg class="pattern" aria-hidden="true" width="100%" height="100%"><defs><pattern id="khatam-foot" width="112" height="112" patternUnits="userSpaceOnUse"><g fill="none" stroke="currentColor" stroke-width="2"><rect x="32" y="32" width="48" height="48"/><rect x="32" y="32" width="48" height="48" transform="rotate(45 56 56)"/><path d="M0 56h22M90 56h22M56 0v22M56 90v22"/></g></pattern></defs><rect width="100%" height="100%" fill="url(#khatam-foot)"/></svg>
+  <div class="wrap">
+    <p class="foot-name" translate="no">Madressa System</p>
+    <div class="foot-grid">
+      <div><h3>Product</h3><ul><li><a href="features.html">Features</a></li><li><a href="index.html#evening-tour">An evening with it</a></li><li><a href="index.html#early-access">Start free trial</a></li></ul></div>
+      <div><h3>Help</h3><ul><li><a href="faq.html">FAQ</a></li><li><a href="contact.html">Contact</a></li></ul></div>
+      <div><h3>Contact</h3><ul><li><a href="mailto:[YOUR EMAIL]">[YOUR EMAIL]</a></li><li><a href="https://wa.me/[WHATSAPP NUMBER]">WhatsApp</a></li></ul></div>
+      <div><h3>Today</h3><p data-today>Today</p><p style="margin-top:8px">© <span data-year>2026</span> Madressa System</p></div>
+    </div>
+  </div>
+</footer>
+<script src="site.js" defer></script>
+</body>
+</html>

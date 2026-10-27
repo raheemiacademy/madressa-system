@@ -21,7 +21,11 @@ test('exams: enter results, then a locked exam can’t change; reports generate 
   await signIn(page);
   await page.goto('/admin/exams');
   await page.getByRole('link', { name: 'Autumn assessment' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Autumn assessment' })).toBeVisible(); // on the exam page before going on
   await page.getByRole('link', { name: 'Results', exact: true }).click();
+  await expect(page).toHaveURL(/\/results$/);
+  // The address changes before the results page has rendered: wait for its form.
+  await expect(page.getByRole('button', { name: 'Save results' })).toBeVisible();
   const first = page.getByRole('textbox').first();
   await first.fill('49.5');
   await page.getByRole('button', { name: 'Save results' }).click();
@@ -76,6 +80,9 @@ test('events: required consent, then an opt-in raises an invoice; incidents and 
   await page.getByRole('textbox', { name: 'Report' }).fill('Slipped on a wet floor.');
   await page.getByRole('button', { name: 'Record incident' }).click();
   await expect(page.getByRole('link', { name: 'Sample slip in corridor' })).toBeVisible();
+  await page.getByRole('link', { name: 'Minor injury' }).first().click();
+  await expect(page.getByRole('heading', { name: 'Tell the parents on WhatsApp' })).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Main contacts' }).getByRole('link').first()).toHaveAttribute('href', /^https:\/\/wa\.me\/44\d+\?text=/);
 
   await page.goto('/admin/forums');
   await page.getByRole('link', { name: 'General' }).click();

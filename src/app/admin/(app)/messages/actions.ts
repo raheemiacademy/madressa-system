@@ -7,7 +7,7 @@ import { db } from '@/db';
 import { contact } from '@/db/schema';
 import { formObject, type FormState } from '@/lib/validate';
 import { actorOf, requireAdmin } from '@/server/next/actor';
-import { bulkThreads, compose, deleteRange, reply } from '@/server/comm/messages';
+import { bulkThreads, compose, deleteMessage, deleteRange, reply } from '@/server/comm/messages';
 import { readTab } from '@/server/settings';
 import { storeAttachment } from '@/server/storage';
 
@@ -68,4 +68,19 @@ export async function findContactsAction(q: string) {
   const s = q.trim().slice(0, 60);
   if (s.length < 2) return [];
   return db.select({ id: contact.id, name: contact.name, email: contact.email }).from(contact).where(or(ilike(contact.name, `%${s}%`), ilike(contact.email, `%${s}%`))).orderBy(asc(contact.name)).limit(12);
+}
+
+/** Delete one message (admins with Delete access). */
+export async function deleteMessageAction(id: number): Promise<{ error?: string } | void> {
+  const a = await requireAdmin('delete');
+  if (!(await deleteMessage(db, actorOf(a), id))) return { error: 'That message has already gone.' };
+  done();
+}
+
+/** Delete a whole conversation from its page, then go back to the inbox. */
+export async function deleteThreadAction(id: number) {
+  const a = await requireAdmin('delete');
+  await bulkThreads(db, actor(a), [id], 'delete');
+  done();
+  redirect('/admin/messages');
 }

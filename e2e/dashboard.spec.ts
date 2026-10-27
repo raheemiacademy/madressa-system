@@ -8,8 +8,8 @@ test('dashboard shows today’s figures and panels, and its shortcuts work', asy
   await expect(page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening), Sample$/ })).toBeVisible();
   const kpis = page.locator('.ra-kpi-top');
   await expect(kpis).toHaveText(['Current students', 'Attendance today', 'Fees outstanding', 'Parents on portal', 'Teachers signed in']);
-  for (const h of ['Weekly attendance', 'Students by age group', 'Unread messages', 'Teacher sign-in', 'Recent payments', 'Fees by type']) await expect(page.getByRole('heading', { level: 2, name: h })).toBeVisible();
-  await expect(page.getByRole('img', { name: /^Students by age group: / })).toBeVisible();
+  for (const h of ['Weekly attendance', 'Unread messages', 'Teacher sign-in', 'Recent payments', 'Fees by type']) await expect(page.getByRole('heading', { level: 2, name: h })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Students by age group' })).toHaveCount(0);
   await expect(page.getByRole('img', { name: /^Fees by type: / })).toBeVisible();
   await page.getByRole('button', { name: 'Record payment' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
@@ -34,6 +34,90 @@ test('staff without fees access see no fees figures on the dashboard', async ({ 
   await expect(v.locator('main')).not.toContainText('overdue');
   await expect(v.locator('main')).not.toContainText('£');
   await ctx.close();
+});
+
+test('on a phone the admin is an app: bottom tabs, and More holds the menu, year and sign-out', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page);
+  const tabs = page.getByRole('navigation', { name: 'Main' });
+  await expect(tabs.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByRole('navigation', { name: 'Sections' })).toBeHidden();
+  await expect(page.getByRole('banner').getByRole('button', { name: 'Dark mode' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Fire drill' })).toBeVisible();
+  await tabs.getByRole('link', { name: 'Students' }).click();
+  await expect(page).toHaveURL(/\/admin\/students$/);
+  await expect(tabs.getByRole('link', { name: 'Students' })).toHaveAttribute('aria-current', 'page');
+  await tabs.getByRole('link', { name: 'More' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'More' })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Academic year' })).toBeVisible();
+  await page.getByRole('navigation', { name: 'Learning' }).getByRole('link', { name: 'Homework' }).click();
+  await expect(page).toHaveURL(/\/admin\/homework$/);
+  await page.getByRole('link', { name: 'Search', exact: true }).click();
+  await page.getByRole('searchbox', { name: 'Search students, contacts and teachers' }).fill('Test Student 001');
+  await page.getByRole('button', { name: 'Search' }).click();
+  await expect(page.getByRole('link', { name: 'Test Student 001' })).toBeVisible();
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto('/admin/more');
+    const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).exclude('nextjs-portal').analyze();
+    expect(r.violations.map((x) => `${scheme} ${x.id}: ${x.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
+  }
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  await expect(page).toHaveURL(/\/admin\/login$/);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page);
+  await expect(page.getByRole('navigation', { name: 'Main' })).toBeHidden();
+  await expect(page.getByRole('navigation', { name: 'Sections' })).toBeVisible();
+});
+
+test('the figure tiles open the page behind each figure', async ({ page }) => {
+  await signIn(page);
+  for (const [label, url] of [['Current students', /\/admin\/students$/], ['Attendance today', /\/admin\/register$/], ['Teachers signed in', /\/admin\/teacher-logs$/]] as const) {
+    await page.goto('/admin');
+    await page.getByRole('link', { name: new RegExp(`^${label}`) }).click();
+    await expect(page).toHaveURL(url);
+  }
+  await page.goto('/admin/students');
+  await page.getByRole('link', { name: /^Waiting list/ }).click();
+  await expect(page).toHaveURL(/status=Waiting(%20|\+)List/);
+});
+
+test('Hide fees leaves money off the dashboard and the Fees page until shown again', async ({ page }) => {
+  await signIn(page);
+  const main = page.locator('main');
+  await expect(main.getByText('Fees outstanding')).toBeVisible();
+  // Retry the click in case it lands before the page has hydrated (once it works the button says "Show fees").
+  await expect(async () => {
+    await page.getByRole('button', { name: 'Hide fees' }).click({ timeout: 2000 });
+    await expect(page.getByRole('button', { name: 'Show fees' })).toBeVisible({ timeout: 3000 });
+  }).toPass();
+  await expect(main.getByText('Fees outstanding')).toHaveCount(0);
+  for (const h of ['Recent payments', 'Fees by type']) await expect(page.getByRole('heading', { level: 2, name: h })).toHaveCount(0);
+  expect(await main.innerHTML()).not.toContain('£');
+  await expect(page.getByRole('button', { name: 'Record payment' })).toBeVisible();
+  await page.goto('/admin/fees');
+  await expect(page.getByText('Fee figures are hidden on this device.')).toBeVisible();
+  for (const h of ['Invoiced vs received by month', 'Totals by type', 'Payments']) await expect(page.getByRole('heading', { level: 2, name: h })).toHaveCount(0);
+  expect(await page.locator('main').innerHTML()).not.toContain('£');
+  await page.getByRole('button', { name: 'Show fees' }).click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Payments' })).toBeVisible();
+  await page.goto('/admin');
+  await expect(main.getByText('Fees outstanding')).toBeVisible();
+});
+
+test('the Dark mode switch changes the theme on this device and is remembered', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await signIn(page);
+  const toggle = page.getByRole('banner').getByRole('button', { name: 'Dark mode' });
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await toggle.click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.getByRole('banner').getByRole('button', { name: 'Dark mode' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('banner').getByRole('button', { name: 'Dark mode' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 });
 
 for (const scheme of ['light', 'dark'] as const) {

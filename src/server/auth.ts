@@ -34,10 +34,10 @@ export function passwordProblem(pw: string): string | null {
 
 export const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
-export async function createSession(db: DbOrTx, identityId: number, portal: Portal, meta: { ip?: string | null; userAgent?: string | null } = {}) {
+export async function createSession(db: DbOrTx, identityId: number, portal: Portal, meta: { ip?: string | null; userAgent?: string | null; actingAdminId?: number } = {}) {
   const token = randomBytes(32).toString('base64url');
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS[portal]);
-  await db.insert(session).values({ id: sha256(token), identityId, portal, expiresAt, ip: meta.ip ?? null, userAgent: meta.userAgent?.slice(0, 300) ?? null });
+  await db.insert(session).values({ id: sha256(token), identityId, portal, expiresAt, ip: meta.ip ?? null, userAgent: meta.userAgent?.slice(0, 300) ?? null, actingAdminId: meta.actingAdminId ?? null });
   return { token, expiresAt };
 }
 
@@ -58,7 +58,7 @@ export async function validateSession(db: DbOrTx, portal: Portal, token: string 
     expiresAt = new Date(now.getTime() + SESSION_TTL_MS[portal]);
     await db.update(session).set({ expiresAt, lastSeenAt: now }).where(eq(session.id, id));
   }
-  return { identity: row.i, expiresAt, refreshed: expiresAt !== row.s.expiresAt };
+  return { identity: row.i, expiresAt, refreshed: expiresAt !== row.s.expiresAt, actingAdminId: row.s.actingAdminId };
 }
 
 export async function invalidateSession(db: DbOrTx, token: string | undefined) {

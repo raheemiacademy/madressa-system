@@ -16,8 +16,10 @@ const ADMIN: Section[] = [
   { href: '/admin/settings/mail-queue', label: 'Mail queue' }
 ];
 const GROUPS = ['General', 'School', 'Finance', 'Communication', 'Learning', 'Portals', 'System'];
+// Kept for later and hidden for now (FUTURE.md): texting, online card/direct-debit payments, and the student portal.
+const LATER = new Set(['sms', 'gateways', 'studentPortal']);
 
 export const SECTION_GROUPS: { group: string; items: Section[] }[] = [
   { group: 'Administration', items: ADMIN },
-  ...GROUPS.map((g) => ({ group: g, items: TABS.filter((t) => t.group === g).map((t) => ({ href: `/admin/settings/${t.key}`, label: t.title })) })).filter((g) => g.items.length)
+  ...GROUPS.map((g) => ({ group: g, items: TABS.filter((t) => t.group === g && !LATER.has(t.key)).map((t) => ({ href: `/admin/settings/${t.key}`, label: t.title })) })).filter((g) => g.items.length)
 ];

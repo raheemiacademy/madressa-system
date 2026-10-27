@@ -1,0 +1,1 @@
+ALTER TABLE "admin_staff" ADD COLUMN "seen_release" text;

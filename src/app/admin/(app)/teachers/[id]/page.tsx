@@ -8,6 +8,7 @@ import { ActionButton } from '@/components/Form';
 import { Icon } from '@/components/Icon';
 import { formatCalendarDate, formatInstant } from '@/lib/dates';
 import { requireAdmin } from '@/server/next/actor';
+import { ViewAsButton } from '../ViewAsButton';
 import { adminCan } from '@/server/permissions';
 import { PRIVILEGES } from '@/server/people/classes';
 import { todayIso } from '@/server/people/common';
@@ -17,7 +18,8 @@ import { deleteTeacherAction } from '../actions';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { normaliseNumber, whatsappMessages } from '@/server/comm/sms';
 import { describeLogin } from '@/server/password-links';
-import { sendLoginLinkAction } from '../../login-actions';
+import { copyLoginLinkAction, sendLoginLinkAction } from '../../login-actions';
+import { LoginLinkButton } from '../../LoginLinkButton';
 
 export const metadata = { title: 'Teacher' };
 const DAY = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -48,6 +50,7 @@ export default async function TeacherProfile({ params }: { params: Promise<{ id:
         <div className="ra-toolbar">
           {adminCan(admin.staff, 'edit') && <Link className="ra-btn primary" href={`/admin/teachers/${id}/edit`}><Icon name="edit" />Edit</Link>}
           <Link className="ra-btn" href={`/admin/teachers/hours?teacher=${id}`}>Work hours</Link>
+          {admin.staff.isSuper && <ViewAsButton id={id} name={t.name} label />}
         </div>
       </div>
       <div className="ra-grid">
@@ -60,7 +63,8 @@ export default async function TeacherProfile({ params }: { params: Promise<{ id:
             {row('Kiosk PIN', t.hasKioskPin ? 'Set' : 'Not set')}
             {cf.fields.map((f) => <span key={f.id} style={{ display: 'contents' }}>{row(f.label, answerText(cf.values[f.id]))}</span>)}
           </dl>
-          {adminCan(admin.staff, 'edit') && t.login && <div className="ra-toolbar"><ActionButton action={sendLoginLinkAction.bind(null, 'teacher', id)} label="Email a set-password link" /></div>}
+          {adminCan(admin.staff, 'edit') && t.login && <div className="ra-toolbar"><ActionButton action={sendLoginLinkAction.bind(null, 'teacher', id)} label="Email a set-password link" />
+            <LoginLinkButton action={copyLoginLinkAction.bind(null, 'teacher', id)} name={t.name} whatsapp={wa?.slice(1)} /></div>}
           {wa && <WhatsAppButton number={wa.slice(1)} name={t.name} messages={waMessages} />}
         </section>
         <section className="ra-card ra-c6"><div className="ra-card-h"><div><h2>Checks, pay and health</h2><div className="ra-note">Shown masked. Open Edit to see them in full.</div></div></div>

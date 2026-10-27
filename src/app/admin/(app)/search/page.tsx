@@ -20,6 +20,10 @@ export default async function Search({ searchParams }: { searchParams: Promise<{
   return (
     <div className="ra-page">
       <div className="ra-page-h"><div><h1>Search</h1><p>{q ? <>Results for “{q}”</> : 'Find students, contacts and teachers'}</p></div></div>
+      <form className="ra-m-only ra-search-m" role="search" action="/admin/search">
+        <input className="ra-input" name="q" type="search" defaultValue={q} autoComplete="off" spellCheck={false} enterKeyHint="search" placeholder="Name, #ID, email or phone" aria-label="Search students, contacts and teachers" />
+        <button className="ra-btn primary">Search</button>
+      </form>
       {!q && <div className="ra-card"><p className="ra-empty" role="status">Type a name, #ID, email or phone number in the search box. Press / to jump to it from any page.</p></div>}
       {q && total === 0 && <div className="ra-card"><p className="ra-empty" role="status">No students, contacts or teachers match “{q}”.</p></div>}
       {group('Students', r.students.length, r.students.map((s) => (

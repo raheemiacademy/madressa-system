@@ -4,7 +4,7 @@ import type { Db, DbOrTx } from '@/db';
 import { GENDERS, loginIdentity, TEACHER_STATUSES, teacher, teacherEmergencyContact, teacherHours } from '@/db/schema';
 import { optionalIsoDate, optionalText, zodErrors, type FieldErrors } from '@/lib/validate';
 import { audit } from '../audit';
-import { hashPassword } from '../auth';
+import { createSession, hashPassword } from '../auth';
 import { decrypt, encrypt } from '../crypto';
 import { catchFieldFail, FieldFail, optEmail, type Actor } from './common';
 import { answersFromForm, listFields, saveAnswers } from './custom-fields';
@@ -123,3 +123,20 @@ export async function setHours(db: Db, actor: Actor, teacherIds: number[], raw: 
 }
 
 export const allHours = (db: DbOrTx) => db.select({ teacherId: teacherHours.teacherId, weekday: teacherHours.weekday, startTime: teacherHours.startTime, endTime: teacherHours.endTime }).from(teacherHours);
+
+/**
+ * "Teacher portal" for Super admins: a teacher-portal session for this teacher, marked as opened by the admin so the portal shows
+ * a banner and its audit entries say who really did it. The teacher needs a portal login (an email on their record).
+ */
+export async function openTeacherPortalAs(db: Db, actor: Actor, adminStaffId: number, teacherId: number, meta: { ip?: string | null; userAgent?: string | null } = {}) {
+  return db.transaction(async (tx) => {
+    const [row] = await tx.select({ id: loginIdentity.id, allowLogin: loginIdentity.allowLogin, name: teacher.name }).from(loginIdentity)
+      .innerJoin(teacher, eq(teacher.id, loginIdentity.teacherId))
+      .where(and(eq(loginIdentity.portal, 'teacher'), eq(loginIdentity.teacherId, teacherId), isNull(teacher.deletedAt))).limit(1);
+    if (!row) return { ok: false as const, error: 'This teacher has no portal login yet. Add an email address to their record first.' };
+    if (!row.allowLogin) return { ok: false as const, error: 'This teacher’s portal login is blocked.' };
+    const s = await createSession(tx, row.id, 'teacher', { ...meta, actingAdminId: adminStaffId });
+    await audit(tx, actor, { action: `Opened the teacher portal as ${row.name}`, page: 'Teachers', entity: 'teacher', entityId: teacherId });
+    return { ok: true as const, ...s };
+  });
+}
