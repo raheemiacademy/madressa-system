@@ -11,7 +11,7 @@
   --s-small: 0.9375rem;
 
   --margin: clamp(1.25rem, 4vw, 4rem);
-  --gap-section: clamp(6rem, 13vw, 13rem);
+  --gap-section: clamp(4rem, 8vw, 8rem); /* tightened from 6–13rem (your request, 27/10/2026) */
   --max: 1440px;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
@@ -81,7 +81,7 @@ body:has(.ms) { background: var(--ground); color-scheme: light; }
 }
 
 /* Hero */
-.ms .hero { position: relative; overflow: hidden; padding-block: clamp(3.5rem, 7vw, 7rem) clamp(4rem, 8vw, 8rem); }
+.ms .hero { position: relative; overflow: hidden; padding-block: clamp(2rem, 4vw, 3.5rem) clamp(3.5rem, 6vw, 6rem); }
 .ms .hero .pattern { position: absolute; inset: 0; color: var(--ink-2); pointer-events: none; }
 .ms .hero-grid { position: relative; display: grid; grid-template-columns: minmax(0, 11fr) minmax(0, 13fr); gap: clamp(2rem, 4vw, 4.5rem); align-items: center; }
 .ms .hero-copy { display: flex; flex-direction: column; gap: 32px; }
@@ -95,7 +95,20 @@ body:has(.ms) { background: var(--ground); color-scheme: light; }
 @media (max-width: 960px) { .ms .hero-grid { grid-template-columns: minmax(0, 1fr); } }
 
 /* Evening scrubber (the live thing) */
-.ms .evening { margin-top: 18px; background: var(--ink-2); border-radius: 22px; padding: 18px 20px 20px; color: var(--on-ink); }
+/* The slider floats over the foot of the dashboard as a frosted panel: it sits higher, and reads as the control for what's
+   behind it. Solid when the visitor asks for less transparency. */
+.ms .evening { position: relative; z-index: 1; margin: -56px 16px 0; border-radius: 22px; padding: 14px 18px 16px; color: var(--on-ink);
+  background: color-mix(in srgb, var(--ink-2) 86%, transparent); -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.09), 0 18px 44px rgb(10 12 36 / 0.42); }
+@media (prefers-reduced-transparency: reduce) { .ms .evening { background: var(--ink-2); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+.ms .evening-now { display: flex; align-items: center; gap: 12px; }
+.ms .evening-play { width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgb(255 255 255 / 0.24); background: transparent; color: var(--sky); display: grid; place-items: center; cursor: pointer; touch-action: manipulation;
+  transition: background-color 160ms ease, transform 120ms var(--ease-out); }
+.ms .evening-play svg { width: 16px; height: 16px; }
+.ms .evening-play:active { transform: scale(0.92); }
+.ms .evening-play:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) { .ms .evening-play:hover { background: rgb(255 255 255 / 0.08); } }
+@media (pointer: coarse) { .ms .evening-play { width: 44px; height: 44px; } }
 .ms .evening[hidden] { display: none; }
 .ms .evening-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .ms .evening-head label { font-weight: 600; font-size: 1rem; }
@@ -121,7 +134,8 @@ body:has(.ms) { background: var(--ground); color-scheme: light; }
 .ms .app-side b { color: var(--white); font-family: var(--display); font-weight: 400; font-size: 1rem; padding: 2px 8px 12px; }
 .ms .app-side span { padding: 7px 8px; border-radius: 8px; }
 .ms .app-side span.on { background: rgba(132,206,235,.16); color: var(--white); }
-.ms .app-main { padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.ms .app-main { padding: 16px 16px 72px; display: flex; flex-direction: column; gap: 12px; min-width: 0; transition: opacity 300ms ease; } /* room under the feed for the slider */
+.ms .browser.rewinding .app-main { opacity: 0.12; } /* the end of the evening fades before the next one begins */
 .ms .app-greet { background: var(--ink); color: var(--white); border-radius: 14px; padding: 14px 16px; }
 .ms .app-greet div { font-size: 0.75rem; color: var(--on-ink-muted); }
 .ms .app-greet p { font-size: 0.9375rem; line-height: 1.45; margin-top: 4px; }
@@ -140,6 +154,26 @@ body:has(.ms) { background: var(--ground); color-scheme: light; }
 @keyframes ms-feed-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .ms .feed-item[data-new] { animation: ms-fade-in 200ms ease both; } }
 @keyframes ms-fade-in { from { opacity: 0; } to { opacity: 1; } }
+/* A number that changes rolls up into place; the greeting crossfades. */
+.ms .kpi strong.kpi-tick { animation: ms-tick 420ms var(--ease-out) both; }
+.ms .app-greet p.greet-in { animation: ms-greet 420ms var(--ease-out) both; }
+@keyframes ms-tick { from { opacity: 0; transform: translateY(45%); } }
+@keyframes ms-greet { from { opacity: 0; transform: translateY(4px); } }
+@media (prefers-reduced-motion: reduce) { .ms .kpi strong.kpi-tick, .ms .app-greet p.greet-in { animation: ms-fade-in 200ms ease both; } }
+
+/* The hero arrives on load: the words rise in one after another, then the dashboard settles up into place and the slider
+   follows. CSS only, so it plays from the first paint. With reduced motion it simply appears. */
+@media (prefers-reduced-motion: no-preference) {
+  .ms .hero-copy > * { animation: ms-hero-in 900ms var(--ease-out) both; }
+  .ms .hero-copy > :nth-child(2) { animation-delay: 70ms; }
+  .ms .hero-copy > :nth-child(3) { animation-delay: 140ms; }
+  .ms .hero-copy > :nth-child(4) { animation-delay: 210ms; }
+  .ms .hero-copy > :nth-child(5) { animation-delay: 280ms; }
+  .ms .evening-wrap .browser { animation: ms-hero-rise 1100ms var(--ease-out) 200ms both; }
+  .ms .evening-wrap .evening { animation: ms-hero-rise 1100ms var(--ease-out) 380ms both; }
+}
+@keyframes ms-hero-in { from { opacity: 0; transform: translateY(18px); } }
+@keyframes ms-hero-rise { from { opacity: 0; transform: translateY(32px) scale(0.98); } }
 @media (max-width: 620px) {
   .ms .app-shell { grid-template-columns: minmax(0, 1fr); min-height: 0; }
   .ms .app-side { display: none; }
@@ -148,7 +182,7 @@ body:has(.ms) { background: var(--ground); color-scheme: light; }
 
 /* Section scaffolding */
 .ms .section { padding-block: var(--gap-section); }
-.ms .section-head { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(1.5rem, 4vw, 4rem); align-items: end; margin-bottom: clamp(3rem, 6vw, 5.5rem); }
+.ms .section-head { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(1.5rem, 4vw, 4rem); align-items: end; margin-bottom: clamp(2rem, 4vw, 3.5rem); }
 .ms .section-head p { max-width: 44ch; }
 @media (max-width: 860px) { .ms .section-head { grid-template-columns: minmax(0, 1fr); } }
 
