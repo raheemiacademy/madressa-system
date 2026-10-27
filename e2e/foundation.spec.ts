@@ -10,7 +10,7 @@ async function axe(page: Page) {
   expect(r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
 }
 
-test('on a madrasah copy (no MARKETING_SITE) / still goes to the admin app, and there are no marketing pages or endpoints', async ({ page, request }) => {
+test('on a madrasah copy (no MARKETING_SITE) / still goes to the admin app, and there are no marketing pages, endpoints or owner dashboard', async ({ page, request }) => {
   await page.goto('/');
   await expect(page).toHaveURL(/\/admin\/login$/);
   await signIn(page);
@@ -19,6 +19,8 @@ test('on a madrasah copy (no MARKETING_SITE) / still goes to the admin app, and 
   expect((await request.post('/api/early-access', { data: { school: 'x' } })).status()).toBe(404);
   expect((await request.post('/api/contact', { data: { name: 'x' } })).status()).toBe(404);
   for (const path of ['/features', '/faq', '/contact']) expect((await request.get(path)).status()).toBe(404);
+  // The owner dashboard is on the main site only.
+  for (const path of ['/owner', '/owner/signin', '/owner/account', '/owner/setup/x', '/pwa/owner']) expect((await request.get(path)).status()).toBe(404);
 });
 
 test('wrong password shows one generic message; right password reaches the dashboard', async ({ page }) => {

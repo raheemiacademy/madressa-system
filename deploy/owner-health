@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+"""Owner dashboard: the server's health, written to owner/health.json every 5 minutes (cron, set up by ./madrasah update).
+
+Disk, memory and CPU with 7 days of history, every container's state, each madrasah's newest backup, and when the app image
+was built. The main site's copy reads the file (mounted read-only at /owner). This script only reads: it never changes Docker,
+the madrasahs or their data. From a madrasah's env file it reads only APP_URL and MARKETING_SITE.
+
+  ./owner-health           write owner/health.json
+  ./owner-health --check   run the self-checks
+"""
+import glob
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+OUT = os.path.join(HERE, 'owner', 'health.json')
+WEEK = 7 * 86400
+UNITS = {'b': 1, 'kb': 1e3, 'mb': 1e6, 'gb': 1e9, 'tb': 1e12, 'kib': 1024, 'mib': 1024 ** 2, 'gib': 1024 ** 3, 'tib': 1024 ** 4}
+
+
+def parse_size(s):
+    """'318.2MiB' (docker stats) → bytes, or None."""
+    m = re.match(r'^\s*([\d.]+)\s*([a-z]+)\s*$', s, re.I)
+    return round(float(m.group(1)) * UNITS[m.group(2).lower()]) if m and m.group(2).lower() in UNITS else None
+
+
+def keep_week(history, now):
+    return [h for h in history if isinstance(h, list) and len(h) == 4 and now - h[0] <= WEEK]
+
+
+def iso(t):
+    return time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(t))
+
+
+def docker(*args):
+    return subprocess.run(['docker', *args], capture_output=True, text=True, timeout=120, check=True).stdout
+
+
+def cpu_percent():
+    def snap():
+        with open('/proc/stat') as f:
+            v = [int(x) for x in f.readline().split()[1:]]
+        return sum(v), v[3] + v[4]  # idle + iowait
+    t1, i1 = snap()
+    time.sleep(1)
+    t2, i2 = snap()
+    return round(100 * (1 - (i2 - i1) / max(1, t2 - t1)), 1)
+
+
+def memory():
+    m = {}
+    with open('/proc/meminfo') as f:
+        for line in f:
+            k, v = line.split(':', 1)
+            m[k] = int(v.split()[0]) * 1024
+    return {'usedBytes': m['MemTotal'] - m['MemAvailable'], 'totalBytes': m['MemTotal']}
+
+
+def disk():
+    s = os.statvfs('/')
+    total = s.f_blocks * s.f_frsize
+    return {'usedBytes': total - s.f_bavail * s.f_frsize, 'totalBytes': total}
+
+
+def containers():
+    names = docker('ps', '-a', '--format', '{{.Names}}').split()
+    used = {}
+    for line in docker('stats', '--no-stream', '--format', '{{.Name}}\t{{.MemUsage}}').splitlines():
+        name, use = line.split('\t', 1)
+        used[name] = parse_size(use.split('/')[0])
+    out = []
+    for c in json.loads(docker('inspect', *names)) if names else []:
+        name, st = c['Name'].lstrip('/'), c['State']
+        out.append({'name': name, 'state': st['Status'], 'exitCode': st['ExitCode'], 'startedAt': st['StartedAt'], 'memoryBytes': used.get(name)})
+    return sorted(out, key=lambda c: c['name'])
+
+
+def env_values(path):
+    vals = {}
+    with open(path) as f:
+        for line in f:
+            k, sep, v = line.strip().partition('=')
+            if sep and k in ('APP_URL', 'MARKETING_SITE'):
+                vals[k] = v
+    return vals
+
+
+def madrasahs():
+    out = []
+    for path in sorted(glob.glob(os.path.join(HERE, 'tenants', '*.env'))):
+        name = os.path.basename(path)[:-4]
+        vals = env_values(path)
+        if vals.get('MARKETING_SITE') == '1':
+            continue  # the main site isn't a madrasah
+        dumps = sorted(glob.glob(os.path.join(HERE, 'backups', name, '*.dump')), key=os.path.getmtime)
+        backup = None
+        if dumps:
+            files = dumps[-1][:-5] + '-files.tgz'
+            backup = {'at': iso(os.path.getmtime(dumps[-1])), 'sizeBytes': os.path.getsize(dumps[-1]) + (os.path.getsize(files) if os.path.exists(files) else 0),
+                      'databaseBytes': os.path.getsize(dumps[-1])}
+        out.append({'name': name, 'url': vals.get('APP_URL'), 'internal': f'http://ma-{name}:3000', 'backup': backup})
+    return out
+
+
+def main():
+    now = int(time.time())
+    health, errors = {'generatedAt': iso(now)}, []
+    for key, fn in (('cpuPercent', cpu_percent), ('memory', memory), ('disk', disk), ('containers', containers), ('madrasahs', madrasahs),
+                    ('imageCreatedAt', lambda: docker('image', 'inspect', '-f', '{{.Created}}', 'madrasah-app:latest').strip())):
+        try:
+            health[key] = fn()
+        except Exception as e:  # one part failing still leaves the rest
+            errors.append(f'{key}: {e}')
+    try:
+        with open(OUT) as f:
+            history = json.load(f).get('history', [])
+    except (OSError, ValueError):
+        history = []
+    pct = lambda d: round(100 * d['usedBytes'] / d['totalBytes'], 1) if d else None
+    history = keep_week(history, now) + [[now, pct(health.get('disk')), pct(health.get('memory')), health.get('cpuPercent')]]
+    health.update(history=history, errors=errors)
+    os.makedirs(os.path.dirname(OUT), exist_ok=True)
+    tmp = OUT + '.tmp'
+    with open(tmp, 'w') as f:
+        json.dump(health, f)
+    os.replace(tmp, OUT)  # the dashboard never reads half a file
+
+
+def check():
+    assert parse_size('318.2MiB') == 333656883
+    assert parse_size('1.5GiB') == 1610612736
+    assert parse_size('42MB') == 42000000
+    assert parse_size('0B') == 0
+    assert parse_size('--') is None
+    now = 1_000_000_000
+    assert keep_week([[now - WEEK - 1, 1, 1, 1], [now - 60, 2, 2, 2], ['bad']], now) == [[now - 60, 2, 2, 2]]
+    print('owner-health: self-checks passed')
+
+
+if __name__ == '__main__':
+    check() if '--check' in sys.argv else main()

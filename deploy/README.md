@@ -34,9 +34,14 @@ EARLY_ACCESS_NOTIFY_EMAIL=you@example.org
 ./madrasah restart main
 ./madrasah signups                                 # list the sign-ups (newest first)
 ./madrasah messages                                # list the contact-form messages (newest first)
+./madrasah owner you@example.org                   # your owner-dashboard account: prints a one-time setup link
 ```
 
 Emails aren't sent yet, so `./madrasah signups` and `./madrasah messages` are where to see them. Messages are kept in the mail queue, so don't use "Delete sent emails before this date" in the main site's admin. The homepage's text is in `src/app/_marketing/`; change it and run `deploy/ship.sh`.
+
+Your owner dashboard is at `/owner` on the main site only. `./madrasah owner <your email>` prints a one-time setup link (24 hours) where you choose a password and add the key to an authenticator app. If you lose your phone or password, run it again: it signs out every device and starts setup afresh.
+
+The dashboard's health checks need nothing from you: `./madrasah update` (run by `ship.sh`) gives every copy the private token, mounts `owner/` into the main site's copy, adds a cron entry that runs `./owner-health` every 5 minutes, and runs it once. `./owner-health` only reads (disk, memory, CPU, containers, backup files) and writes `owner/health.json`; its log is `owner/cron.log`. `./owner-health --check` runs its self-checks.
 
 ## Signing in to the server
 

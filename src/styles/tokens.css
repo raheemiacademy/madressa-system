@@ -109,3 +109,43 @@
   --ui-fg: #1F2340; --ui-ground: #F2F3F9; --ui-bar: #E4E7F3; --ui-line: #E3E5F0; --ui-rule: #EEF0F6; --ui-bubble: #EEF0F8;
   --ui-phone: #F5F6FB; --ui-bezel: #0F1330; --ui-drill: #B42318;
 }
+
+/* Owner dashboard (/owner on the main site, src/styles/owner.css). The admin app's layout in a deep teal palette, exactly as
+   design-reference/owner/owner-dashboard-design.html; scoped to .ow. Link text on light is --link (#0E6B66): --action reaches only 4.35:1. */
+.ow, body:has(.ow) {
+  --bg: #F6F4EF; --panel: #FFFFFF; --panel-2: #EFECE4; --border: #E2DED4; --hair: #EEEBE3;
+  --fg: #1B2A29; --muted: #5B6866;
+  --side: #0F4C4A; --side-2: #0C3F3D; --side-fg: #FFFFFF; --side-muted: #B9D3D0;
+  --action: #13807A; --action-hover: #0E6B66; --on-action: #FFFFFF; --link: #0E6B66;
+  --amber: #E0A526; --amber-text: #8A5A00; --amber-tint: #FBF1DA;
+  --bad: #B42318; --bad-tint: #FCE9E6; --ok: #1F7A4A; --ok-tint: #E3F2EA;
+  --chart: #13807A; --chart-fill: rgb(19 128 122 / 0.12); --grid: #ECE8DF; --ref: #B8B2A4;
+  --scrim: rgb(11 31 30 / 0.45); --shadow-pop: 0 12px 40px rgb(11 31 30 / 0.18);
+  /* The same in both modes: the brand mark, the menu's current-page bar, and dark text on amber fills */
+  --mark: #2BB3A8; --on-amber: #0B1F1E; --knob: #FFFFFF;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) :is(.ow, body:has(.ow)) {
+    --bg: #0B1F1E; --panel: #12302E; --panel-2: #183B39; --border: #24504D; --hair: #1D4441;
+    --fg: #E8F1EF; --muted: #9DB3B0;
+    --side: #0A2725; --side-2: #0D302E; --side-fg: #FFFFFF; --side-muted: #A9C6C2;
+    --action: #2BB3A8; --action-hover: #4CC7BD; --on-action: #0B1F1E; --link: #5FD0C6;
+    --amber: #E0A526; --amber-text: #E8B84A; --amber-tint: #3A2F12;
+    --bad: #F08A7E; --bad-tint: #3D1E1B; --ok: #6FCF97; --ok-tint: #143726;
+    --chart: #2BB3A8; --chart-fill: rgb(43 179 168 / 0.16); --grid: #1D4441; --ref: #4F7470;
+    --scrim: rgb(0 0 0 / 0.55); --shadow-pop: 0 12px 40px rgb(0 0 0 / 0.45);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] :is(.ow, body:has(.ow)) {
+  --bg: #0B1F1E; --panel: #12302E; --panel-2: #183B39; --border: #24504D; --hair: #1D4441;
+  --fg: #E8F1EF; --muted: #9DB3B0;
+  --side: #0A2725; --side-2: #0D302E; --side-fg: #FFFFFF; --side-muted: #A9C6C2;
+  --action: #2BB3A8; --action-hover: #4CC7BD; --on-action: #0B1F1E; --link: #5FD0C6;
+  --amber: #E0A526; --amber-text: #E8B84A; --amber-tint: #3A2F12;
+  --bad: #F08A7E; --bad-tint: #3D1E1B; --ok: #6FCF97; --ok-tint: #143726;
+  --chart: #2BB3A8; --chart-fill: rgb(43 179 168 / 0.16); --grid: #1D4441; --ref: #4F7470;
+  --scrim: rgb(0 0 0 / 0.55); --shadow-pop: 0 12px 40px rgb(0 0 0 / 0.45);
+  color-scheme: dark;
+}

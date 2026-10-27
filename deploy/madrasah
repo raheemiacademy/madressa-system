@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # Runs the madrasah copies on this server. Lives in /srv/madrasah; see deploy/README.md.
 #   ./madrasah add <name> <web address> [--demo]   new madrasah: its own database, keys, app container and HTTPS site
-#   ./madrasah update                               build the app from ./src (sent by ship.sh) and restart every madrasah
+#   ./madrasah update                               build the app from ./src (sent by ship.sh) and restart every madrasah;
+#                                                   also keeps the owner dashboard's token, health file and cron in place
 #   ./madrasah password <name> <email|--all> [pw]   new password (random unless given) for a sign-in or all, kept in tenants/<name>.passwords
 #   ./madrasah restart <name> | logs <name> | list
 #   ./madrasah signups [name]                       early-access sign-ups from the homepage (on the main-site copy, "main")
 #   ./madrasah messages [name]                      contact-form messages from the main site, newest first
+#   ./madrasah owner <email>                        the owner dashboard's account (made, or reset if the phone is lost): prints a setup link
 #   ./madrasah backup                               database dumps of every madrasah into ./backups (nightly from cron)
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")"
@@ -21,9 +23,26 @@ start() { # (re)creates one madrasah's app container from the current image
   local n=$1
   docker rm -f "ma-$n" >/dev/null 2>&1 || true
   # shortcut: a few seconds offline while the new container migrates and starts; fine for test schools, use blue/green if that matters
+  # The main site's copy reads the server's health for the owner dashboard (written by ./owner-health), read-only.
+  local extra=(); grep -q '^MARKETING_SITE=1' "tenants/$n.env" && extra=(-v "$PWD/owner:/owner:ro")
   docker run -d --name "ma-$n" --restart unless-stopped --network madrasah_apps \
-    --env-file "tenants/$n.env" -v "ma-$n-files:/data" --memory 900m --memory-swap 1400m "$IMAGE" >/dev/null
+    --env-file "tenants/$n.env" -v "ma-$n-files:/data" "${extra[@]}" --memory 900m --memory-swap 1400m "$IMAGE" >/dev/null
   echo "started ma-$n"
+}
+
+# The owner dashboard (main site) asks each madrasah copy for its counts over the private network with this one token.
+owner_token() {
+  [[ -s secrets/owner_summary_token ]] || (umask 077; hex 32 > secrets/owner_summary_token)
+  cat secrets/owner_summary_token
+}
+# Every copy has the token, the health file exists, and cron rewrites it every 5 minutes. Safe to run again.
+owner_setup() {
+  local t; t=$(owner_token)
+  for n in $(tenants); do grep -q '^OWNER_SUMMARY_TOKEN=' "tenants/$n.env" || echo "OWNER_SUMMARY_TOKEN=$t" >> "tenants/$n.env"; done
+  mkdir -p owner
+  local line="*/5 * * * * $PWD/owner-health >> $PWD/owner/cron.log 2>&1"
+  crontab -l 2>/dev/null | grep -qF "$PWD/owner-health" || (crontab -l 2>/dev/null; echo "$line") | crontab -
+  ./owner-health || echo "owner-health failed; the dashboard's Server page will say so" >&2
 }
 
 case "${1:-}" in
@@ -51,6 +70,7 @@ SQL
       echo "EMAIL_DRIVER=log"
       echo "SMS_DRIVER=log"
       echo "PUSH_DRIVER=webpush"
+      echo "OWNER_SUMMARY_TOKEN=$(owner_token)"
       if [[ $demo == --demo ]]; then
         echo "SEED_SAMPLE_DATA=1"
         echo "SEED_ADMIN_PASSWORD=$(hex 8)"
@@ -70,6 +90,7 @@ SQL
   update)
     [[ -d src ]] || die "no ./src: run ship.sh from your computer"
     docker build -t "$IMAGE" src
+    owner_setup
     for n in $(tenants); do start "$n"; done
     docker image prune -f >/dev/null
     ;;
@@ -91,6 +112,11 @@ SQL
   signups)
     db="ma_${2:-main}"; db=${db//-/_}
     docker compose exec -T postgres psql -U postgres -d "$db" -c       "select to_char(created_at at time zone 'Europe/London', 'DD/MM/YYYY HH24:MI') as \"when\", school, name, role, email, students, type from early_access_signup order by created_at desc" </dev/null
+    ;;
+  owner)
+    [[ -n ${2:-} ]] || die "usage: ./madrasah owner <your email>"
+    echo "Every device signed in to the owner dashboard is signed out. Open this link within 24 hours to choose a password and add your authenticator:"
+    docker exec ma-main npx tsx scripts/owner-setup.ts "$2"
     ;;
   restart) [[ -e tenants/${2:-}.env ]] || die "no such madrasah"; start "$2" ;;
   logs) docker logs --tail 200 -f "ma-${2:?name}" ;;

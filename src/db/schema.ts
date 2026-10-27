@@ -1,13 +1,14 @@
 import { sql } from 'drizzle-orm';
 import {
-  bigserial, boolean, check, date, index, integer, jsonb, pgEnum, pgTable, primaryKey, serial, smallint, text, time, timestamp, uniqueIndex, uuid
+  bigint, bigserial, boolean, check, date, index, integer, jsonb, pgEnum, pgTable, primaryKey, serial, smallint, text, time, timestamp, uniqueIndex, uuid
 } from 'drizzle-orm/pg-core';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 
 const tz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
 const createdAt = () => tz('created_at').notNull().defaultNow();
 
-export const portalEnum = pgEnum('portal', ['admin', 'teacher', 'parent', 'student']);
+// 'owner' is the one owner-dashboard sign-in on the main site (OWNER-DASHBOARD.md); madrasah copies never have one.
+export const portalEnum = pgEnum('portal', ['admin', 'teacher', 'parent', 'student', 'owner']);
 
 // §3 School Profile — single row (id = 1).
 export const schoolProfile = pgTable('school_profile', {
@@ -117,6 +118,27 @@ export const session = pgTable('session', {
   // Set when a Super admin opened this teacher-portal session to use the portal as that teacher; ends if the admin is removed.
   actingAdminId: integer('acting_admin_id').references(() => adminStaff.id, { onDelete: 'cascade' })
 }, (t) => [index('session_identity_idx').on(t.identityId)]);
+
+// The owner's authenticator (TOTP) key, encrypted with DATA_ENCRYPTION_KEY. A new key waits in pendingSecret until a code from it
+// is accepted, so a half-finished reset never locks the owner out. lastStep stops the same code being used twice.
+export const ownerTotp = pgTable('owner_totp', {
+  identityId: integer('identity_id').primaryKey().references(() => loginIdentity.id, { onDelete: 'cascade' }),
+  secret: text('secret'),
+  pendingSecret: text('pending_secret'),
+  lastStep: bigint('last_step', { mode: 'number' }),
+  updatedAt: tz('updated_at').notNull().defaultNow()
+});
+
+// The owner dashboard's checks of each madrasah copy, every 5 minutes (main site only). `summary` is the copy's answer from
+// GET /api/owner/summary: counts and totals only, never a child's or parent's details. Kept for 7 days.
+export const ownerCheck = pgTable('owner_check', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  madrasah: text('madrasah').notNull(), // the copy's name on the server, e.g. "demo"
+  at: tz('at').notNull().defaultNow(),
+  ok: boolean('ok').notNull(),
+  error: text('error'), // why it didn't answer, when it didn't
+  summary: jsonb('summary')
+}, (t) => [index('owner_check_madrasah_at_idx').on(t.madrasah, t.at)]);
 
 // Phones and browsers that asked for notifications (web push). Removed when the push service says the subscription has gone.
 export const pushSubscription = pgTable('push_subscription', {

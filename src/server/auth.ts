@@ -5,12 +5,13 @@ import type { DbOrTx } from '@/db';
 import { loginIdentity, rateLimit, session } from '@/db/schema';
 import { log, PORTAL_LOG } from './ops/logs';
 
-export type Portal = 'admin' | 'teacher' | 'parent' | 'student';
+export type Portal = 'admin' | 'teacher' | 'parent' | 'student' | 'owner';
+// The school portals. The owner dashboard signs in through src/server/owner/auth.ts instead.
 export const PORTALS: readonly Portal[] = ['admin', 'teacher', 'parent', 'student'];
 
 const HOUR = 3_600_000;
 // Staff portals hold the most data per login, so their sessions are short; families stay signed in on phones.
-export const SESSION_TTL_MS: Record<Portal, number> = { admin: 12 * HOUR, teacher: 12 * HOUR, parent: 30 * 24 * HOUR, student: 30 * 24 * HOUR };
+export const SESSION_TTL_MS: Record<Portal, number> = { admin: 12 * HOUR, teacher: 12 * HOUR, parent: 30 * 24 * HOUR, student: 30 * 24 * HOUR, owner: 14 * 24 * HOUR };
 export const MAX_FAILED_ATTEMPTS = 5;
 export const LOCKOUT_MS = 15 * 60_000;
 export const IP_LIMIT = { hits: 30, windowMs: 15 * 60_000 };
@@ -23,7 +24,7 @@ export const hashPassword = (pw: string) => hash(pw, ARGON);
 export const verifyPassword = (stored: string, pw: string) => verify(stored, pw).catch(() => false);
 // Compared against when no account matches, so a missing account takes as long as a wrong password.
 let dummyHash: Promise<string> | undefined;
-const dummy = () => (dummyHash ??= hashPassword('dummy-password-for-timing'));
+export const dummy = () => (dummyHash ??= hashPassword('dummy-password-for-timing'));
 
 export const MIN_PASSWORD_LENGTH = 10;
 export function passwordProblem(pw: string): string | null {
