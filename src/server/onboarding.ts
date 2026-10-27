@@ -1,7 +1,8 @@
 import { timingSafeEqual } from 'node:crypto';
-import { and, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Db, DbOrTx } from '@/db';
+import { supportStaffId } from './support';
 import { academicYear, adminStaff, contact, feeStructure, loginIdentity, onboarding, schoolClass, schoolProfile, student, studentContact, teacher } from '@/db/schema';
 import { STEPS, type StepKey } from '@/lib/onboarding-steps';
 import { LATEST } from '@/lib/releases';
@@ -17,8 +18,14 @@ import { readTab } from './settings';
 
 /* ───────── First admin ───────── */
 
-/** A new installation has no admin staff yet; until one exists, /admin/setup is open (with the setup code). */
-export const needsFirstAdmin = async (db: DbOrTx) => !(await db.select({ id: adminStaff.id }).from(adminStaff).limit(1)).length;
+/**
+ * A new installation has no admin staff of its own yet; until one exists, /admin/setup is open (with the setup code).
+ * Madressa's remote support account doesn't count: it's added when the madrasah first starts, before anyone has set it up.
+ */
+export async function needsFirstAdmin(db: DbOrTx) {
+  const support = await supportStaffId(db);
+  return !(await db.select({ id: adminStaff.id }).from(adminStaff).where(support ? ne(adminStaff.id, support) : undefined).limit(1)).length;
+}
 
 const same = (a: string, b: string) => { const x = Buffer.from(sha256(a)), y = Buffer.from(sha256(b)); return timingSafeEqual(x, y); };
 
@@ -31,8 +38,9 @@ export const setupInput = z.object({
 });
 
 /**
- * Creates the school and its first super admin, and signs them in. Only works while there are no admin staff at all,
- * and only with the setup code the person who installed it chose (SETUP_CODE), so a stranger who finds a new site can't claim it.
+ * Creates the school and its first super admin, and signs them in. Only works while the school has no admin staff of its own
+ * (Madressa's support account aside), and only with the setup code the person who installed it chose (SETUP_CODE), so a
+ * stranger who finds a new site can't claim it.
  */
 export async function setUpSchool(db: Db, raw: unknown, meta: { ip?: string | null; userAgent?: string | null } = {}) {
   const expected = process.env.SETUP_CODE ?? '';

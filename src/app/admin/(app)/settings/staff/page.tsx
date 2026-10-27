@@ -4,6 +4,7 @@ import { formatCalendarDate, formatInstant } from '@/lib/dates';
 import { plural } from '@/lib/text';
 import { requireAdmin } from '@/server/next/actor';
 import { listStaff } from '@/server/staff';
+import { supportStaffId } from '@/server/support';
 import { Icon } from '@/components/Icon';
 import { DeleteStaff } from './DeleteStaff';
 import { ACCESS_LEVELS } from '@/lib/access-levels';
@@ -12,7 +13,7 @@ export const metadata = { title: 'Admin staff' };
 
 export default async function StaffPage() {
   const me = await requireAdmin('super');
-  const rows = await listStaff(db);
+  const [rows, support] = await Promise.all([listStaff(db), supportStaffId(db)]);
   const today = formatInstant(new Date(), 'yyyy-MM-dd');
   return (
     <section className="ra-card" aria-labelledby="staff-h">
@@ -34,7 +35,9 @@ export default async function StaffPage() {
                   <td className="wrap">{allowLogin ? (levels.join(', ') || 'View only') : <span className="ra-chip" style={{ ['--c' as string]: 'var(--color-fg-muted)' }}><span>Login off</span></span>}</td>
                   <td className="opt">{s.dbsExpiresOn ? <span className={dbsExpired ? 'ra-warn' : undefined}>{formatCalendarDate(s.dbsExpiresOn)}{dbsExpired ? ' · expired' : ''}</span> : ''}</td>
                   <td className="opt ra-muted">{lastLoginAt ? formatInstant(lastLoginAt, 'dd/MM/yyyy HH:mm') : 'Never'}</td>
-                  <td><span className="ra-acts"><Link href={`/admin/settings/staff/${s.id}`} aria-label={`Edit ${s.name}`}><Icon name="edit" /></Link>{s.id !== me.staff.id && <DeleteStaff id={s.id} name={s.name} />}</span></td>
+                  <td>{s.id === support
+                    ? <span className="ra-note">Remote support, managed by Madressa</span>
+                    : <span className="ra-acts"><Link href={`/admin/settings/staff/${s.id}`} aria-label={`Edit ${s.name}`}><Icon name="edit" /></Link>{s.id !== me.staff.id && <DeleteStaff id={s.id} name={s.name} />}</span>}</td>
                 </tr>
               );
             })}

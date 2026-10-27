@@ -1,11 +1,12 @@
 import { and, asc, eq, isNull, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import type { Db } from '@/db';
+import type { Db, DbOrTx } from '@/db';
 import { adminStaff, loginIdentity } from '@/db/schema';
 import { checkbox, optionalIsoDate, optionalText, zodErrors, type FieldErrors } from '@/lib/validate';
 import { audit, type AuditActor } from './audit';
 import { hashPassword, invalidateAllSessions, passwordProblem } from './auth';
 import { answersFromForm, listFields, saveAnswers } from './people/custom-fields';
+import { isSupportStaff, supportStaffId } from './support';
 
 export const RANKS = ['Committee', 'Head Teacher', 'Head of Education', 'Administrator', 'Secretary', 'Director', 'Deputy Head', 'Head Administrator', 'Head of Day Alim', 'Head of Hifz', 'Head of Maktab'];
 
@@ -31,16 +32,19 @@ export async function getStaff(db: Db, id: number) {
 }
 
 type Result = { ok: true; id: number } | { ok: false; errors: FieldErrors };
+export const SUPPORT_LOCKED = 'This is Madressa’s remote support account. Only Madressa can change or remove it.';
 
-/** Number of other active super admins who can still sign in. */
-async function otherSupers(db: Pick<Db, 'select'>, exceptId: number) {
+/** Number of the school's other active super admins who can still sign in (Madressa's support account doesn't count). */
+async function otherSupers(db: DbOrTx, exceptId: number) {
+  const support = await supportStaffId(db);
   const [r] = await db.select({ n: sql<number>`count(*)::int` }).from(adminStaff)
     .innerJoin(loginIdentity, eq(loginIdentity.adminStaffId, adminStaff.id))
-    .where(and(eq(adminStaff.isSuper, true), isNull(adminStaff.deletedAt), eq(loginIdentity.allowLogin, true), ne(adminStaff.id, exceptId)));
+    .where(and(eq(adminStaff.isSuper, true), isNull(adminStaff.deletedAt), eq(loginIdentity.allowLogin, true), ne(adminStaff.id, exceptId), support ? ne(adminStaff.id, support) : sql`true`));
   return r?.n ?? 0;
 }
 
 export async function saveStaff(db: Db, actor: AuditActor & { staffId: number }, raw: unknown, id?: number, fd?: FormData): Promise<Result> {
+  if (id && (await isSupportStaff(db, id))) return { ok: false, errors: { name: SUPPORT_LOCKED } };
   const p = staffInput.safeParse(raw);
   if (!p.success) return { ok: false, errors: zodErrors(p.error) };
   const cf = fd ? answersFromForm(await listFields(db, 'staff'), fd) : { values: {}, errors: {} };
@@ -84,6 +88,7 @@ export async function saveStaff(db: Db, actor: AuditActor & { staffId: number },
 
 export async function deleteStaff(db: Db, actor: AuditActor & { staffId: number }, id: number): Promise<{ ok: boolean; error?: string }> {
   if (id === actor.staffId) return { ok: false, error: 'You can’t delete your own account.' };
+  if (await isSupportStaff(db, id)) return { ok: false, error: SUPPORT_LOCKED };
   return db.transaction(async (tx) => {
     const [s] = await tx.select().from(adminStaff).where(and(eq(adminStaff.id, id), isNull(adminStaff.deletedAt))).limit(1);
     if (!s) return { ok: false, error: 'This staff member no longer exists.' };
