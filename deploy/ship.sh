@@ -10,8 +10,6 @@ echo "Sending $(git rev-parse --short "$REF") to $SERVER"
 git -c core.autocrlf=false archive --format=tar.gz "$REF" | ssh -i "$KEY" "$SERVER" 'set -e
   cd /srv/madrasah && rm -rf src.new && mkdir src.new && tar xzf - -C src.new
   cp src.new/deploy/compose.yml src.new/deploy/Caddyfile src.new/deploy/madrasah . && chmod +x madrasah
-  mkdir -p home && cp -r src.new/deploy/home/. home/ # in place: the home container has this folder mounted
   rm -rf src && mv src.new src
-  docker compose up -d
-  [ -s home.env ] && docker compose restart home
+  docker compose up -d --remove-orphans
   ./madrasah update'

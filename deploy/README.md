@@ -15,17 +15,27 @@ Because the data is stored in France (EU), say so in each madrasah's privacy not
   secrets/pg_password  Postgres admin password
 ```
 
-## The home page
+## The main site (homepage)
 
-The bare domain (now `213-32-71-244.sslip.io`, later your own) shows the Madrasah Manager website: what it does, the demo logins, a "Get started" form, and "Sign in to your madrasah", which takes someone from a short name like `flc` to `https://flc.<domain>/admin`.
-The page is `deploy/home/public/`; edit it and run `deploy/ship.sh`.
+The bare domain (now `213-32-71-244.sslip.io`, later your own) shows the Madressa System homepage with the "Start free trial" form. It is a copy of the app like any madrasah's, called `main`, with two extra settings in `tenants/main.env`:
 
 ```bash
-./madrasah home 213-32-71-244.sslip.io   # set it up, or move it to a new domain
-./madrasah requests                      # where to see "Get started" requests, and their password
+MARKETING_SITE=1                                   # / shows the homepage instead of the admin app
+EARLY_ACCESS_NOTIFY_EMAIL=you@example.org          # who is emailed about each sign-up (once email is switched on)
 ```
 
-Requests are listed at `https://<domain>/requests` (user `admin`, password from `home.env`). Nothing is emailed yet, so check it now and then.
+Set it up once (or move it to a new domain the same way):
+
+```bash
+./madrasah add main 213-32-71-244.sslip.io
+printf 'MARKETING_SITE=1
+EARLY_ACCESS_NOTIFY_EMAIL=you@example.org
+' >> tenants/main.env
+./madrasah restart main
+./madrasah signups                                 # list the sign-ups (newest first)
+```
+
+Emails aren't sent yet, so `./madrasah signups` is where to see them. The homepage's text is in `src/app/_marketing/`; change it and run `deploy/ship.sh`.
 
 ## Signing in to the server
 
@@ -73,7 +83,7 @@ cat tenants/demo.passwords                       # each login's current password
 
 A new password signs that person out everywhere and is written to `tenants/<name>.passwords`, readable only by the ubuntu user. It stays when the app restarts or updates. People can still change their own password in the app; this file then shows the old one.
 
-Until you have a domain, use `<name>.213-32-71-244.sslip.io` (sslip.io points any such name at this server), e.g. `./madrasah add flc flc.213-32-71-244.sslip.io`. Use `<name>.<domain>` so "Sign in to your madrasah" on the home page finds it.
+Until you have a domain, use `<name>.213-32-71-244.sslip.io` (sslip.io points any such name at this server), e.g. `./madrasah add flc flc.213-32-71-244.sslip.io`.
 
 Teachers and parents get their first password from the admin: on their page, **Get a set-password link** makes a one-time link to copy or send on WhatsApp (or the admin types a password in their edit form, which they must change when they first sign in).
 

@@ -1,5 +1,5 @@
-# Shared parts on the VPS: one Postgres for every madrasah (a database and user each), Caddy for HTTPS, and the home page.
-# The madrasah apps themselves are started by ./madrasah (one container each) on the same network.
+# Shared parts on the VPS: one Postgres for every madrasah (a database and user each) and Caddy for HTTPS.
+# The app copies themselves (each madrasah, and the main site) are started by ./madrasah (one container each) on the same network.
 name: madrasah
 services:
   postgres:
@@ -22,19 +22,7 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     networks: [apps]
-  home: # the website at the bare domain: information, demo links, "Get started" requests, "Sign in to your madrasah"
-    image: node:22-alpine
-    restart: unless-stopped
-    command: node /site/server.mjs
-    env_file: [{ path: ./home.env, required: false }] # REQUESTS_PASSWORD, made by ./madrasah home
-    volumes:
-      - ./home:/site:ro
-      - ./sites:/sites:ro # which madrasahs exist, for "Sign in"
-      - home_data:/data # requests to join
-    networks: [apps]
-    mem_limit: 128m
 volumes:
-  home_data:
   pgdata:
   caddy_data:
   caddy_config:
