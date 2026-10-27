@@ -312,7 +312,7 @@ body:has(.ms) { background: var(--ground); color-scheme: light; }
 .ms .foot-grid { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2rem; font-size: 0.9375rem; }
 .ms .foot-grid h3 { font-family: var(--text); font-size: 0.9375rem; font-weight: 600; color: var(--on-ink); letter-spacing: 0; margin-bottom: 10px; }
 .ms .foot-grid ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
-.ms .foot-grid a { color: var(--on-ink-muted); text-decoration: none; display: inline-block; padding: 6px 0; }
+.ms .foot-grid a { color: var(--on-ink-muted); text-decoration: none; display: inline-block; padding: 6px 0; max-width: 100%; overflow-wrap: anywhere; } /* a long email wraps inside its column */
 .ms .foot-grid .foot-copy { margin-top: 8px; }
 @media (hover: hover) and (pointer: fine) { .ms .foot-grid a:hover { color: var(--on-ink); text-decoration: underline; } }
 @media (max-width: 760px) { .ms .foot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

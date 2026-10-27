@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { EA_ROLES, EA_TYPES } from '@/lib/marketing';
+import { CONTACT_EMAIL, EA_ROLES, EA_TYPES } from '@/lib/marketing';
 import { d } from './bits';
 
 /*
@@ -11,7 +11,7 @@ import { d } from './bits';
 type Field = 'school' | 'name' | 'role' | 'email' | 'students' | 'type';
 const ID: Record<Field, string> = { school: 'ea-school', name: 'ea-name', role: 'ea-role', email: 'ea-email', students: 'ea-size', type: 'ea-type' };
 const OK = 'JazakAllah khair. You’re on the early-access list. We’ll email you soon to set up your madressa.';
-const FAILED = 'We couldn’t send this just now. Please try again in a minute, or email us at [YOUR EMAIL].';
+const FAILED = `We couldn’t send this just now. Please try again in a minute, or email us at ${CONTACT_EMAIL}.`;
 const CHECK = 'Please check the highlighted field.';
 type Control = HTMLInputElement | HTMLSelectElement;
 
