@@ -317,6 +317,43 @@ body:has(.ms) { background: var(--ground); color-scheme: light; }
 @media (hover: hover) and (pointer: fine) { .ms .foot-grid a:hover { color: var(--on-ink); text-decoration: underline; } }
 @media (max-width: 760px) { .ms .foot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
+/* Inner pages (features, FAQ, contact) */
+.ms .page-hero { padding-block: clamp(4rem, 8vw, 8rem) clamp(3.5rem, 7vw, 6.5rem); position: relative; overflow: hidden; }
+.ms .page-hero .pattern { position: absolute; inset: 0; color: var(--ink-2); pointer-events: none; }
+.ms .page-hero .wrap { position: relative; display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(2rem, 5vw, 5rem); align-items: end; }
+.ms .page-hero-copy { display: flex; flex-direction: column; gap: 28px; }
+.ms .page-hero .lede { color: var(--on-ink-muted); }
+.ms .page-hero .lede a { color: var(--sky); }
+@media (max-width: 860px) { .ms .page-hero .wrap { grid-template-columns: minmax(0, 1fr); } }
+.ms .toc { display: flex; flex-wrap: wrap; gap: 8px; }
+.ms .toc a { text-decoration: none; color: var(--on-ink); background: var(--ink-2); padding: 10px 14px; border-radius: 999px; font-size: 0.9375rem; font-weight: 500; }
+@media (hover: hover) and (pointer: fine) { .ms .toc a:hover { background: var(--toc-hover); } }
+.ms .modules { display: flex; flex-direction: column; gap: clamp(4.5rem, 8vw, 8rem); }
+.ms .module { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: clamp(2rem, 5vw, 5rem); scroll-margin-top: 100px; }
+.ms .module-head { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 110px; align-self: start; }
+.ms .module-head p { color: var(--muted); }
+.ms .module-head h2 { font-size: clamp(2rem, 3.1vw, 3rem); }
+.ms .module-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.ms .module-list li { background: var(--white); border-radius: 18px; padding: 20px 22px; }
+.ms .module-list li strong { display: block; font-weight: 600; margin-bottom: 4px; }
+.ms .module-list li span { color: var(--muted); font-size: 1rem; }
+.ms .module-list li.wide { grid-column: 1 / -1; background: var(--field); }
+@media (max-width: 860px) { .ms .module { grid-template-columns: minmax(0, 1fr); } .ms .module-head { position: static; } .ms .module-list { grid-template-columns: minmax(0, 1fr); } }
+.ms .closing .actions .on-ink-muted { color: var(--on-ink-muted); }
+.ms .closing .actions .sky-link { color: var(--sky); }
+.ms .contact-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(2.5rem, 6vw, 6rem); align-items: start; }
+.ms .contact-side { display: flex; flex-direction: column; gap: 26px; }
+.ms .contact-grid .form-title { font-size: clamp(1.75rem, 3vw, 2.5rem); }
+.ms .contact-ways { display: flex; flex-direction: column; gap: 14px; }
+.ms .way { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 16px; align-items: center; background: var(--white); border-radius: 20px; padding: 18px 20px; text-decoration: none; color: var(--ink); transition: background-color 160ms ease, transform 160ms var(--ease-out); }
+.ms .way:active { transform: scale(0.98); }
+@media (hover: hover) and (pointer: fine) { .ms .way:hover { background: var(--field); } }
+.ms .way i { width: 52px; height: 52px; border-radius: 16px; background: var(--field); display: grid; place-items: center; color: var(--action); }
+.ms .way strong { display: block; font-weight: 600; }
+.ms .way span { color: var(--muted); font-size: 1rem; overflow-wrap: anywhere; }
+@media (max-width: 860px) { .ms .contact-grid { grid-template-columns: minmax(0, 1fr); } }
+.ms textarea.input { min-height: 130px; resize: vertical; }
+
 /* Entrances: motion only. Content is visible at rest; an element already on screen when the page loads never animates.
    Others get .rise from an observer just before they scroll into view, and play in from below. */
 @keyframes ms-rise { from { opacity: 0; transform: translateY(24px); } }

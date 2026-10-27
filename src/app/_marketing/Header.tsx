@@ -1,7 +1,12 @@
 import Link from 'next/link';
 import { PRODUCT_NAME } from '@/lib/marketing';
 
-export function Header() {
+const PAGES = [['/features', 'Features'], ['/faq', 'FAQ'], ['/contact', 'Contact']] as const;
+export type Page = (typeof PAGES)[number][0];
+
+/** `current` marks the page the visitor is on in both navs. */
+export function Header({ current }: { current?: Page }) {
+  const links = PAGES.map(([href, label]) => <a key={href} href={href} aria-current={href === current ? 'page' : undefined}>{label}</a>);
   return (
     <header className="site-head on-ink">
       <div className="wrap">
@@ -10,14 +15,12 @@ export function Header() {
           {PRODUCT_NAME}
         </Link>
         <nav className="site-nav" aria-label="Main">
-          <a href="/features">Features</a>
-          <a href="/faq">FAQ</a>
-          <a href="/contact">Contact</a>
+          {links}
         </nav>
-        <a className="btn btn-sky" href="#early-access"><span className="long">Start free trial</span><span className="short">Free trial</span></a>
+        <Link className="btn btn-sky" href="/#early-access"><span className="long">Start free trial</span><span className="short">Free trial</span></Link>
       </div>
       <nav className="mobile-nav" aria-label="Main (mobile)">
-        <a href="/features">Features</a><a href="/faq">FAQ</a><a href="/contact">Contact</a>
+        {links}
       </nav>
     </header>
   );

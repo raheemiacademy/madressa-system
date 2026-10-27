@@ -33,9 +33,10 @@ EARLY_ACCESS_NOTIFY_EMAIL=you@example.org
 ' >> tenants/main.env
 ./madrasah restart main
 ./madrasah signups                                 # list the sign-ups (newest first)
+./madrasah messages                                # list the contact-form messages (newest first)
 ```
 
-Emails aren't sent yet, so `./madrasah signups` is where to see them. The homepage's text is in `src/app/_marketing/`; change it and run `deploy/ship.sh`.
+Emails aren't sent yet, so `./madrasah signups` and `./madrasah messages` are where to see them. Messages are kept in the mail queue, so don't use "Delete sent emails before this date" in the main site's admin. The homepage's text is in `src/app/_marketing/`; change it and run `deploy/ship.sh`.
 
 ## Signing in to the server
 

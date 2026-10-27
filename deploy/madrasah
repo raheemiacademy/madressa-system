@@ -5,6 +5,7 @@
 #   ./madrasah password <name> <email|--all> [pw]   new password (random unless given) for a sign-in or all, kept in tenants/<name>.passwords
 #   ./madrasah restart <name> | logs <name> | list
 #   ./madrasah signups [name]                       early-access sign-ups from the homepage (on the main-site copy, "main")
+#   ./madrasah messages [name]                      contact-form messages from the main site, newest first
 #   ./madrasah backup                               database dumps of every madrasah into ./backups (nightly from cron)
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")"
@@ -82,6 +83,10 @@ SQL
     done <<< "$new"
     echo "$new" >> "$f"
     echo "New password set for $(wc -l <<< "$new") sign-in(s), and they were signed out. To see them: cat $PWD/$f"
+    ;;
+  messages)
+    db="ma_${2:-main}"; db=${db//-/_}
+    docker compose exec -T postgres psql -U postgres -d "$db" -x -c       "select to_char(created_at at time zone 'Europe/London', 'DD/MM/YYYY HH24:MI') as \"when\", reply_to as \"from\", subject, regexp_replace(regexp_replace(html, '</(tr|p)>', E'\n', 'g'), '<[^>]+>', ' ', 'g') as message from mail_queue where entity = 'contact_message' order by created_at desc" </dev/null
     ;;
   signups)
     db="ma_${2:-main}"; db=${db//-/_}

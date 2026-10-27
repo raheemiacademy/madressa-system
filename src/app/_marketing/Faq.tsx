@@ -1,7 +1,8 @@
+import { OFFER } from '@/lib/marketing';
 import { d } from './bits';
 
 const QUESTIONS: [string, string][] = [
-  ['How much does it cost?', 'Nothing during early access. We’ll publish pricing before launch and tell early-access schools first, so you can decide whether to carry on. Early-access madressas keep their launch price fixed for as long as they stay with us.'],
+  ['How much does it cost?', `Nothing during early access. We’ll publish pricing before launch and tell early-access schools first, so you can decide whether to carry on. ${OFFER}`],
   ['What happens when early access ends?', 'You choose whether to continue. Your records are yours: you can download students, contacts, fees and registers as spreadsheets at any time.'],
   ['Can you move our records from spreadsheets or another system?', 'Yes, and it’s free. Send us what you have and we’ll import your students, parents, classes and fees, then check everything with you before teachers and parents are invited.'],
   ['Is it UK GDPR compliant? Who can see the children’s details?', 'Yes. Parents see only their own children, teachers see only the classes they teach, and you decide what each office user can do. Important changes are recorded in an audit log.'],

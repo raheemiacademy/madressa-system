@@ -1,4 +1,4 @@
-import { PRODUCT_NAME } from '@/lib/marketing';
+import { OFFER, PRODUCT_NAME } from '@/lib/marketing';
 import { d } from './bits';
 import { EarlyAccessForm } from './EarlyAccessForm';
 
@@ -14,7 +14,7 @@ export function EarlyAccess() {
             <li>Free data import from your spreadsheets or current system</li>
             <li>A direct line to the people building it. Your ideas shape what comes next</li>
           </ul>
-          <p className="offer" data-rise style={d(3)}>Early-access madressas keep their launch price fixed for as long as they stay with us.</p>
+          <p className="offer" data-rise style={d(3)}>{OFFER}</p>
         </div>
         <EarlyAccessForm />
       </div>

@@ -104,6 +104,7 @@
   --ok: #2F7D32; --bad: #C62828;
   /* Single-use values from the reference, named */
   --sky-hover: #A3DBF1; --rule: #D6DAEC; --input-line: #CDD2E6; --early-text: #E6EAF8; --ok-text: #1F5E22; --bad-text: #8E1C1C;
+  --toc-hover: #313874;
   /* Inside the product mock-ups (data-ui) */
   --ui-fg: #1F2340; --ui-ground: #F2F3F9; --ui-bar: #E4E7F3; --ui-line: #E3E5F0; --ui-rule: #EEF0F6; --ui-bubble: #EEF0F8;
   --ui-phone: #F5F6FB; --ui-bezel: #0F1330; --ui-drill: #B42318;
