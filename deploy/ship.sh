@@ -12,4 +12,6 @@ git -c core.autocrlf=false archive --format=tar.gz "$REF" | ssh -i "$KEY" "$SERV
   cp src.new/deploy/compose.yml src.new/deploy/Caddyfile src.new/deploy/madrasah . && chmod +x madrasah
   rm -rf src && mv src.new src
   docker compose up -d --remove-orphans
-  ./madrasah update'
+  # Detached, so a dropped connection cannot stop it half-way; its output is followed here and kept in update.log.
+  nohup ./madrasah update > update.log 2>&1 </dev/null &
+  tail -n +1 --pid=$! -f update.log'
