@@ -1,0 +1,94 @@
+#!/usr/bin/env python3
+"""Owner dashboard: runs the safe actions asked for on the dashboard (cron, every minute; set up by ./madrasah update).
+
+Reads waiting requests from the main site's owner_action table and does only these two things, for a madrasah that exists
+on this server: `./madrasah restart <name>` or `./madrasah backup <name>`. Each request gets its start, finish and result.
+The website only writes the request; it never gets Docker access.
+
+  ./owner-actions           run what's waiting
+  ./owner-actions --check   run the self-checks
+"""
+import glob
+import os
+import re
+import subprocess
+import sys
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+ACTIONS = ('restart', 'backup')
+NAME = re.compile(r'^[a-z0-9][a-z0-9-]{1,29}$')
+
+
+def tenants():
+    """{name: is the main site} for every copy on the server."""
+    out = {}
+    for path in glob.glob(os.path.join(HERE, 'tenants', '*.env')):
+        with open(path) as f:
+            out[os.path.basename(path)[:-4]] = any(line.strip() == 'MARKETING_SITE=1' for line in f)
+    return out
+
+
+def allowed(name, action, copies):
+    """Only restart or back up, and only a madrasah (never the main site, never anything else)."""
+    return action in ACTIONS and bool(NAME.match(name)) and copies.get(name) is False
+
+
+def parse(rows):
+    out = []
+    for line in rows.splitlines():
+        parts = line.split('|')
+        if len(parts) == 3 and parts[0].isdigit():
+            out.append((int(parts[0]), parts[1], parts[2]))
+    return out
+
+
+def psql(db, sql, **params):
+    # Values travel as psql variables (quoted with :'name'), never pasted into the SQL.
+    args = ['docker', 'compose', 'exec', '-T', 'postgres', 'psql', '-U', 'postgres', '-d', db, '-v', 'ON_ERROR_STOP=1', '-At']
+    for k, v in params.items():
+        args += ['-v', f'{k}={v}']
+    return subprocess.run(args, input=sql, capture_output=True, text=True, timeout=60, check=True, cwd=HERE).stdout
+
+
+def main():
+    import fcntl  # Linux only, like the server this runs on
+    copies = tenants()
+    mains = [n for n, is_main in copies.items() if is_main]
+    if not mains:
+        return
+    db = 'ma_' + mains[0].replace('-', '_')
+    os.makedirs(os.path.join(HERE, 'owner'), exist_ok=True)
+    lock = open(os.path.join(HERE, 'owner', 'actions.lock'), 'w')
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)  # a backup can outlast a minute: one run at a time
+    except BlockingIOError:
+        return
+    psql(db, "update owner_action set finished_at = now(), result = 'Not picked up within an hour' "
+             "where started_at is null and requested_at < now() - interval '1 hour';")
+    for rid, name, action in parse(psql(db, "select id, madrasah, action from owner_action where started_at is null order by id;")):
+        if not allowed(name, action, copies):
+            psql(db, "update owner_action set started_at = now(), finished_at = now(), result = 'Refused: not a madrasah on this server' where id = :'id';", id=rid)
+            continue
+        psql(db, "update owner_action set started_at = now() where id = :'id';", id=rid)
+        try:
+            r = subprocess.run([os.path.join(HERE, 'madrasah'), action, name], capture_output=True, text=True, timeout=900, cwd=HERE)
+            result = 'Done' if r.returncode == 0 else 'Failed: ' + ((r.stderr or r.stdout).strip().splitlines() or ['no output'])[-1]
+        except subprocess.TimeoutExpired:
+            result = 'Failed: took over 15 minutes'
+        psql(db, "update owner_action set finished_at = now(), result = :'res' where id = :'id';", id=rid, res=result[:300])
+        print(f'{action} {name}: {result}', flush=True)
+
+
+def check():
+    copies = {'demo': False, 'flc': False, 'main': True}
+    assert allowed('demo', 'restart', copies) and allowed('flc', 'backup', copies)
+    assert not allowed('main', 'restart', copies), 'never the main site'
+    assert not allowed('nope', 'restart', copies), 'only madrasahs that exist'
+    assert not allowed('demo', 'rm', copies), 'only the two actions'
+    assert not allowed('demo; rm -rf /', 'restart', {'demo; rm -rf /': False}), 'names are plain'
+    assert parse('12|demo|restart\n13|flc|backup\n\nbad line') == [(12, 'demo', 'restart'), (13, 'flc', 'backup')]
+    print('owner-actions: self-checks passed')
+
+
+if __name__ == '__main__':
+    check() if '--check' in sys.argv else main()

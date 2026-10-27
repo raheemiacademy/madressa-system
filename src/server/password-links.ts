@@ -31,9 +31,12 @@ async function personName(db: DbOrTx, idn: typeof loginIdentity.$inferSelect) {
   return '';
 }
 
-/** A one-time link that verifies the address and sets a password. Older unused links stop working. */
+/**
+ * A one-time link that verifies the address and sets a password. Older unused links stop working. Admins get one only from
+ * the owner dashboard (a locked-out head teacher); they can't ask for one themselves.
+ */
 export async function makePasswordLink(db: DbOrTx, idn: typeof loginIdentity.$inferSelect) {
-  if (!isLinkPortal(idn.portal)) return null;
+  if (!isLinkPortal(idn.portal) && idn.portal !== 'admin') return null;
   const raw = randomBytes(32).toString('base64url');
   await db.update(authToken).set({ usedAt: new Date() }).where(and(eq(authToken.identityId, idn.id), isNull(authToken.usedAt)));
   await db.insert(authToken).values({ identityId: idn.id, tokenHash: sha256(raw), expiresAt: new Date(Date.now() + LINK_HOURS * 3_600_000) });
@@ -77,7 +80,7 @@ export async function redeemPasswordLink(db: Db, portal: Portal, raw: string, pa
     await tx.update(authToken).set({ usedAt: new Date() }).where(eq(authToken.id, row.t.id));
     await tx.update(loginIdentity).set({ passwordHash: await hashPassword(password), emailVerifiedAt: new Date(), mustChangePassword: false, failedAttempts: 0, lockedUntil: null }).where(eq(loginIdentity.id, row.i.id));
     await invalidateAllSessions(tx, row.i.id);
-    await audit(tx, { identityId: row.i.id, name: row.i.email }, { action: `Set a ${portal} portal password from an email link`, page: 'Sign in', entity: 'login_identity', entityId: row.i.id });
+    await audit(tx, { identityId: row.i.id, name: row.i.email }, { action: portal === 'admin' ? 'Set an admin password from a link made on the owner dashboard' : `Set a ${portal} portal password from an email link`, page: 'Sign in', entity: 'login_identity', entityId: row.i.id });
     return { ok: true as const, ...(await createSession(tx, row.i.id, portal, meta)) };
   });
 }

@@ -4,7 +4,11 @@ import { duration, num, plural, size, whenShort } from '@/lib/owner-format';
 import { normaliseNumber } from '@/server/comm/sms';
 import { getOwnerState, requireOwner } from '@/server/next/owner';
 import type { StoredSummary } from '@/server/owner/checks';
+import { db } from '@/db';
+import { formatInstant } from '@/lib/dates';
+import { latestActions, madrasahNote } from '@/server/owner/safe-actions';
 import { Chart } from '../../../_ui/Chart';
+import { MadrasahNotes, SafeActions } from './SafeActions';
 import { Icon } from '../../../_ui/icons';
 import { NotYet, Page } from '../../../_ui/parts';
 
@@ -13,6 +17,16 @@ export async function generateMetadata({ params }: { params: Promise<{ name: str
 }
 
 type Money = NonNullable<StoredSummary['money']>['month'];
+
+type Req = Awaited<ReturnType<typeof latestActions>>['restart'];
+/** The newest restart or backup request, in a few words, for a day after it was asked for. */
+function actionStatus(r: Req, now: Date) {
+  if (!r || now.getTime() - r.requestedAt.getTime() > 86_400_000) return null;
+  const at = (d: Date) => formatInstant(d, 'HH:mm');
+  if (!r.startedAt) return `Asked at ${at(r.requestedAt)}; waiting for the server.`;
+  if (!r.finishedAt) return `Running since ${at(r.startedAt)}.`;
+  return r.result === 'Done' ? `Done at ${at(r.finishedAt)}.` : `${r.result} (${at(r.finishedAt)}).`;
+}
 const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
 const weekLabel = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 
@@ -35,6 +49,7 @@ export default async function MadrasahPage({ params }: { params: Promise<{ name:
   const crumb = <><Link href="/owner/madrasahs">Madrasahs</Link>{m && ` · ${m.host}`}</>;
   if (!m) return <Page title="Madrasah not found" crumb={crumb}><NotYet title="Not found">It may have been removed. <Link href="/owner/madrasahs">Back to madrasahs</Link></NotYet></Page>;
 
+  const [actions, notes] = await Promise.all([latestActions(db, m.name), madrasahNote(db, m.name)]);
   const sm = m.summary, u = sm?.usage, weeks = sm?.weeks ?? [];
   const status = [
     ['Current', u?.byStatus.current], ['Waiting list', u?.byStatus.waiting], ['On hold', u?.byStatus.onHold], ['Left this year', u?.byStatus.leftThisYear]
@@ -89,7 +104,13 @@ export default async function MadrasahPage({ params }: { params: Promise<{ name:
             : <div className="empty"><b>No numbers yet</b>It hasn’t answered a check yet.</div>}
         </section>
 
-        <section className="card c5" aria-labelledby="h-staff">
+        <section className="card c5" aria-labelledby="h-actions">
+          <div className="card-h"><h2 id="h-actions">Safe actions</h2><p className="note">Each asks first and is logged</p></div>
+          <SafeActions name={m.name} admins={(sm?.admins ?? []).map((a) => ({ name: a.name, email: a.email }))} lastBackup={m.backup ? whenShort(m.backup.at, s.now) : 'none yet'}
+            status={{ restart: actionStatus(actions.restart, s.now), backup: actionStatus(actions.backup, s.now) }} />
+        </section>
+
+        <section className="card c7" aria-labelledby="h-staff">
           <div className="card-h"><h2 id="h-staff">Staff contacts</h2><p className="note">Admin users only</p></div>
           <div className="contacts">
             {sm?.admins?.length ? sm.admins.map((a, i) => {
@@ -107,6 +128,8 @@ export default async function MadrasahPage({ params }: { params: Promise<{ name:
             }) : <div className="empty"><b>No admin users</b>{sm ? 'This madrasah has no admin accounts yet.' : 'It hasn’t answered a check yet.'}</div>}
           </div>
         </section>
+
+        <section className="card c5" aria-labelledby="h-notes"><MadrasahNotes name={m.name} initial={notes} /></section>
       </div>
     </Page>
   );

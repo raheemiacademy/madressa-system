@@ -8,7 +8,7 @@
 #   ./madrasah signups [name]                       early-access sign-ups from the homepage (on the main-site copy, "main")
 #   ./madrasah messages [name]                      contact-form messages from the main site, newest first
 #   ./madrasah owner <email>                        the owner dashboard's account (made, or reset if the phone is lost): prints a setup link
-#   ./madrasah backup                               database dumps of every madrasah into ./backups (nightly from cron)
+#   ./madrasah backup [name]                        database dumps of every madrasah (or one) into ./backups (nightly from cron)
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")"
 IMAGE=madrasah-app:latest
@@ -35,13 +35,17 @@ owner_token() {
   [[ -s secrets/owner_summary_token ]] || (umask 077; hex 32 > secrets/owner_summary_token)
   cat secrets/owner_summary_token
 }
-# Every copy has the token, the health file exists, and cron rewrites it every 5 minutes. Safe to run again.
+# Every copy has the token, the health file exists, cron rewrites it every 5 minutes and runs the dashboard's safe actions
+# every minute. Safe to run again.
 owner_setup() {
   local t; t=$(owner_token)
   for n in $(tenants); do grep -q '^OWNER_SUMMARY_TOKEN=' "tenants/$n.env" || echo "OWNER_SUMMARY_TOKEN=$t" >> "tenants/$n.env"; done
   mkdir -p owner
   local line="*/5 * * * * $PWD/owner-health >> $PWD/owner/cron.log 2>&1"
   crontab -l 2>/dev/null | grep -qF "$PWD/owner-health" || (crontab -l 2>/dev/null; echo "$line") | crontab -
+  # Restart and back up now, asked for on the dashboard, are picked up within a minute.
+  line="* * * * * $PWD/owner-actions >> $PWD/owner/actions.log 2>&1"
+  crontab -l 2>/dev/null | grep -qF "$PWD/owner-actions" || (crontab -l 2>/dev/null; echo "$line") | crontab -
   ./owner-health || echo "owner-health failed; the dashboard's Server page will say so" >&2
 }
 
@@ -126,7 +130,9 @@ SQL
     done ;;
   backup)
     umask 077
-    for n in $(tenants); do
+    names=$(tenants)
+    if [[ -n ${2:-} ]]; then [[ -e tenants/$2.env ]] || die "no such madrasah"; names=$2; fi
+    for n in $names; do
       mkdir -p "backups/$n"
       docker compose exec -T postgres pg_dump -U postgres -Fc "ma_${n//-/_}" > "backups/$n/$(date +%F).dump"
       docker exec "ma-$n" tar czf - -C /data . > "backups/$n/$(date +%F)-files.tgz"

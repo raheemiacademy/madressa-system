@@ -16,6 +16,7 @@ import { evaluateAlerts, saveAlertSettings } from '@/server/owner/alerts';
 import { removePushSubscription, savePushSubscription } from '@/server/comm/push';
 import { ownerState, readHealth, runChecks } from '@/server/owner/checks';
 import { setLeadNotes, setLeadStatus } from '@/server/owner/leads';
+import { adminLink, requestAction, saveMadrasahNote } from '@/server/owner/safe-actions';
 
 const field = (fd: FormData, k: string) => String(fd.get(k) ?? '').slice(0, 200);
 
@@ -116,4 +117,26 @@ export async function removeOwnerPushAction(endpoint: string) {
 export async function saveAlertSettingsAction(raw: unknown) {
   const o = await requireOwner();
   return saveAlertSettings(db, { identityId: o.identityId, name: 'Owner' }, raw);
+}
+
+const owner = (o: { identityId: number }) => ({ identityId: o.identityId, name: 'Owner' });
+
+/** One madrasah → Restart or Back up now: a request the server picks up within a minute. */
+export async function requestActionAction(madrasah: string, action: string) {
+  const o = await requireOwner();
+  const r = await requestAction(db, owner(o), await readHealth(), String(madrasah), action);
+  if (r.ok) revalidatePath('/owner', 'layout');
+  return r;
+}
+
+/** One madrasah → Set-password link for one of its admins, made by that madrasah's copy. */
+export async function adminLinkAction(madrasah: string, email: string) {
+  const o = await requireOwner();
+  return adminLink(db, owner(o), await readHealth(), String(madrasah), email);
+}
+
+/** One madrasah → Your notes. */
+export async function saveMadrasahNoteAction(madrasah: string, notes: string) {
+  const o = await requireOwner();
+  return saveMadrasahNote(db, owner(o), await readHealth(), String(madrasah), notes);
 }

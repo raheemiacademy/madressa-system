@@ -9,7 +9,7 @@ REF=${1:-HEAD}
 echo "Sending $(git rev-parse --short "$REF") to $SERVER"
 git -c core.autocrlf=false archive --format=tar.gz "$REF" | ssh -i "$KEY" "$SERVER" 'set -e
   cd /srv/madrasah && rm -rf src.new && mkdir src.new && tar xzf - -C src.new
-  cp src.new/deploy/compose.yml src.new/deploy/Caddyfile src.new/deploy/madrasah src.new/deploy/owner-health . && chmod +x madrasah owner-health
+  cp src.new/deploy/compose.yml src.new/deploy/Caddyfile src.new/deploy/madrasah src.new/deploy/owner-health src.new/deploy/owner-actions . && chmod +x madrasah owner-health owner-actions
   rm -rf src && mv src.new src
   docker compose up -d --remove-orphans
   # Detached, so a dropped connection cannot stop it half-way; its output is followed here and kept in update.log.

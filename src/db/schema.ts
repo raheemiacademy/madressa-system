@@ -153,6 +153,25 @@ export const ownerAlert = pgTable('owner_alert', {
   channels: text('channels').notNull() // 'Push', 'Push and email', 'Email', or 'Not sent' when that alert is turned off
 }, (t) => [uniqueIndex('owner_alert_open_uq').on(t.key).where(sql`${t.clearedAt} is null`)]);
 
+// The owner dashboard's notes about each madrasah (main site), e.g. "Imam prefers WhatsApp".
+export const ownerMadrasahNote = pgTable('owner_madrasah_note', {
+  madrasah: text('madrasah').primaryKey(),
+  notes: text('notes').notNull(),
+  updatedAt: tz('updated_at').notNull().defaultNow()
+});
+
+// The owner dashboard's safe actions (main site): requests the server's owner-actions script picks up every minute. It only
+// restarts or backs up a named madrasah; the website never touches Docker.
+export const ownerAction = pgTable('owner_action', {
+  id: serial('id').primaryKey(),
+  madrasah: text('madrasah').notNull(),
+  action: text('action').notNull(),
+  requestedAt: tz('requested_at').notNull().defaultNow(),
+  startedAt: tz('started_at'),
+  finishedAt: tz('finished_at'),
+  result: text('result') // 'Done', or what went wrong
+}, (t) => [check('owner_action_kind', sql`${t.action} in ('restart', 'backup')`)]);
+
 // Phones and browsers that asked for notifications (web push). Removed when the push service says the subscription has gone.
 export const pushSubscription = pgTable('push_subscription', {
   id: serial('id').primaryKey(),

@@ -43,6 +43,8 @@ Your owner dashboard is at `/owner` on the main site only. `./madrasah owner <yo
 
 The dashboard's health checks need nothing from you: `./madrasah update` (run by `ship.sh`) gives every copy the private token, mounts `owner/` into the main site's copy, adds a cron entry that runs `./owner-health` every 5 minutes, and runs it once. `./owner-health` only reads (disk, memory, CPU, containers, backup files) and writes `owner/health.json`; its log is `owner/cron.log`. `./owner-health --check` runs its self-checks.
 
+"Restart" and "Back up now" on the dashboard are requests: `./owner-actions` (cron, every minute) runs `./madrasah restart <name>` or `./madrasah backup <name>` for a madrasah on this server, and nothing else; its log is `owner/actions.log`. `./owner-actions --check` runs its self-checks.
+
 ## Signing in to the server
 
 From this computer, in Git Bash or PowerShell:

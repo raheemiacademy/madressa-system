@@ -21,6 +21,10 @@ test('on a madrasah copy (no MARKETING_SITE) / still goes to the admin app, and 
   for (const path of ['/features', '/faq', '/contact']) expect((await request.get(path)).status()).toBe(404);
   // The owner dashboard is on the main site only.
   for (const path of ['/owner', '/owner/signin', '/owner/account', '/owner/setup/x', '/pwa/owner']) expect((await request.get(path)).status()).toBe(404);
+  // An admin's set-password link (made from the owner dashboard) opens without signing in; an unknown one says it has expired.
+  const link = await request.get('/admin/set-password/not-a-real-token', { maxRedirects: 0 });
+  expect(link.status()).toBe(200);
+  expect(await link.text()).toContain('Link expired');
 });
 
 test('wrong password shows one generic message; right password reaches the dashboard', async ({ page }) => {

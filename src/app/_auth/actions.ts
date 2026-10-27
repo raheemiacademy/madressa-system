@@ -50,7 +50,8 @@ export async function requestLinkAction(portal: Portal, _prev: LoginState, fd: F
 }
 
 export async function setPasswordAction(portal: Portal, token: string, _prev: LoginState, fd: FormData): Promise<LoginState> {
-  if (!isLinkPortal(portal)) return { error: 'Unknown portal' };
+  // Admins can use a link (made from the owner dashboard) but can't ask for one.
+  if (!isLinkPortal(portal) && portal !== 'admin') return { error: 'Unknown portal' };
   const password = String(fd.get('password') ?? ''), confirm = String(fd.get('confirm') ?? '');
   if (password !== confirm) return { error: 'The two passwords don’t match.' };
   const r = await redeemPasswordLink(db, portal, token, password, await requestMeta());
