@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { formatInstant } from '@/lib/dates';
 import { duration, num, size, sizeOf, whenShort } from '@/lib/owner-format';
 import { LATEST } from '@/lib/releases';
@@ -50,7 +51,7 @@ export default async function ServerPage() {
           {M.length ? <div className="table-wrap" tabIndex={0} role="region" aria-label="Backups table"><table className="t">
             <thead><tr><th scope="col">Madrasah</th><th scope="col">Last night</th><th scope="col">Newest</th><th scope="col" className="r">Size</th></tr></thead>
             <tbody>{M.map((m) => (
-              <tr key={m.name}><td><span className="name" translate="no">{m.name}</span></td>
+              <tr key={m.name}><td><Link className="name" href={`/owner/madrasahs/${encodeURIComponent(m.name)}`} translate="no">{m.name}</Link></td>
                 <td>{m.backup?.lastNightRan ? <span className="status">Ran</span> : <span className="status bad">Didn’t run</span>}</td>
                 <td className="nw">{m.backup ? <>{whenShort(m.backup.at, now)} <span className="addr">{num(Math.floor((now.getTime() - m.backup.at.getTime()) / 3_600_000))} hours old</span></> : 'None yet'}</td>
                 <td className="r">{size(m.backup?.sizeBytes)}</td></tr>

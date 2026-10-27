@@ -1,13 +1,15 @@
 import { z } from 'zod';
 import type { DbOrTx } from '@/db';
+import { lead } from '@/db/schema';
 import { CONTACT_TOPICS, PRODUCT_NAME } from '@/lib/marketing';
 import { zodErrors, type FieldErrors } from '@/lib/validate';
 import { hitRateLimit } from './auth';
 import { enqueueMail } from './comm/mail';
+import { alertNewLead } from './owner/alerts';
 
 /*
- * The marketing site's contact form (POST /api/contact). Public, so: validated here and limited per IP. Not stored in a
- * table of its own: each message is emailed to EARLY_ACCESS_NOTIFY_EMAIL through the mail queue, which keeps the copy.
+ * The marketing site's contact form (POST /api/contact). Public, so: validated here and limited per IP. Each message is kept
+ * in the owner dashboard's leads and emailed to EARLY_ACCESS_NOTIFY_EMAIL through the mail queue.
  */
 
 const required = (msg: string, max: number) => z.string({ error: msg }).trim().min(1, msg).max(max, `Keep this under ${max} characters.`);
@@ -35,6 +37,8 @@ export async function sendContactMessage(db: DbOrTx, raw: unknown, ip: string | 
   if (!to) return { status: 503, body: { ok: false, error: 'Messages can’t be sent from here just now.' } };
   if (!(await hitRateLimit(db, `contact:${ip ?? 'unknown'}`, CONTACT_LIMIT))) return { status: 429, body: { ok: false, error: 'Too many messages from here. Please try again in an hour.' } };
   const v = p.data;
+  const [l] = await db.insert(lead).values({ kind: 'contact', name: v.name, email: v.email, school: v.school, topic: v.topic, message: v.message }).returning({ id: lead.id });
+  await alertNewLead(db, { id: l!.id, kind: 'contact', who: v.name });
   const lines: [string, string][] = [['Name', v.name], ['Email', v.email], ['Madressa or school', v.school ?? 'Not given'], ['About', v.topic]];
   await enqueueMail(db, [{
     to, subject: `${PRODUCT_NAME} contact: ${v.topic} (${v.name})`, replyTo: v.email, entity: 'contact_message',

@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { and, desc, eq, gt, lt, max, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Db, DbOrTx } from '@/db';
-import { ownerCheck } from '@/db/schema';
+import { earlyAccessSignup, lead, ownerCheck } from '@/db/schema';
 import { formatInstant } from '@/lib/dates';
 import { LATEST } from '@/lib/releases';
 
@@ -37,10 +37,24 @@ const healthSchema = z.object({
 export type Health = z.infer<typeof healthSchema>;
 
 /** What the main site keeps from a madrasah's answer: these fields only, whatever else might be sent. */
+const int = z.number().int();
+const money = z.object({ invoiced: int, collected: int, overdue: int, familiesOverdue: int });
 const summarySchema = z.object({
   version: z.string().max(20),
-  counts: z.object({ students: z.number().int(), teachers: z.number().int(), staff: z.number().int(), parents: z.number().int(), parentsWithLogin: z.number().int() }),
-  lastActiveAt: z.string().nullable()
+  counts: z.object({ students: int, teachers: int, staff: int, parents: int, parentsWithLogin: int }),
+  lastActiveAt: z.string().nullable(),
+  // Step 3's numbers; a copy still on an older version answers without them.
+  usage: z.object({
+    byStatus: z.object({ current: int, waiting: int, onHold: int, leftThisYear: int }),
+    classes: int,
+    logins: z.object({ last7: int, last30: int }),
+    registersThisWeek: z.object({ taken: int, planned: int }),
+    thisMonth: z.object({ messages: int, homework: int, incidents: int }),
+    errors24h: int
+  }).optional(),
+  weeks: z.array(z.object({ start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), students: int, registers: int, logins: int, parentLogins: int, messages: int })).max(8).optional(),
+  money: z.object({ month: money, year: money }).optional(),
+  admins: z.array(z.object({ name: z.string().max(200), email: z.string().max(200), phone: z.string().max(40).nullable(), access: z.string().max(200) })).max(100).optional()
 });
 export type StoredSummary = z.infer<typeof summarySchema>;
 
@@ -134,23 +148,23 @@ export async function ownerState(db: DbOrTx, health: Health | null, now = new Da
   const pct = (b?: { usedBytes: number; totalBytes: number }) => b ? Math.round((100 * b.usedBytes) / b.totalBytes) : null;
   const disk = pct(health?.disk), memory = pct(health?.memory);
   const problem = !health ? 'Can’t read the server’s health file' : healthAge! > STALE_HEALTH_MS ? `Server health is ${minutes(healthAge!)} minutes old` : !process.env.OWNER_SUMMARY_TOKEN ? 'OWNER_SUMMARY_TOKEN isn’t set on the main site' : null;
-  type Need = { kind: 'bad' | 'warn'; text: string; name?: string; href: string; at: Date };
+  // New leads: "New contact message from <name>" / "New early-access sign-up: <school>" (`lead` puts the name after the text).
+  const fresh = await db.select({ id: lead.id, kind: lead.kind, at: lead.createdAt, name: lead.name, school: earlyAccessSignup.school }).from(lead)
+    .leftJoin(earlyAccessSignup, eq(earlyAccessSignup.id, lead.signupId)).where(eq(lead.status, 'New')).orderBy(desc(lead.createdAt));
+  type Need = { kind: 'bad' | 'warn' | 'info'; text: string; name?: string; lead?: true; href: string; at: Date };
   const needs: Need[] = [
-    ...madrasahs.filter((m) => m.attention).map((m): Need => ({ kind: m.status === 'down' ? 'bad' : 'warn', name: m.name, text: m.attention!.text, href: '/owner/madrasahs', at: m.attention!.since })),
+    ...fresh.map((l): Need => l.kind === 'contact' ? { kind: 'info', text: 'New contact message from', name: l.name ?? '', lead: true, href: `/owner/leads/${l.id}`, at: l.at }
+      : { kind: 'info', text: 'New early-access sign-up:', name: l.school ?? '', lead: true, href: `/owner/leads/${l.id}`, at: l.at }),
+    ...madrasahs.filter((m) => m.attention).map((m): Need => ({ kind: m.status === 'down' ? 'bad' : 'warn', name: m.name, text: m.attention!.text, href: `/owner/madrasahs/${encodeURIComponent(m.name)}`, at: m.attention!.since })),
     ...(disk !== null && disk >= DISK_LIMIT ? [{ kind: 'bad' as const, text: `Server disk is ${disk}% full`, href: '/owner/server', at: new Date(health!.generatedAt) }] : []),
     ...(memory !== null && memory >= MEMORY_LIMIT ? [{ kind: 'bad' as const, text: `Server memory is ${memory}% used`, href: '/owner/server', at: new Date(health!.generatedAt) }] : []),
     ...(problem ? [{ kind: 'warn' as const, text: problem, href: '/owner/server', at: health ? new Date(health.generatedAt) : now }] : [])
   ].sort((a, b) => b.at.getTime() - a.at.getTime());
   return {
     now, health, healthProblem: problem, lastCheckAt: last?.at ?? null, madrasahs, needs, disk, memory, cpu: health?.cpuPercent ?? null,
-    attentionCount: madrasahs.filter((m) => m.attention).length // a madrasah that is down is also flagged, but counts once
+    attentionCount: madrasahs.filter((m) => m.attention).length, // a madrasah that is down is also flagged, but counts once
+    newLeads: fresh.length
   };
-}
-
-/** The worker's step, on the main site only. */
-export async function ownerTick(db: Db, now = new Date()) {
-  if (process.env.MARKETING_SITE !== '1' || !(await checksDue(db, now))) return;
-  await runChecks(db, await readHealth(), now);
 }
 
 const HALF_DAY = 12 * 3_600_000;
@@ -166,4 +180,19 @@ export function weekSeries(history: Health['history'], col: 1 | 2 | 3, now: Date
     labels.push(i === 13 ? 'Now' : formatInstant(new Date(from), 'EEE HH:mm'));
   }
   return { vals, labels };
+}
+
+/** "This week across all madrasahs": each week's numbers added up over every madrasah's last good answer, oldest week first. */
+export function weeklyTotals(madrasahs: Pick<MadrasahState, 'summary'>[]) {
+  const byWeek = new Map<string, { students: number; registers: number; parentLogins: number; messages: number }>();
+  for (const w of madrasahs.flatMap((m) => m.summary?.weeks ?? [])) {
+    const t = byWeek.get(w.start) ?? { students: 0, registers: 0, parentLogins: 0, messages: 0 };
+    byWeek.set(w.start, { students: t.students + w.students, registers: t.registers + w.registers, parentLogins: t.parentLogins + w.parentLogins, messages: t.messages + w.messages });
+  }
+  const weeks = [...byWeek].sort(([a], [b]) => a.localeCompare(b)).slice(-8);
+  const col = (k: 'students' | 'registers' | 'parentLogins' | 'messages') => weeks.map(([, t]) => t[k]);
+  return {
+    starts: weeks.map(([s]) => s), students: col('students'), registers: col('registers'), parentLogins: col('parentLogins'), messages: col('messages'),
+    registersPlanned: madrasahs.reduce((s, m) => s + (m.summary?.usage?.registersThisWeek.planned ?? 0), 0)
+  };
 }

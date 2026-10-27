@@ -1,14 +1,16 @@
 import { z } from 'zod';
 import type { DbOrTx } from '@/db';
-import { earlyAccessSignup } from '@/db/schema';
+import { earlyAccessSignup, lead } from '@/db/schema';
 import { EA_ROLES, EA_TYPES, PRODUCT_NAME } from '@/lib/marketing';
 import { zodErrors, type FieldErrors } from '@/lib/validate';
 import { hitRateLimit } from './auth';
 import { enqueueMail } from './comm/mail';
+import { alertNewLead } from './owner/alerts';
 
 /*
  * Early-access sign-ups from the marketing homepage (POST /api/early-access). Public, so: validated here, limited per IP,
- * stored without the IP, and the owner is told by email (EARLY_ACCESS_NOTIFY_EMAIL) through the normal mail queue.
+ * stored without the IP, added to the owner dashboard's leads, and the owner is told by email (EARLY_ACCESS_NOTIFY_EMAIL) through
+ * the normal mail queue.
  */
 
 const required = (msg: string, max: number) => z.string({ error: msg }).trim().min(1, msg).max(max, `Keep this under ${max} characters.`);
@@ -39,6 +41,8 @@ export async function signUpForEarlyAccess(db: DbOrTx, raw: unknown, ip: string 
   if (!(await hitRateLimit(db, `early-access:${ip ?? 'unknown'}`, EA_LIMIT))) return { status: 429, body: { ok: false, error: 'Too many sign-ups from here. Please try again in an hour.' } };
   const v = p.data;
   const [row] = await db.insert(earlyAccessSignup).values(v).returning();
+  const [l] = await db.insert(lead).values({ kind: 'early_access', signupId: row!.id }).returning({ id: lead.id });
+  await alertNewLead(db, { id: l!.id, kind: 'early_access', who: v.school });
   const to = process.env.EARLY_ACCESS_NOTIFY_EMAIL?.trim();
   if (to) {
     const lines: [string, string][] = [['Madressa or school', v.school], ['Name', v.name], ['Role', v.role], ['Email', v.email], ['Students', v.students ? String(v.students) : 'Not given'], ['Kind of school', v.type]];

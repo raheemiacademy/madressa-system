@@ -1,6 +1,7 @@
 'use server';
 
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
+import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { db } from '@/db';
@@ -11,7 +12,10 @@ import { setSessionCookie } from '@/server/next/session-cookie';
 import {
   changeOwnerPassword, completeOwnerSetup, confirmAuthenticatorReset, type Errors, ownerSignIn, signOutEverywhere, startAuthenticatorReset
 } from '@/server/owner/auth';
-import { readHealth, runChecks } from '@/server/owner/checks';
+import { evaluateAlerts, saveAlertSettings } from '@/server/owner/alerts';
+import { removePushSubscription, savePushSubscription } from '@/server/comm/push';
+import { ownerState, readHealth, runChecks } from '@/server/owner/checks';
+import { setLeadNotes, setLeadStatus } from '@/server/owner/leads';
 
 const field = (fd: FormData, k: string) => String(fd.get(k) ?? '').slice(0, 200);
 
@@ -66,7 +70,50 @@ export async function signOutEverywhereAction() {
 export async function checkNowAction(): Promise<{ ok?: true; error?: string }> {
   await requireOwner();
   if (!(await hitRateLimit(db, 'owner-check-now', { hits: 6, windowMs: 60_000 }))) return { error: 'Checked a moment ago. Try again in a minute.' };
-  await runChecks(db, await readHealth());
+  const health = await readHealth();
+  await runChecks(db, health);
+  await evaluateAlerts(db, await ownerState(db, health));
   revalidatePath('/owner', 'layout');
   return { ok: true };
+}
+
+const leadId = (id: unknown) => (Number.isInteger(id) && (id as number) > 0 ? (id as number) : 0);
+
+/** Leads: the status picker. */
+export async function setLeadStatusAction(id: number, status: string) {
+  const o = await requireOwner();
+  const r = await setLeadStatus(db, { identityId: o.identityId, name: 'Owner' }, leadId(id), status);
+  if (r.ok) revalidatePath('/owner', 'layout');
+  return r;
+}
+
+/** Leads: the notes box, saved as you type (after a pause) and when you leave it. */
+export async function setLeadNotesAction(id: number, notes: string) {
+  const o = await requireOwner();
+  return setLeadNotes(db, { identityId: o.identityId, name: 'Owner' }, leadId(id), notes);
+}
+
+const subscription = z.object({
+  endpoint: z.string().url().startsWith('https://').max(1000),
+  keys: z.object({ p256dh: z.string().min(1).max(200), auth: z.string().min(1).max(100) })
+});
+
+/** Alerts → "Push on this device": saves this browser's push address for the owner. */
+export async function saveOwnerPushAction(raw: unknown): Promise<{ error?: string }> {
+  const o = await requireOwner();
+  const p = subscription.safeParse(raw);
+  if (!p.success) return { error: 'This device didn’t give a usable notification address.' };
+  await savePushSubscription(db, o.identityId, p.data, (await headers()).get('user-agent'));
+  return {};
+}
+
+export async function removeOwnerPushAction(endpoint: string) {
+  const o = await requireOwner();
+  if (typeof endpoint === 'string') await removePushSubscription(db, o.identityId, endpoint.slice(0, 1000));
+}
+
+/** Alerts → which alerts to send, and where to email them. */
+export async function saveAlertSettingsAction(raw: unknown) {
+  const o = await requireOwner();
+  return saveAlertSettings(db, { identityId: o.identityId, name: 'Owner' }, raw);
 }

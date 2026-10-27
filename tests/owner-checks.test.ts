@@ -2,7 +2,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { ownerCheck } from '@/db/schema';
 import { ago, duration, size, sizeOf, whenShort } from '@/lib/owner-format';
 import { LATEST } from '@/lib/releases';
-import { checksDue, type Health, lastBackupRun, ownerState, ownerTick, runChecks, weekSeries } from '@/server/owner/checks';
+import { checksDue, type Health, type StoredSummary, lastBackupRun, ownerState, runChecks, weeklyTotals, weekSeries } from '@/server/owner/checks';
+import { ownerTick } from '@/server/owner/alerts';
 import { db, resetDb } from './helpers';
 
 const env = { OWNER_SUMMARY_TOKEN: process.env.OWNER_SUMMARY_TOKEN, MARKETING_SITE: process.env.MARKETING_SITE, OWNER_HEALTH_FILE: process.env.OWNER_HEALTH_FILE };
@@ -72,6 +73,44 @@ describe('a round of checks', () => {
     process.env.MARKETING_SITE = '1';
     await ownerTick(db, new Date(NOW.getTime() + 60 * 60_000)); // no health file here, so a round with nothing to ask
     process.env.MARKETING_SITE = env.MARKETING_SITE ?? '';
+  });
+});
+
+describe('step 3 numbers', () => {
+  const full = (over: Record<string, unknown> = {}) => summary({
+    usage: { byStatus: { current: 102, waiting: 8, onHold: 1, leftThisYear: 0 }, classes: 4, logins: { last7: 18, last30: 77 }, registersThisWeek: { taken: 15, planned: 16 }, thisMonth: { messages: 9, homework: 4, incidents: 0 }, errors24h: 0 },
+    weeks: [{ start: '2026-10-19', students: 100, registers: 16, logins: 20, parentLogins: 12, messages: 7 }, { start: '2026-10-26', students: 102, registers: 15, logins: 18, parentLogins: 10, messages: 9 }],
+    money: { month: { invoiced: 459000, collected: 312050, overdue: 45000, familiesOverdue: 6 }, year: { invoiced: 918000, collected: 765000, overdue: 45000, familiesOverdue: 6 } },
+    admins: [{ name: 'Sample Admin', email: 'office@example.org', phone: '07700 900002', access: 'Super', password: 'never kept' }], ...over
+  });
+
+  it('keeps usage, weeks, money and admin contacts, and nothing extra inside them', async () => {
+    await runChecks(db, health(), NOW, answer(full()));
+    const [row] = await db.select().from(ownerCheck);
+    const kept = row!.summary as StoredSummary;
+    expect(kept.money).toEqual((full() as StoredSummary).money);
+    expect(kept.admins).toEqual([{ name: 'Sample Admin', email: 'office@example.org', phone: '07700 900002', access: 'Super' }]);
+    expect(JSON.stringify(kept)).not.toContain('never kept');
+  });
+
+  it('still reads a copy on the previous version (no step 3 numbers), and flags its version', async () => {
+    await runChecks(db, health(), NOW, answer(summary({ version: '1.1' })));
+    const s = await ownerState(db, health(), NOW);
+    expect(by(s, 'demo')).toMatchObject({ status: 'up', attention: { text: 'Running an older version (1.1)' } });
+    expect(by(s, 'demo').summary?.money).toBeUndefined();
+  });
+
+  it('adds up each week across madrasahs, and the registers planned this week', () => {
+    const a = { summary: full() as never }, b = { summary: full({ weeks: [{ start: '2026-10-26', students: 10, registers: 5, logins: 1, parentLogins: 1, messages: 1 }] }) as never };
+    expect(weeklyTotals([a, b, { summary: null }])).toEqual({
+      starts: ['2026-10-19', '2026-10-26'], students: [100, 112], registers: [16, 20], parentLogins: [12, 11], messages: [7, 10], registersPlanned: 32
+    });
+    expect(weeklyTotals([])).toEqual({ starts: [], students: [], registers: [], parentLogins: [], messages: [], registersPlanned: 0 });
+  });
+
+  it('links each problem to that madrasah’s page', async () => {
+    await db.insert(ownerCheck).values([{ madrasah: 'demo', ok: false, at: min(5) }, { madrasah: 'demo', ok: false, at: min(0) }]);
+    expect((await ownerState(db, health(), NOW)).needs[0]!.href).toBe('/owner/madrasahs/demo');
   });
 });
 

@@ -13,7 +13,7 @@ import { processMailQueue } from './mail';
 import { processPushQueue } from './push';
 import { sendAttendanceAlerts } from './notify';
 import { processSmsQueue } from './sms';
-import { ownerTick } from '../owner/checks';
+import { ownerTick } from '../owner/alerts';
 
 const SYSTEM = { identityId: null, name: 'Scheduled job' };
 

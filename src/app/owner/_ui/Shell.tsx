@@ -11,11 +11,12 @@ const NAV: [IconName, string, string][] = [
 // Server and Account are reached from the account button in the top bar on a phone.
 const TABS: IconName[] = ['overview', 'madrasahs', 'leads', 'alerts'];
 
-/** `attention`: madrasahs needing a look, each counted once even when it is both down and flagged. */
-export function Shell({ attention, children }: { attention: number; children: React.ReactNode }) {
+/** `attention`: madrasahs needing a look, each counted once even when it is both down and flagged. `leads`: new leads. */
+export function Shell({ attention, leads, children }: { attention: number; leads: number; children: React.ReactNode }) {
   const path = usePathname();
   const current = (href: string) => (href === '/owner' ? path === href : path === href || path.startsWith(`${href}/`)) ? 'page' as const : undefined;
-  const badge = (k: IconName) => k === 'madrasahs' && attention ? <span className="count" aria-label={`${attention} need${attention === 1 ? 's' : ''} attention`}>{attention}</span> : null;
+  const badge = (k: IconName) => k === 'madrasahs' && attention ? <span className="count" aria-label={`${attention} need${attention === 1 ? 's' : ''} attention`}>{attention}</span>
+    : k === 'leads' && leads ? <span className="count" aria-label={`${leads} new`}>{leads}</span> : null;
   return (
     <div className="shell">
       <a className="skip" href="#view">Skip to content</a>

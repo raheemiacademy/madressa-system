@@ -140,6 +140,19 @@ export const ownerCheck = pgTable('owner_check', {
   summary: jsonb('summary')
 }, (t) => [index('owner_check_madrasah_at_idx').on(t.madrasah, t.at)]);
 
+// The owner dashboard's alerts (main site): one row per alert sent. A problem keeps one open row (cleared_at null) until it
+// clears, so repeats are held back; news (a madrasah back up, a new lead) is cleared as it's sent.
+export const ownerAlert = pgTable('owner_alert', {
+  id: serial('id').primaryKey(),
+  kind: text('kind').notNull(), // down | back | backup | server | signup | contact
+  key: text('key').notNull(), // what it's about, e.g. 'down:demo', 'disk', 'lead:12'
+  about: text('about').notNull(), // 'demo', 'Server', or a lead's school or name
+  title: text('title').notNull(),
+  sentAt: tz('sent_at').notNull().defaultNow(),
+  clearedAt: tz('cleared_at'),
+  channels: text('channels').notNull() // 'Push', 'Push and email', 'Email', or 'Not sent' when that alert is turned off
+}, (t) => [uniqueIndex('owner_alert_open_uq').on(t.key).where(sql`${t.clearedAt} is null`)]);
+
 // Phones and browsers that asked for notifications (web push). Removed when the push service says the subscription has gone.
 export const pushSubscription = pgTable('push_subscription', {
   id: serial('id').primaryKey(),
@@ -1368,3 +1381,22 @@ export const earlyAccessSignup = pgTable('early_access_signup', {
   type: text('type').notNull(),
   createdAt: createdAt()
 }, (t) => [index('early_access_signup_created_idx').on(t.createdAt)]);
+
+// The owner dashboard's leads inbox (main site): every early-access sign-up and contact-form message, with its status and the
+// owner's notes. A sign-up's details stay in early_access_signup; a contact message's are kept here.
+export const LEAD_STATUSES = ['New', 'Contacted', 'Set up', 'Not interested'] as const;
+export const lead = pgTable('lead', {
+  id: serial('id').primaryKey(),
+  kind: text('kind').notNull(), // 'early_access' | 'contact'
+  signupId: integer('signup_id').references(() => earlyAccessSignup.id, { onDelete: 'cascade' }),
+  name: text('name'), email: text('email'), school: text('school'), topic: text('topic'), message: text('message'),
+  status: text('status').notNull().default('New'),
+  notes: text('notes'),
+  createdAt: createdAt(),
+  updatedAt: tz('updated_at').notNull().defaultNow()
+}, (t) => [
+  index('lead_created_idx').on(t.createdAt),
+  uniqueIndex('lead_signup_uq').on(t.signupId),
+  check('lead_kind', sql`(${t.kind} = 'early_access' and ${t.signupId} is not null) or (${t.kind} = 'contact' and ${t.signupId} is null and ${t.email} is not null)`),
+  check('lead_status', sql`${t.status} in ('New', 'Contacted', 'Set up', 'Not interested')`)
+]);
