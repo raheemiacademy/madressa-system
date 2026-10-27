@@ -68,6 +68,9 @@ Things deliberately left out of the current build, kept so nothing is forgotten.
 15. **Newsletters** (§11, your request 25/10/2026)
     Built, but taken out of the menu for now: Communication has Messages and Shared files. The pages and data are kept (`/admin/newsletters`), so it can come back by adding the menu item.
 
+16. **Billing the madrasahs: remind you when early access ends** (your request 27/10/2026)
+    For the owner dashboard: a simple record per madrasah (plan, price per month, start date, paid-up-to date, notes; payments marked by you, no online payments). Not built during early access. **When early access is ending, bring this up** so it's ready before the first school pays.
+
 ## Waiting on your details
 
 - **Student Diary / Daily Progress Tracker** (§12): its inner pages weren't visible in the inventory. Send the fields you want and it will be built.

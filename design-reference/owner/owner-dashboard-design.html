@@ -1,0 +1,795 @@
+<title>Madressa Owner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#0F4C4A">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0A2725">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Owner dashboard — the admin app's layout and components in a deep teal palette.
+   Laptop: teal sidebar + full tables. Phone: cards + bottom tab bar. */
+:root {
+  --bg: #F6F4EF; --panel: #FFFFFF; --panel-2: #EFECE4; --border: #E2DED4; --hair: #EEEBE3;
+  --fg: #1B2A29; --muted: #5B6866;
+  --side: #0F4C4A; --side-2: #0C3F3D; --side-fg: #FFFFFF; --side-muted: #B9D3D0;
+  --action: #13807A; --action-hover: #0E6B66; --on-action: #FFFFFF; --link: #0E6B66;
+  --amber: #E0A526; --amber-text: #8A5A00; --amber-tint: #FBF1DA;
+  --bad: #B42318; --bad-tint: #FCE9E6; --ok: #1F7A4A; --ok-tint: #E3F2EA;
+  --chart: #13807A; --chart-fill: rgba(19,128,122,.12); --grid: #ECE8DF; --ref: #B8B2A4;
+  --scrim: rgba(11,31,30,.45); --shadow-pop: 0 12px 40px rgba(11,31,30,.18);
+  --display: 'Fraunces', Georgia, serif; --text: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --r: 12px; --r-lg: 16px; --ctl: 40px;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0B1F1E; --panel: #12302E; --panel-2: #183B39; --border: #24504D; --hair: #1D4441;
+  --fg: #E8F1EF; --muted: #9DB3B0;
+  --side: #0A2725; --side-2: #0D302E; --side-fg: #FFFFFF; --side-muted: #A9C6C2;
+  --action: #2BB3A8; --action-hover: #4CC7BD; --on-action: #0B1F1E; --link: #5FD0C6;
+  --amber: #E0A526; --amber-text: #E8B84A; --amber-tint: #3A2F12;
+  --bad: #F08A7E; --bad-tint: #3D1E1B; --ok: #6FCF97; --ok-tint: #143726;
+  --chart: #2BB3A8; --chart-fill: rgba(43,179,168,.16); --grid: #1D4441; --ref: #4F7470;
+  --scrim: rgba(0,0,0,.55); --shadow-pop: 0 12px 40px rgba(0,0,0,.45);
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #0B1F1E; --panel: #12302E; --panel-2: #183B39; --border: #24504D; --hair: #1D4441;
+  --fg: #E8F1EF; --muted: #9DB3B0;
+  --side: #0A2725; --side-2: #0D302E; --side-fg: #FFFFFF; --side-muted: #A9C6C2;
+  --action: #2BB3A8; --action-hover: #4CC7BD; --on-action: #0B1F1E; --link: #5FD0C6;
+  --amber: #E0A526; --amber-text: #E8B84A; --amber-tint: #3A2F12;
+  --bad: #F08A7E; --bad-tint: #3D1E1B; --ok: #6FCF97; --ok-tint: #143726;
+  --chart: #2BB3A8; --chart-fill: rgba(43,179,168,.16); --grid: #1D4441; --ref: #4F7470;
+  --scrim: rgba(0,0,0,.55); --shadow-pop: 0 12px 40px rgba(0,0,0,.45);
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 400 15px/1.5 var(--text); font-variant-numeric: tabular-nums; }
+a { color: var(--link); text-underline-offset: 3px; }
+button, input, select, textarea { font: inherit; color: inherit; touch-action: manipulation; }
+:focus-visible { outline: 3px solid var(--action); outline-offset: 2px; border-radius: 6px; }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.num { font-family: var(--display); font-weight: 400; letter-spacing: -0.01em; }
+
+/* Shell */
+.shell { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; }
+.side { background: var(--side); color: var(--side-fg); position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 20px 12px; display: flex; flex-direction: column; gap: 22px; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 2px 10px; }
+.brand-mark { width: 34px; height: 34px; border-radius: 10px; background: #2BB3A8; display: grid; place-items: center; flex: none; }
+.brand-name { font-family: var(--display); font-size: 1.125rem; line-height: 1.1; }
+.owner-pill { margin-left: auto; font-size: 12px; font-weight: 600; color: #0B1F1E; background: #E0A526; border-radius: 999px; padding: 3px 9px; }
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav a { display: flex; align-items: center; gap: 12px; min-height: var(--ctl); padding: 0 12px; border-radius: 10px; color: var(--side-muted); text-decoration: none; font-weight: 500; position: relative; transition: background-color .15s ease, color .15s ease; }
+.nav a svg { width: 18px; height: 18px; flex: none; }
+.nav a[aria-current="page"] { background: rgba(255,255,255,.1); color: var(--side-fg); }
+.nav a[aria-current="page"]::before { content: ""; position: absolute; left: -12px; top: 10px; bottom: 10px; width: 3px; border-radius: 0 3px 3px 0; background: #2BB3A8; }
+.nav .count { margin-left: auto; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 11px; background: #E0A526; color: #0B1F1E; font-size: 12px; font-weight: 600; display: grid; place-items: center; }
+@media (hover: hover) and (pointer: fine) { .nav a:hover { color: var(--side-fg); background: rgba(255,255,255,.06); } }
+.side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 10px; font-size: 12px; color: var(--side-muted); }
+.side-foot label { display: flex; flex-direction: column; gap: 6px; }
+.side-foot select { min-height: 36px; border-radius: 8px; border: 1px solid rgba(255,255,255,.18); background: var(--side-2); color: var(--side-fg); padding: 0 8px; font-size: 13px; }
+
+.main { min-width: 0; display: flex; flex-direction: column; }
+.top { display: flex; align-items: center; gap: 12px; padding: 18px 32px; border-bottom: 1px solid var(--border); background: var(--panel); flex-wrap: wrap; }
+.top h1 { margin: 0; font: 400 1.625rem/1.15 var(--display); letter-spacing: -0.01em; margin-right: auto; min-width: 0; overflow-wrap: anywhere; }
+.top .crumb { display: block; font: 500 13px/1.3 var(--text); color: var(--muted); margin-bottom: 2px; }
+.top .crumb a { color: var(--muted); }
+.checked { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 8px; }
+.top-account { display: none; }
+.view { padding: 24px 32px 48px; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+
+/* Mobile tabs */
+.tabs { display: none; }
+@media (max-width: 760px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .side { display: none; }
+  .top { padding: calc(14px) max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px)); position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; }
+  .top h1 { font-size: 1.375rem; }
+  .top .checked { display: none; }
+  .top-account { display: grid; }
+  .view { padding: 16px max(16px, env(safe-area-inset-right, 0px)) calc(96px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); gap: 16px; }
+  .tabs { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--panel); border-top: 1px solid var(--border); padding: 6px max(6px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px)); }
+  .tabs a { flex: 1; min-height: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 12px; font-weight: 500; color: var(--muted); text-decoration: none; position: relative; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  .tabs a svg { width: 22px; height: 22px; }
+  .tabs a[aria-current="page"] { color: var(--link); }
+  .tabs .count { position: absolute; top: 2px; left: calc(50% + 6px); min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--amber); color: #0B1F1E; font-size: 12px; font-weight: 700; display: grid; place-items: center; }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--panel); }
+}
+
+/* Building blocks */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--ctl); padding: 0 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); color: var(--fg); font-weight: 500; font-size: 14px; cursor: pointer; text-decoration: none; white-space: nowrap; user-select: none; -webkit-user-select: none; transition: background-color .15s ease, border-color .15s ease, transform 160ms var(--ease-out); }
+.btn svg { width: 16px; height: 16px; flex: none; }
+.btn.primary { background: var(--action); border-color: transparent; color: var(--on-action); }
+.btn.danger { color: var(--bad); }
+.btn.sm { min-height: 34px; padding: 0 12px; font-size: 13px; }
+.btn:active { transform: scale(0.97); }
+.btn[disabled] { opacity: .55; cursor: not-allowed; transform: none; }
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover { border-color: var(--action); }
+  .btn.primary:hover { background: var(--action-hover); }
+}
+.icon-btn { width: var(--ctl); height: var(--ctl); padding: 0; }
+.card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 18px 20px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.card-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.card-h h2, .card-h h3 { margin: 0; font-size: 16px; font-weight: 600; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(12, minmax(0, 1fr)); }
+.c3 { grid-column: span 3; } .c4 { grid-column: span 4; } .c5 { grid-column: span 5; } .c6 { grid-column: span 6; } .c7 { grid-column: span 7; } .c8 { grid-column: span 8; } .c12 { grid-column: span 12; }
+@media (max-width: 1180px) { .c3 { grid-column: span 6; } .c4, .c5, .c7, .c8 { grid-column: span 12; } }
+@media (max-width: 760px) { .c3, .c4, .c5, .c6, .c7, .c8 { grid-column: span 12; } }
+
+.strip { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: var(--r-lg); text-decoration: none; color: var(--fg); border: 1px solid transparent; }
+.strip .dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+.strip b { font-weight: 600; }
+.strip .go { margin-left: auto; font-weight: 600; color: var(--link); white-space: nowrap; font-size: 14px; }
+.strip.ok { background: var(--ok-tint); } .strip.ok .dot { background: var(--ok); }
+.strip.warn { background: var(--amber-tint); border-color: color-mix(in srgb, var(--amber) 45%, transparent); } .strip.warn .dot { background: var(--amber); }
+.strip.bad { background: var(--bad-tint); border-color: color-mix(in srgb, var(--bad) 40%, transparent); } .strip.bad .dot { background: var(--bad); }
+.strip-text { min-width: 0; overflow-wrap: anywhere; }
+
+.tile { background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: var(--fg); min-width: 0; transition: border-color .15s ease, transform 160ms var(--ease-out); }
+a.tile:active { transform: scale(0.98); }
+@media (hover: hover) and (pointer: fine) { a.tile:hover { border-color: var(--action); } }
+.tile .label { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.tile .big { font: 400 2rem/1.1 var(--display); letter-spacing: -0.01em; }
+.tile .big small { font: 500 15px var(--text); color: var(--muted); letter-spacing: 0; }
+.tile .sub { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.meter { height: 6px; border-radius: 999px; background: var(--panel-2); overflow: hidden; }
+.meter i { display: block; height: 100%; border-radius: 999px; background: var(--chart); }
+.meter.warn i { background: var(--amber); } .meter.bad i { background: var(--bad); }
+.meter-row { display: grid; grid-template-columns: 64px minmax(0, 1fr) 44px; gap: 10px; align-items: center; font-size: 13px; }
+.meter-row span:last-child { text-align: right; }
+
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; white-space: nowrap; }
+.status::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--ok); flex: none; }
+.status.warn::before { background: var(--amber); } .status.bad::before { background: var(--bad); } .status.off::before { background: var(--muted); }
+.status.warn { color: var(--amber-text); } .status.bad { color: var(--bad); }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap; background: var(--panel-2); color: var(--fg); }
+.chip.new { background: var(--amber-tint); color: var(--amber-text); }
+.chip.contacted { background: color-mix(in srgb, var(--chart) 16%, transparent); color: var(--link); }
+.chip.setup { background: var(--ok-tint); color: var(--ok); }
+.chip.no { background: var(--panel-2); color: var(--muted); }
+
+.list { list-style: none; margin: 0; padding: 0; }
+.list li { border-top: 1px solid var(--hair); }
+.list li:first-child { border-top: 0; }
+.need { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 12px 0; text-decoration: none; color: var(--fg); }
+.need .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; background: var(--muted); }
+.need .dot.warn { background: var(--amber); } .need .dot.bad { background: var(--bad); } .need .dot.info { background: var(--chart); }
+.need b { font-weight: 600; }
+.need span { overflow-wrap: anywhere; }
+.need time { font-size: 13px; color: var(--muted); white-space: nowrap; }
+@media (hover: hover) and (pointer: fine) { a.need:hover b, a.need:hover span { text-decoration: underline; } }
+
+.week { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 0; }
+.week > div { padding: 4px 18px; border-left: 1px solid var(--hair); display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.week > div:nth-child(odd) { border-left: 0; padding-left: 0; }
+.week .label { font-size: 13px; color: var(--muted); }
+.week .big { font: 400 1.75rem/1.1 var(--display); }
+.delta { font-size: 13px; font-weight: 500; }
+.delta.up { color: var(--ok); } .delta.down { color: var(--bad); } .delta.flat { color: var(--muted); }
+.grid > div > .tile { height: 100%; }
+
+/* Tables (laptop) and cards (phone) */
+.table-wrap { overflow-x: auto; margin: 0 -4px; }
+table.t { width: 100%; border-collapse: collapse; font-size: 14px; }
+.t th { text-align: left; font-size: 12px; font-weight: 500; color: var(--muted); padding: 10px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.t td { padding: 12px 8px; border-bottom: 1px solid var(--hair); vertical-align: top; }
+.t tr:last-child td { border-bottom: 0; }
+.t .r { text-align: right; }
+.t .name { font-weight: 600; color: var(--fg); text-decoration: none; overflow-wrap: anywhere; }
+.t .addr { display: block; font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.t .muted { color: var(--muted); }
+.t tbody tr { cursor: pointer; }
+@media (hover: hover) and (pointer: fine) { .t tbody tr:hover td { background: color-mix(in srgb, var(--chart) 6%, transparent); } .t tbody tr:hover .name { text-decoration: underline; } }
+.fees { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
+.fees .meter { height: 5px; }
+.mcards { display: none; }
+@media (max-width: 760px) { .tbl-or-cards .table-wrap { display: none; } .tbl-or-cards .mcards { display: flex; flex-direction: column; gap: 10px; } }
+.mcard { background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: var(--fg); transition: transform 160ms var(--ease-out); user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.mcard:active { transform: scale(0.98); }
+.mcard-h { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.mcard-h b { font-size: 16px; overflow-wrap: anywhere; }
+.mcard .addr { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.facts div { background: var(--panel-2); border-radius: 10px; padding: 8px 10px; min-width: 0; }
+.facts small { display: block; font-size: 12px; color: var(--muted); }
+.facts strong { font-weight: 600; font-size: 15px; overflow-wrap: anywhere; }
+
+.seg { display: inline-flex; gap: 4px; padding: 4px; background: var(--panel-2); border-radius: 12px; flex-wrap: wrap; }
+.seg button { min-height: 34px; padding: 0 12px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+.seg button[aria-pressed="true"] { background: var(--panel); color: var(--fg); box-shadow: 0 0 0 1px var(--border); }
+.toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.toolbar .grow { flex: 1 1 220px; }
+.input, .select, .textarea { width: 100%; min-height: 44px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); color: var(--fg); padding: 0 12px; font-size: 15px; }
+.textarea { padding: 10px 12px; min-height: 96px; resize: vertical; line-height: 1.5; }
+.input:focus-visible, .select:focus-visible, .textarea:focus-visible { outline: 2px solid var(--action); outline-offset: 0; border-color: var(--action); }
+@media (pointer: coarse) { .input, .select, .textarea { font-size: 16px; } :root { --ctl: 44px; } .btn.sm { min-height: 40px; } }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field > span { font-size: 14px; font-weight: 500; }
+.field .hint { font-size: 13px; color: var(--muted); font-weight: 400; }
+.empty { text-align: center; color: var(--muted); padding: 28px 12px; font-size: 14px; }
+.empty b { display: block; color: var(--fg); font-size: 15px; margin-bottom: 4px; }
+code, .cmd { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
+.cmd { display: flex; align-items: center; gap: 10px; background: var(--panel-2); border-radius: 10px; padding: 10px 12px; overflow-x: auto; }
+.cmd code { flex: 1; white-space: nowrap; }
+
+/* Detail */
+.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.kv div { background: var(--panel-2); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.kv small { display: block; font-size: 12px; color: var(--muted); }
+.kv strong { display: block; font-weight: 600; font-size: 15px; overflow-wrap: anywhere; }
+.kv strong.num { font-weight: 400; font-size: 1.375rem; }
+.bars { display: flex; flex-direction: column; gap: 8px; }
+.bar-row { display: grid; grid-template-columns: minmax(90px, 140px) minmax(0, 1fr) 72px; gap: 10px; align-items: center; font-size: 14px; }
+.bar-row span:last-child { text-align: right; white-space: nowrap; }
+.kv4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.kv2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 1180px) { .kv4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.bar-row .meter { height: 8px; }
+.trends { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 760px) { .trends { grid-template-columns: minmax(0, 1fr); } }
+.trend h4 { margin: 0 0 4px; font-size: 13px; font-weight: 500; color: var(--muted); }
+.money { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.money h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+@media (max-width: 560px) { .money { grid-template-columns: minmax(0, 1fr); } }
+.contacts { display: flex; flex-direction: column; gap: 10px; }
+.contact { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--hair); }
+.contact:first-child { border-top: 0; }
+.contact b { display: block; overflow-wrap: anywhere; }
+.contact small { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; user-select: text; }
+.contact .acts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.actions { display: flex; flex-direction: column; gap: 10px; }
+.action { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 12px; background: var(--panel-2); }
+.action b { display: block; font-weight: 600; }
+.action small { color: var(--muted); font-size: 13px; }
+@media (max-width: 480px) { .action { grid-template-columns: minmax(0, 1fr); } .contact { grid-template-columns: minmax(0, 1fr); } .contact .acts { justify-content: flex-start; } }
+
+/* Leads */
+.leads { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 960px) { .leads { grid-template-columns: minmax(0, 1fr); } .leads .lead-detail-wrap { display: none; } }
+.lead-list { padding: 6px; gap: 0; }
+.lead-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 12px; border-radius: 12px; text-decoration: none; color: var(--fg); transition: background-color .15s ease; }
+.lead-item[aria-current="true"] { background: var(--panel-2); }
+.lead-item b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lead-item .meta { grid-column: 1; font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lead-item .chip { grid-column: 2; justify-self: end; }
+@media (min-width: 961px) { .lead-list { max-height: calc(100vh - 190px); overflow-y: auto; overscroll-behavior: contain; } .lead-detail-wrap { position: sticky; top: 16px; } }
+.lead-item time { font-size: 12px; color: var(--muted); white-space: nowrap; }
+@media (hover: hover) and (pointer: fine) { .lead-item:hover { background: var(--panel-2); } }
+.lead-detail dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 16px; margin: 0; font-size: 14px; }
+.lead-detail dt { color: var(--muted); }
+.lead-detail dd { margin: 0; overflow-wrap: anywhere; user-select: text; }
+.msg { background: var(--panel-2); border-radius: 4px 14px 14px 14px; padding: 14px 16px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 320px; overflow-y: auto; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Charts */
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { fill: var(--muted); font: 12px var(--text); }
+.tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-pop); padding: 6px 10px; font-size: 12px; white-space: nowrap; opacity: 0; transition: opacity .12s ease; z-index: 3; }
+.tip b { display: block; font-weight: 600; font-size: 13px; }
+
+/* Sheet / dialog */
+.scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 40; display: grid; place-items: center; padding: 16px; }
+.sheet { background: var(--panel); color: var(--fg); border-radius: 18px; width: min(460px, 100%); padding: 22px; display: flex; flex-direction: column; gap: 14px; box-shadow: var(--shadow-pop); }
+.sheet h2 { margin: 0; font: 400 1.375rem/1.2 var(--display); }
+.sheet p { margin: 0; }
+.sheet .btn-row { justify-content: flex-end; }
+@media (max-width: 760px) {
+  .scrim { place-items: end stretch; padding: 0; }
+  .sheet { width: 100%; border-radius: 20px 20px 0 0; padding: 22px max(20px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px)); }
+  .sheet .btn-row { flex-direction: column-reverse; } .sheet .btn-row .btn { width: 100%; }
+}
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 50; background: var(--fg); color: var(--bg); border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500; max-width: min(520px, calc(100% - 32px)); box-shadow: var(--shadow-pop); }
+@media (max-width: 760px) { .toast { bottom: calc(88px + env(safe-area-inset-bottom, 0px)); } }
+
+/* Sign-in */
+.signin { min-height: 100vh; display: grid; place-items: center; padding: 24px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); background: var(--side); }
+.signin-card { width: min(420px, 100%); background: var(--panel); border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 16px; }
+.signin-card h1 { margin: 0; font: 400 1.75rem/1.2 var(--display); }
+.otp { letter-spacing: 0.4em; font-size: 22px !important; text-align: center; font-variant-numeric: tabular-nums; }
+.err { color: var(--bad); font-size: 13px; font-weight: 500; margin: 0; }
+.err:empty { display: none; }
+
+/* Switches */
+.switch { appearance: none; -webkit-appearance: none; width: 48px; height: 28px; border-radius: 999px; background: var(--border); position: relative; cursor: pointer; flex: none; margin: 0; transition: background-color .16s ease; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .16s var(--ease-out); }
+.switch:checked { background: var(--action); }
+.switch:checked::after { transform: translateX(20px); }
+.opt { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 0; border-top: 1px solid var(--hair); }
+.opt:first-child { border-top: 0; }
+.opt small { display: block; color: var(--muted); font-size: 13px; }
+
+/* Motion (find-animation-opportunities → animate) */
+@media (prefers-reduced-motion: no-preference) {
+  .scrim { animation: fade-in 180ms ease both; }
+  .sheet { animation: sheet-in 220ms var(--ease-out) both; }
+  @media (max-width: 760px) { .sheet { animation: sheet-up 280ms cubic-bezier(0.32, 0.72, 0, 1) both; } }
+  .toast { animation: toast-in 220ms var(--ease-out) both; }
+  .toast.out { animation: toast-out 160ms ease-in both; }
+  .first-view .tile, .first-view .strip { animation: rise 280ms var(--ease-out) both; animation-delay: calc(var(--i, 0) * 40ms); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn:active, a.tile:active, .mcard:active { transform: none; }
+  .scrim, .sheet, .toast { animation: fade-in 160ms ease both; }
+  .switch, .switch::after { transition: none; }
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sheet-in { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes toast-out { from { opacity: 1; } to { opacity: 0; transform: translate(-50%, 4px); } }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+</style>
+
+<div id="app"></div>
+<div id="layer"></div>
+
+<script>
+(function () {
+'use strict';
+/* ---------- helpers ---------- */
+var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+var nf = new Intl.NumberFormat('en-GB');
+var n = function (v) { return v == null ? '—' : nf.format(v); };
+var nf2 = new Intl.NumberFormat('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+var gbp = function (v) { return v == null ? '—' : '£' + (Math.round(v * 100) % 100 ? nf2.format(v) : nf.format(Math.round(v))); };
+var pct = function (a, b) { return b ? Math.round(a / b * 100) : 0; };
+var plural = function (k, one, many) { return k === 1 ? one : many; };
+var store = { get: function (k, d) { try { var v = localStorage.getItem('owner.' + k); return v == null ? d : v; } catch (e) { return d; } }, set: function (k, v) { try { localStorage.setItem('owner.' + k, v); } catch (e) {} } };
+var ICON = {
+  overview: '<path d="M3 10 12 4l9 6"/><path d="M5 10v10h14V10"/>',
+  madrasahs: '<rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/>',
+  leads: '<path d="M4 4h16v12H8l-4 4z"/>',
+  server: '<rect x="4" y="3" width="16" height="7" rx="1.5"/><rect x="4" y="14" width="16" height="7" rx="1.5"/><path d="M8 6.5h.01M8 17.5h.01"/>',
+  alerts: '<path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  account: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+  wa: '<path d="M4 20l1.5-4.5A8 8 0 1 1 9 19z"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+  refresh: '<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/>',
+  back: '<path d="m15 6-6 6 6 6"/>'
+};
+var ic = function (k) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[k] + '</svg>'; };
+
+/* ---------- prototype data (sample, not real) ---------- */
+var WEEKS = ['7 Sep', '14 Sep', '21 Sep', '28 Sep', '5 Oct', '12 Oct', '19 Oct', '26 Oct'];
+var demoData = function () {
+  var M = [
+    { slug: 'noor', name: 'Masjid Noor Maktab', status: 'up', version: '1.4.2', uptime: '12 days', students: 214, teachers: 12, staff: 3, parents: 168, parentsTotal: 241, lastActive: '5 min ago', lastActiveDays: 0, backupWhen: 'Today 02:00', backupAgeH: 10, backupSize: '62 MB', backupOk: true, memory: '318 MB', errors: 0,
+      feesMonth: { inv: 9630, col: 7210, over: 1890, fam: 21 }, feesYear: { inv: 38520, col: 31100, over: 3260, fam: 34 },
+      byStatus: [['Current', 214], ['Waiting list', 37], ['On hold', 4], ['Left this year', 9]], classes: 8, logins7: 412, logins30: 1580, regTaken: 31, regPlanned: 32, counts: { messages: 64, homework: 22, incidents: 1 },
+      trendLogins: [342, 360, 351, 377, 392, 380, 401, 412], trendRegs: [30, 32, 31, 32, 29, 32, 30, 31],
+      admins: [{ name: 'Ustadh Idris Qureshi', email: 'idris.qureshi@example.org', phone: '447700900311', access: 'Super' }, { name: 'Sister Halima Begum', email: 'office.noor@example.org', phone: '447700900412', access: 'Fees and admin' }],
+      notes: 'Imam prefers WhatsApp after Isha.' },
+    { slug: 'flc', name: 'FLC', status: 'up', version: '1.4.2', uptime: '12 days', students: 96, teachers: 6, staff: 1, parents: 41, parentsTotal: 88, lastActive: '14 days ago', lastActiveDays: 14, backupWhen: 'Today 02:00', backupAgeH: 10, backupSize: '21 MB', backupOk: true, memory: '204 MB', errors: 0,
+      feesMonth: { inv: 4320, col: 0, over: 0, fam: 0 }, feesYear: { inv: 8640, col: 3900, over: 1080, fam: 12 },
+      byStatus: [['Current', 96], ['Waiting list', 3], ['On hold', 0], ['Left this year', 2]], classes: 5, logins7: 0, logins30: 23, regTaken: 0, regPlanned: 20, counts: { messages: 0, homework: 0, incidents: 0 },
+      trendLogins: [64, 71, 58, 40, 23, 0, 0, 0], trendRegs: [18, 20, 19, 12, 8, 0, 0, 0],
+      admins: [{ name: 'Br Yaseen Ahmed', email: 'yaseen.ahmed@example.org', phone: '447700900522', access: 'Super' }],
+      notes: 'Go-live 01/12. Waiting on teacher training date.', attention: 'Not used for 14 days' },
+    { slug: 'demo', name: 'Demo', status: 'up', version: '1.4.2', uptime: '3 days', students: 102, teachers: 6, staff: 2, parents: 0, parentsTotal: 0, lastActive: '2 hours ago', lastActiveDays: 0, backupWhen: 'Mon 06:00', backupAgeH: 30, backupSize: '18 MB', backupOk: false, memory: '188 MB', errors: 3,
+      feesMonth: { inv: 4590, col: 3120, over: 450, fam: 6 }, feesYear: { inv: 9180, col: 7650, over: 450, fam: 6 },
+      byStatus: [['Current', 102], ['Waiting list', 8], ['On hold', 1], ['Left this year', 0]], classes: 4, logins7: 18, logins30: 77, regTaken: 15, regPlanned: 16, counts: { messages: 9, homework: 4, incidents: 0 },
+      trendLogins: [12, 9, 14, 20, 11, 16, 22, 18], trendRegs: [16, 16, 14, 16, 15, 16, 16, 15],
+      admins: [{ name: 'Owais (you)', email: '[YOUR EMAIL]', phone: '', access: 'Super' }],
+      notes: 'Used for sales demos. Reset before each call.', attention: 'Newest backup is 30 hours old' }
+  ];
+  return {
+    checked: '2 min ago', madrasahs: M,
+    needs: [
+      { kind: 'info', text: 'New contact message from <b>Imran Patel</b>', href: '#leads', when: '1 hour ago' },
+      { kind: 'warn', text: '<b>Demo</b>’s newest backup is 30 hours old', href: '#madrasah-demo', when: '4 hours ago' },
+      { kind: 'warn', text: '<b>FLC</b> hasn’t been used for 14 days', href: '#madrasah-flc', when: 'Yesterday' },
+      { kind: 'info', text: 'New early-access sign-up: <b>Masjid Bilal Maktab, Leicester</b>', href: '#leads', when: '2 days ago' }
+    ],
+    week: { students: [398, 401, 404, 404, 409, 410, 410, 412], registers: [64, 68, 64, 60, 52, 48, 46, 46], regPlanned: 68, logins: [418, 440, 423, 437, 426, 396, 423, 430], messages: [61, 70, 58, 66, 80, 69, 71, 73] },
+    server: { disk: 61, diskText: '49 of 80 GB', mem: 72, memText: '5.8 of 8 GB', cpu: 18,
+      diskSeries: [58, 58, 59, 59, 59, 60, 60, 60, 60, 60, 61, 61, 61, 61], memSeries: [64, 70, 66, 74, 69, 71, 68, 75, 70, 73, 69, 72, 70, 72], cpuSeries: [12, 22, 15, 31, 14, 19, 11, 27, 16, 21, 13, 24, 15, 18],
+      containers: [['caddy', 'Running', '12 days', '42 MB'], ['main-site', 'Running', '5 days', '156 MB'], ['noor-app', 'Running', '12 days', '318 MB'], ['noor-db', 'Running', '12 days', '410 MB'], ['flc-app', 'Running', '12 days', '204 MB'], ['flc-db', 'Running', '12 days', '233 MB'], ['demo-app', 'Running', '3 days', '188 MB'], ['demo-db', 'Running', '3 days', '201 MB']],
+      version: '1.4.2', deployed: '21 Oct 2026, 19:40', offsite: null },
+    leads: [
+      { id: 'l1', kind: 'Contact form', when: '1 hour ago', name: 'Imran Patel', school: 'Madni Masjid Evening Classes', email: 'imran.patel@example.org', phone: '', topic: 'Moving our records', message: 'Assalamu alaikum. We have about 180 children on a spreadsheet and fees in a receipt book. How long would it take to move everything over, and can we keep using the spreadsheet for fees until the end of term?', status: 'New', notes: '' },
+      { id: 'l2', kind: 'Early access', when: '2 days ago', name: 'Ustadha Ruqayyah Shah', role: 'Head teacher or imam', school: 'Masjid Bilal Maktab, Leicester', email: 'r.shah@example.org', phone: '', students: 95, type: 'Evening or weekend madressa / maktab', status: 'New', notes: '' },
+      { id: 'l3', kind: 'Early access', when: '6 days ago', name: 'Br Tariq Hussain', role: 'Administrator', school: 'Darul Arqam Hifz Academy', email: 'tariq.h@example.org', phone: '447700900733', students: 60, type: 'Hifz or alim academy', status: 'Contacted', notes: 'Called 21/10. Wants a demo after half-term.' },
+      { id: 'l4', kind: 'Early access', when: '3 weeks ago', name: 'Ustadh Idris Qureshi', role: 'Head teacher or imam', school: 'Masjid Noor Maktab', email: 'idris.qureshi@example.org', phone: '447700900311', students: 214, type: 'Evening or weekend madressa / maktab', status: 'Set up', notes: 'Live as noor since 01/10.' },
+      { id: 'l5', kind: 'Contact form', when: '1 month ago', name: 'Sarah Khan', school: '', email: 'sarah.k@example.org', phone: '', topic: 'Something else', message: 'Do you offer this for Saturday tuition centres that are not faith based?', status: 'Not interested', notes: 'Not our audience for now.' }
+    ],
+    alerts: [
+      { what: 'Backup over 26 hours old', who: 'Demo', sent: 'Today 08:00', cleared: '', ch: 'Push' },
+      { what: 'New contact message', who: 'Imran Patel', sent: 'Today 11:04', cleared: '—', ch: 'Push' },
+      { what: 'New early-access sign-up', who: 'Masjid Bilal Maktab', sent: 'Sun 25 Oct 19:12', cleared: '—', ch: 'Push' },
+      { what: 'Not responding (2 checks)', who: 'FLC', sent: 'Mon 19 Oct 03:10', cleared: 'Mon 19 Oct 03:25 · 15 min', ch: 'Push' },
+      { what: 'Server memory over 90%', who: 'Server', sent: 'Fri 16 Oct 21:40', cleared: 'Fri 16 Oct 22:05 · 25 min', ch: 'Push' }
+    ],
+    sessions: [['This laptop', 'Chrome on Windows · London', 'Active now'], ['iPhone', 'Home-screen app · London', '2 hours ago']]
+  };
+};
+var worstData = function () {
+  var d = demoData();
+  var long = ['Jamia Masjid Ghausia Bolton — Weekend Hifz & Evening Maktab (Girls’ Section)', 'A', 'Darul Uloom Al-Madania Islamic Educational Trust Supplementary School', 'Ḥalqah al-Qurʾān', 'مدرسة النور'];
+  var M = [];
+  for (var i = 0; i < 14; i++) {
+    var base = JSON.parse(JSON.stringify(d.madrasahs[i % 3]));
+    base.slug = 'm' + i; base.name = long[i % long.length] + (i >= long.length ? ' ' + (i + 1) : '');
+    base.host = 'm' + i + '-very-long-subdomain-for-testing.213-32-71-244.sslip.io';
+    if (i === 0) { base.status = 'down'; base.attention = 'Not responding for 25 minutes (5 checks)'; base.errors = 1284; base.uptime = '—'; base.memory = '—'; }
+    if (i === 1) { base.students = 0; base.parents = 0; base.parentsTotal = 0; base.teachers = 0; base.lastActive = 'Never'; base.lastActiveDays = 999; base.feesMonth = { inv: 0, col: 0, over: 0, fam: 0 }; base.attention = 'Never used'; base.admins = []; }
+    if (i === 2) { base.students = 12840; base.parents = 9912; base.parentsTotal = 11004; base.feesMonth = { inv: 1284500.5, col: 1290000, over: 0, fam: 0 }; base.version = '1.3.9'; base.attention = 'Running an older version (1.3.9)'; }
+    if (i === 3) { base.backupOk = false; base.backupWhen = 'Failed last night'; base.backupAgeH = 54; base.attention = 'Backup failed last night'; }
+    if (i === 4) { base.admins = [{ name: 'Muhammad-Ibrahim Abdur-Rahman Chowdhury-Siddiqui', email: 'bartholomew.fitzgerald@northwind-industries-holdings.example.com', phone: '', access: 'Fees only' }]; }
+    M.push(base);
+  }
+  d.madrasahs = M;
+  d.needs = [{ kind: 'bad', text: '<b>' + esc(long[0]) + '</b> isn’t responding (5 checks)', href: '#madrasah-m0', when: '25 min ago' }].concat(d.needs, d.needs, d.needs);
+  d.server.disk = 97; d.server.diskText = '77.6 of 80 GB'; d.server.mem = 93; d.server.memText = '7.4 of 8 GB'; d.server.cpu = 100;
+  d.server.diskSeries = [80, 82, 84, 86, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97]; d.server.memSeries = d.server.memSeries.map(function (v) { return Math.min(100, v + 21); }); d.server.cpuSeries = d.server.cpuSeries.map(function (v) { return Math.min(100, v * 4); });
+  d.server.containers[2][1] = 'Restarting'; d.server.containers[3][1] = 'Exited (1)';
+  var L = [];
+  for (var j = 0; j < 60; j++) {
+    var b = JSON.parse(JSON.stringify(d.leads[j % 5])); b.id = 'w' + j;
+    if (j === 0) { b.name = 'Aleksandra Wiśniewska-Kowalczyk'; b.email = 'bartholomew.fitzgerald@northwind-industries-holdings.example.com'; b.school = long[0]; b.message = Array(12).join('We would like to understand how registers, fees, homework and parent messaging work for a school with three sites and both evening and weekend classes. '); }
+    if (j === 1) { b.name = 'Jo'; b.school = ''; b.email = 'jo@x.uk'; b.message = '?'; }
+    L.push(b);
+  }
+  d.leads = L;
+  d.alerts = []; for (var k = 0; k < 120; k++) d.alerts.push({ what: k % 2 ? 'Not responding (2 checks)' : 'Backup over 26 hours old', who: long[k % long.length], sent: 'Day ' + (k + 1), cleared: k % 3 ? 'Cleared after 12 min' : '', ch: 'Push' });
+  d.checked = 'Last check failed · retrying'; d.checkFailed = true;
+  return d;
+};
+var emptyData = function () {
+  var d = demoData();
+  d.madrasahs = []; d.needs = []; d.leads = []; d.alerts = [];
+  d.week = { students: [0, 0, 0, 0, 0, 0, 0, 0], registers: [0, 0, 0, 0, 0, 0, 0, 0], regPlanned: 0, logins: [0, 0, 0, 0, 0, 0, 0, 0], messages: [0, 0, 0, 0, 0, 0, 0, 0] };
+  d.server.containers = [['caddy', 'Running', '1 day', '40 MB'], ['main-site', 'Running', '1 day', '120 MB']];
+  d.checked = 'Just now';
+  return d;
+};
+var mode = store.get('data', 'demo');
+var D = mode === 'worst' ? worstData() : mode === 'empty' ? emptyData() : demoData();
+var leadState = {}; try { leadState = JSON.parse(store.get('leads', '{}')) || {}; } catch (e) { leadState = {}; }
+D.leads.forEach(function (l) { if (leadState[l.id]) { l.status = leadState[l.id].status || l.status; if (leadState[l.id].notes != null) l.notes = leadState[l.id].notes; } });
+
+/* ---------- derived ---------- */
+var down = function () { return D.madrasahs.filter(function (m) { return m.status === 'down'; }); };
+var attention = function () { return D.madrasahs.filter(function (m) { return m.attention; }); };
+var newLeads = function () { return D.leads.filter(function (l) { return l.status === 'New'; }); };
+var hostOf = function (m) { return m.host || (m.slug + '.213-32-71-244.sslip.io'); };
+var sum = function (a) { return a.reduce(function (s, v) { return s + v; }, 0); };
+var last = function (a) { return a[a.length - 1]; };
+var delta = function (a, fmt) {
+  var d = last(a) - a[a.length - 2];
+  if (!d) return '<span class="delta flat">No change on last week</span>';
+  return '<span class="delta ' + (d > 0 ? 'up' : 'down') + '">' + (d > 0 ? '+' : '−') + n(Math.abs(d)) + ' on last week</span>';
+};
+
+/* ---------- charts (single series, one axis, hover crosshair) ---------- */
+var chart = function (id, vals, opts) {
+  return '<div class="chart" data-chart="' + id + '" data-h="' + (opts.h || 64) + '" data-axis="' + (opts.axis ? 1 : 0) + '" data-max="' + (opts.max || '') + '" data-ref="' + (opts.ref || '') + '" data-unit="' + esc(opts.unit || '') + '" data-labels="' + esc(JSON.stringify(opts.labels || WEEKS)) + '" data-vals="' + esc(JSON.stringify(vals)) + '" role="img" aria-label="' + esc(opts.aria) + '"></div>';
+};
+var drawCharts = function () {
+  document.querySelectorAll('.chart').forEach(function (el) {
+    var vals = JSON.parse(el.dataset.vals), labels = JSON.parse(el.dataset.labels);
+    var W = Math.max(120, el.clientWidth), H = Number(el.dataset.h), axis = el.dataset.axis === '1';
+    var max = Number(el.dataset.max) || Math.max(1, Math.max.apply(null, vals)) * 1.15, ref = Number(el.dataset.ref) || 0, unit = el.dataset.unit;
+    var ml = axis ? 40 : 4, mr = axis ? 8 : 8, mt = 8, mb = axis ? 22 : 6;
+    var x = function (i) { return ml + (vals.length === 1 ? (W - ml - mr) / 2 : i * (W - ml - mr) / (vals.length - 1)); };
+    var y = function (v) { return mt + (H - mt - mb) * (1 - v / max); };
+    var p = vals.map(function (v, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1); }).join(' ');
+    var area = p + ' L' + x(vals.length - 1).toFixed(1) + ' ' + y(0) + ' L' + x(0).toFixed(1) + ' ' + y(0) + ' Z';
+    var g = '';
+    if (axis) [0, 50, 100].forEach(function (t) { if (t > max) return; g += '<line x1="' + ml + '" x2="' + (W - mr) + '" y1="' + y(t) + '" y2="' + y(t) + '" stroke="var(--grid)" stroke-width="1"/><text x="' + (ml - 8) + '" y="' + (y(t) + 4) + '" text-anchor="end">' + t + unit + '</text>'; });
+    if (axis) { [0, Math.floor(vals.length / 2), vals.length - 1].forEach(function (i, k) { g += '<text x="' + x(i) + '" y="' + (H - 4) + '" text-anchor="' + (k === 0 ? 'start' : k === 2 ? 'end' : 'middle') + '">' + esc(labels[i]) + '</text>'; }); }
+    if (ref) g += '<line x1="' + ml + '" x2="' + (W - mr) + '" y1="' + y(ref) + '" y2="' + y(ref) + '" stroke="var(--amber)" stroke-width="1.5" stroke-dasharray="4 4"/><text x="' + (W - mr) + '" y="' + (y(ref) - 5) + '" text-anchor="end" style="fill:var(--amber-text)">Alert at ' + ref + unit + '</text>';
+    var lv = last(vals), over = ref && lv >= ref;
+    el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" height="' + H + '" preserveAspectRatio="none">' + g +
+      '<path d="' + area + '" fill="var(--chart-fill)"/>' +
+      '<path d="' + p + '" fill="none" stroke="var(--chart)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<circle cx="' + x(vals.length - 1) + '" cy="' + y(lv) + '" r="4" fill="' + (over ? 'var(--bad)' : 'var(--chart)') + '" stroke="var(--panel)" stroke-width="2"/>' +
+      '<line class="xh" y1="' + mt + '" y2="' + (H - mb) + '" stroke="var(--ref)" stroke-width="1" style="opacity:0"/>' +
+      '<circle class="hd" r="4" fill="var(--chart)" stroke="var(--panel)" stroke-width="2" style="opacity:0"/></svg><div class="tip"></div>';
+    var svg = el.querySelector('svg'), tip = el.querySelector('.tip'), xh = el.querySelector('.xh'), hd = el.querySelector('.hd');
+    var move = function (cx) {
+      var r = svg.getBoundingClientRect(), mx = (cx - r.left) / r.width * W;
+      var i = Math.max(0, Math.min(vals.length - 1, Math.round((mx - ml) / ((W - ml - mr) / Math.max(1, vals.length - 1)))));
+      xh.setAttribute('x1', x(i)); xh.setAttribute('x2', x(i)); xh.style.opacity = 1;
+      hd.setAttribute('cx', x(i)); hd.setAttribute('cy', y(vals[i])); hd.style.opacity = 1;
+      tip.innerHTML = '<span>' + esc(labels[i]) + '</span><b>' + n(vals[i]) + esc(unit) + '</b>';
+      tip.style.opacity = 1;
+      var left = x(i) / W * r.width + 10; if (left + tip.offsetWidth > r.width) left = x(i) / W * r.width - tip.offsetWidth - 10;
+      tip.style.left = Math.max(0, left) + 'px'; tip.style.top = '0px';
+    };
+    var hide = function () { tip.style.opacity = 0; xh.style.opacity = 0; hd.style.opacity = 0; };
+    svg.addEventListener('pointermove', function (e) { move(e.clientX); });
+    svg.addEventListener('pointerleave', hide);
+  });
+};
+window.addEventListener('resize', function () { clearTimeout(drawCharts.t); drawCharts.t = setTimeout(drawCharts, 120); });
+
+/* ---------- shell ---------- */
+var NAV = [['overview', 'Overview'], ['madrasahs', 'Madrasahs'], ['leads', 'Leads'], ['server', 'Server'], ['alerts', 'Alerts'], ['account', 'Account']];
+var TABS = ['overview', 'madrasahs', 'leads', 'alerts'];
+var shell = function (route, title, crumb, body) {
+  var section = route.split('-')[0] === 'madrasah' ? 'madrasahs' : route.split('-')[0] === 'lead' ? 'leads' : route;
+  var nl = newLeads().length, nb = D.madrasahs.filter(function (m) { return m.status === 'down' || m.attention; }).length;
+  var badge = function (k) { return k === 'leads' && nl ? '<span class="count" aria-label="' + nl + ' new">' + n(nl) + '</span>' : k === 'madrasahs' && nb ? '<span class="count" aria-label="' + nb + ' need attention">' + n(nb) + '</span>' : ''; };
+  return '<div class="shell"><aside class="side" aria-label="Owner menu">' +
+    '<div class="brand"><span class="brand-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B1F1E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10 12 4l9 6"/><path d="M5 10v9h14v-9"/></svg></span><span class="brand-name" translate="no">Madressa</span><span class="owner-pill">Owner</span></div>' +
+    '<nav class="nav" aria-label="Owner">' + NAV.map(function (a) { return '<a href="#' + a[0] + '"' + (section === a[0] ? ' aria-current="page"' : '') + '>' + ic(a[0]) + '<span>' + a[1] + '</span>' + badge(a[0]) + '</a>'; }).join('') + '</nav>' +
+    '<div class="side-foot"><label>Prototype data<select id="data-mode"><option value="demo"' + (mode === 'demo' ? ' selected' : '') + '>Demo</option><option value="worst"' + (mode === 'worst' ? ' selected' : '') + '>Worst case</option><option value="empty"' + (mode === 'empty' ? ' selected' : '') + '>Empty</option></select></label><a href="#signin" style="color:var(--side-muted)">See the sign-in screen</a></div>' +
+    '</aside><div class="main"><header class="top"><h1>' + (crumb ? '<span class="crumb">' + crumb + '</span>' : '') + esc(title) + '</h1>' +
+    (D.checkFailed ? '<span class="checked status warn">' + esc(D.checked) + '</span>' : '<span class="checked">Checked ' + esc(D.checked) + '</span>') + '<button class="btn sm" data-act="refresh">' + ic('refresh') + 'Check now</button>' +
+    '<a class="btn icon-btn top-account" href="#account" aria-label="Account and server">' + ic('account') + '</a></header>' +
+    '<main class="view' + (firstView ? ' first-view' : '') + '" id="view">' + body + '</main></div>' +
+    '<nav class="tabs" aria-label="Owner (mobile)">' + TABS.map(function (k) { var a = NAV.filter(function (x) { return x[0] === k; })[0]; return '<a href="#' + k + '"' + (section === k ? ' aria-current="page"' : '') + '>' + ic(k) + a[1] + badge(k) + '</a>'; }).join('') + '</nav></div>';
+};
+
+/* ---------- views ---------- */
+var stripHTML = function () {
+  var dn = down(), at = attention(), tot = D.madrasahs.length;
+  if (!tot) return '<a class="strip ok" href="#server"><span class="dot"></span><span class="strip-text"><b>No madrasahs yet.</b> Add the first one on the server with <code>./madrasah add &lt;name&gt;</code>.</span></a>';
+  if (dn.length) return '<a class="strip bad" href="#madrasah-' + esc(dn[0].slug) + '"><span class="dot"></span><span class="strip-text"><b>' + n(dn.length) + ' ' + plural(dn.length, 'madrasah is', 'madrasahs are') + ' down.</b> ' + esc(dn[0].name) + ': ' + esc(dn[0].attention) + '</span><span class="go">Open</span></a>';
+  if (at.length) return '<a class="strip warn" href="#madrasahs"><span class="dot"></span><span class="strip-text"><b>All ' + n(tot) + ' ' + plural(tot, 'madrasah', 'madrasahs') + ' running.</b> ' + n(at.length) + ' ' + plural(at.length, 'needs', 'need') + ' attention.</span><span class="go">Review</span></a>';
+  return '<div class="strip ok"><span class="dot"></span><span class="strip-text"><b>All ' + n(tot) + ' ' + plural(tot, 'madrasah', 'madrasahs') + ' running.</b> Nothing needs you.</span></div>';
+};
+var meterCls = function (v, warn, bad) { return v >= bad ? 'bad' : v >= warn ? 'warn' : ''; };
+
+var vOverview = function () {
+  var M = D.madrasahs, up = M.filter(function (m) { return m.status === 'up'; }).length, nl = newLeads().length;
+  var failed = M.filter(function (m) { return !m.backupOk; }), S = D.server, W = D.week;
+  var tiles = [
+    '<a class="tile" href="#madrasahs" style="--i:1"><span class="label">Madrasahs up</span><span class="big">' + n(up) + ' <small>of ' + n(M.length) + '</small></span><span class="sub">' + (M.length ? (up === M.length ? 'All responding' : n(M.length - up) + ' not responding') : 'None added yet') + '</span></a>',
+    '<a class="tile" href="#leads" style="--i:2"><span class="label">New leads</span><span class="big">' + n(nl) + '</span><span class="sub">' + (nl ? 'Waiting for a reply' : 'All replied to') + '</span></a>',
+    '<a class="tile" href="#server" style="--i:3"><span class="label">Last night’s backups</span><span class="big">' + (M.length ? (failed.length ? n(M.length - failed.length) + ' <small>of ' + n(M.length) + ' OK</small>' : 'All OK') : '—') + '</span><span class="sub">' + (failed.length ? esc(failed.slice(0, 2).map(function (m) { return m.name; }).join(', ')) + (failed.length > 2 ? ' and ' + (failed.length - 2) + ' more' : '') + ' ' + plural(failed.length, 'needs', 'need') + ' a look' : M.length ? 'Every madrasah backed up' : 'Nothing to back up yet') + '</span></a>',
+    '<a class="tile" href="#server" style="--i:4"><span class="label">Server</span>' +
+      '<div class="meter-row"><span>Disk</span><span class="meter ' + meterCls(S.disk, 75, 85) + '"><i style="width:' + S.disk + '%"></i></span><span>' + S.disk + '%</span></div>' +
+      '<div class="meter-row"><span>Memory</span><span class="meter ' + meterCls(S.mem, 80, 90) + '"><i style="width:' + S.mem + '%"></i></span><span>' + S.mem + '%</span></div>' +
+      '<span class="sub">' + (S.disk >= 85 || S.mem >= 90 ? 'Over the alert limit' : 'Within limits') + '</span></a>'
+  ];
+  var needs = D.needs.length ? '<ul class="list">' + D.needs.slice(0, 6).map(function (x) { return '<li><a class="need" href="' + x.href + '"><span class="dot ' + x.kind + '"></span><span>' + x.text + '</span><time>' + esc(x.when) + '</time></a></li>'; }).join('') + '</ul>' + (D.needs.length > 6 ? '<a href="#alerts">See all ' + n(D.needs.length) + '</a>' : '')
+    : '<div class="empty"><b>Nothing needs you</b>Problems, new leads and messages appear here, newest first.</div>';
+  var wk = function (label, arr, extra, aria) { return '<div><span class="label">' + label + '</span><span class="big">' + n(last(arr)) + (extra || '') + '</span>' + delta(arr) + chart('w-' + label, arr, { h: 40, aria: aria + ': ' + arr.join(', ') }) + '</div>'; };
+  return stripHTML() + '<div class="grid">' + tiles.map(function (t) { return '<div class="c3">' + t + '</div>'; }).join('') + '</div>' +
+    '<div class="grid"><section class="card c7" aria-labelledby="h-needs"><div class="card-h"><h2 id="h-needs">Needs you</h2><p class="note">Newest first</p></div>' + needs + '</section>' +
+    '<section class="card c5" aria-labelledby="h-week"><div class="card-h"><h2 id="h-week">This week across all madrasahs</h2><p class="note">Week of 26 Oct</p></div><div class="week">' +
+      wk('Students', W.students, '', 'Students, last 8 weeks') +
+      wk('Registers taken', W.registers, W.regPlanned ? ' <small style="font:500 14px var(--text);color:var(--muted)">of ' + n(W.regPlanned) + '</small>' : '', 'Registers taken, last 8 weeks') +
+      wk('Parent logins', W.logins, '', 'Parent logins, last 8 weeks') +
+      wk('Messages sent', W.messages, '', 'Messages sent, last 8 weeks') + '</div></section></div>';
+};
+
+var sortMode = 'attention';
+var vMadrasahs = function () {
+  var M = D.madrasahs.slice();
+  var score = function (m) { return (m.status === 'down' ? 100 : 0) + (m.attention ? 10 : 0) + (m.backupOk ? 0 : 5); };
+  if (sortMode === 'attention') M.sort(function (a, b) { return score(b) - score(a); });
+  if (sortMode === 'least') M.sort(function (a, b) { return b.lastActiveDays - a.lastActiveDays; });
+  if (sortMode === 'biggest') M.sort(function (a, b) { return b.students - a.students; });
+  var st = function (m) { return m.status === 'down' ? '<span class="status bad">Down</span>' : m.attention ? '<span class="status warn">Needs a look</span>' : '<span class="status">Running</span>'; };
+  var fees = function (m) { var f = m.feesMonth, p = pct(f.col, f.inv); return '<div class="fees"><span>' + gbp(f.col) + ' <span class="muted">of ' + gbp(f.inv) + '</span></span><span class="meter"><i style="width:' + Math.min(100, p) + '%"></i></span></div>'; };
+  var seg = '<div class="seg" role="group" aria-label="Sort">' + [['attention', 'Needs attention'], ['least', 'Least active'], ['biggest', 'Biggest']].map(function (s) { return '<button data-sort="' + s[0] + '" aria-pressed="' + (sortMode === s[0]) + '">' + s[1] + '</button>'; }).join('') + '</div>';
+  if (!M.length) return '<div class="card"><div class="empty"><b>No madrasahs yet</b>Each madrasah is added on the server. Run <code>./madrasah add &lt;name&gt;</code> and it appears here within 5 minutes.</div></div>';
+  var rows = M.map(function (m) {
+    return '<tr data-href="#madrasah-' + esc(m.slug) + '"><td><a class="name" href="#madrasah-' + esc(m.slug) + '">' + esc(m.name) + '</a><span class="addr">' + esc(hostOf(m)) + '</span>' + (m.attention ? '<span class="addr" style="color:var(--amber-text)">' + esc(m.attention) + '</span>' : '') + '</td>' +
+      '<td>' + st(m) + '<span class="addr">v' + esc(m.version) + '</span></td><td class="r">' + n(m.students) + '</td><td class="r">' + n(m.teachers) + '</td><td class="r">' + n(m.parents) + '<span class="addr">of ' + n(m.parentsTotal) + '</span></td>' +
+      '<td>' + esc(m.lastActive) + '</td><td>' + (m.backupOk ? esc(m.backupWhen) : '<span class="status bad">' + esc(m.backupWhen) + '</span>') + '</td><td>' + fees(m) + '</td></tr>';
+  }).join('');
+  var cards = M.map(function (m) {
+    return '<a class="mcard" href="#madrasah-' + esc(m.slug) + '"><div class="mcard-h"><div style="min-width:0"><b>' + esc(m.name) + '</b><div class="addr">' + esc(hostOf(m)) + ' · v' + esc(m.version) + '</div></div>' + st(m) + '</div>' +
+      (m.attention ? '<div class="note" style="color:var(--amber-text)">' + esc(m.attention) + '</div>' : '') +
+      '<div class="facts"><div><small>Students</small><strong>' + n(m.students) + '</strong></div><div><small>Teachers</small><strong>' + n(m.teachers) + '</strong></div><div><small>Parents in</small><strong>' + n(m.parents) + '</strong></div></div>' +
+      '<div class="note">Active ' + esc(m.lastActive) + ' · Backup ' + esc(m.backupWhen) + '</div>' + fees(m) + '</a>';
+  }).join('');
+  return '<div class="toolbar">' + seg + '<span class="note" style="margin-left:auto">' + n(M.length) + ' ' + plural(M.length, 'madrasah', 'madrasahs') + ' · fees are this month, collected of invoiced</span></div>' +
+    '<section class="card tbl-or-cards" aria-label="Madrasahs"><div class="table-wrap"><table class="t"><thead><tr><th scope="col">Madrasah</th><th scope="col">Status</th><th scope="col" class="r">Students</th><th scope="col" class="r">Teachers</th><th scope="col" class="r">Parents in</th><th scope="col">Last active</th><th scope="col">Last backup</th><th scope="col">Fees this month</th></tr></thead><tbody>' + rows + '</tbody></table></div><div class="mcards">' + cards + '</div></section>';
+};
+
+var vMadrasah = function (slug) {
+  var m = D.madrasahs.filter(function (x) { return x.slug === slug; })[0];
+  if (!m) return null;
+  var maxS = Math.max(1, Math.max.apply(null, m.byStatus.map(function (b) { return b[1]; })));
+  var money = function (title, f) { return '<div><h3>' + title + '</h3><div class="kv kv2"><div><small>Invoiced</small><strong class="num">' + gbp(f.inv) + '</strong></div><div><small>Collected</small><strong class="num">' + gbp(f.col) + '</strong></div><div><small>Overdue</small><strong class="num">' + gbp(f.over) + '</strong></div><div><small>Families overdue</small><strong class="num">' + n(f.fam) + '</strong></div></div></div>'; };
+  var notes = store.get('notes.' + m.slug, m.notes || '');
+  var admins = m.admins.length ? m.admins.map(function (a, i) {
+    return '<div class="contact"><div><b>' + esc(a.name) + '</b><small>' + esc(a.email) + (a.phone ? ' · +' + esc(a.phone) : ' · no phone') + ' · ' + esc(a.access) + '</small></div><div class="acts">' +
+      '<a class="btn sm" href="mailto:' + esc(a.email) + '">' + ic('mail') + 'Email</a>' +
+      (a.phone ? '<a class="btn sm" href="https://wa.me/' + esc(a.phone) + '" target="_blank" rel="noopener">' + ic('wa') + 'WhatsApp</a>' : '<button class="btn sm" disabled title="No phone number on record">' + ic('wa') + 'WhatsApp</button>') + '</div></div>';
+  }).join('') : '<div class="empty"><b>No admin users</b>This madrasah has no admin accounts yet.</div>';
+  return (m.status === 'down' ? '<div class="strip bad"><span class="dot"></span><span class="strip-text"><b>Not responding.</b> ' + esc(m.attention) + '</span></div>' : m.attention ? '<div class="strip warn"><span class="dot"></span><span class="strip-text"><b>Needs a look.</b> ' + esc(m.attention) + '</span></div>' : '') +
+    '<div class="grid">' +
+    '<section class="card c4" aria-labelledby="h-health"><div class="card-h"><h2 id="h-health">Health</h2>' + (m.status === 'down' ? '<span class="status bad">Down</span>' : '<span class="status">Up ' + esc(m.uptime) + '</span>') + '</div>' +
+      '<div class="kv kv2"><div><small>Version</small><strong>' + esc(m.version) + '</strong></div><div><small>Last backup</small><strong>' + esc(m.backupWhen) + '</strong><small>' + esc(m.backupSize) + '</small></div><div><small>Memory</small><strong>' + esc(m.memory) + '</strong></div><div><small>Errors, 24 h</small><strong' + (m.errors ? ' style="color:var(--bad)"' : '') + '>' + n(m.errors) + '</strong></div></div></section>' +
+    '<section class="card c8" aria-labelledby="h-usage"><div class="card-h"><h2 id="h-usage">Usage</h2><p class="note">Counts only</p></div>' +
+      '<div class="kv kv4"><div><small>Classes</small><strong class="num">' + n(m.classes) + '</strong></div><div><small>Teachers / staff</small><strong class="num">' + n(m.teachers) + ' / ' + n(m.staff) + '</strong></div><div><small>Parents with a login</small><strong class="num">' + n(m.parents) + '</strong><small>of ' + n(m.parentsTotal) + '</small></div><div><small>Logins 7 / 30 days</small><strong class="num">' + n(m.logins7) + ' / ' + n(m.logins30) + '</strong></div></div>' +
+      '<div class="bars" aria-label="Students by status">' + m.byStatus.map(function (b) { return '<div class="bar-row"><span>' + esc(b[0]) + '</span><span class="meter"><i style="width:' + (b[1] / maxS * 100) + '%"></i></span><span>' + n(b[1]) + '</span></div>'; }).join('') + '</div>' +
+      '<div class="bar-row"><span>Registers this week</span><span class="meter ' + (m.regPlanned && m.regTaken / m.regPlanned < .5 ? 'warn' : '') + '"><i style="width:' + pct(m.regTaken, m.regPlanned) + '%"></i></span><span>' + n(m.regTaken) + ' of ' + n(m.regPlanned) + '</span></div>' +
+      '<p class="note">This month: ' + n(m.counts.messages) + ' messages · ' + n(m.counts.homework) + ' homework · ' + n(m.counts.incidents) + ' ' + plural(m.counts.incidents, 'incident', 'incidents') + '</p>' +
+      '<div class="trends"><div class="trend"><h4>Logins per week</h4>' + chart('t-l', m.trendLogins, { h: 72, aria: 'Logins per week, last 8 weeks: ' + m.trendLogins.join(', ') }) + '</div><div class="trend"><h4>Registers taken per week</h4>' + chart('t-r', m.trendRegs, { h: 72, aria: 'Registers per week, last 8 weeks: ' + m.trendRegs.join(', ') }) + '</div></div></section>' +
+    '<section class="card c7" aria-labelledby="h-money"><div class="card-h"><h2 id="h-money">Money</h2><p class="note">Totals only</p></div><div class="money">' + money('This month', m.feesMonth) + money('This year', m.feesYear) + '</div></section>' +
+    '<section class="card c5" aria-labelledby="h-actions"><div class="card-h"><h2 id="h-actions">Safe actions</h2><p class="note">Each asks first and is logged</p></div><div class="actions">' +
+      '<div class="action"><div><b>Set-password link</b><small>For a locked-out admin. Also logged in this madrasah’s audit log.</small></div><button class="btn" data-act="link" data-slug="' + esc(m.slug) + '"' + (m.admins.length ? '' : ' disabled') + '>Get link</button></div>' +
+      '<div class="action"><div><b>Restart</b><small>Unavailable for about 30 seconds.</small></div><button class="btn" data-act="restart" data-slug="' + esc(m.slug) + '">Restart</button></div>' +
+      '<div class="action"><div><b>Back up now</b><small>Runs within a minute. Last: ' + esc(m.backupWhen) + '.</small></div><button class="btn" data-act="backup" data-slug="' + esc(m.slug) + '">Back up</button></div></div></section>' +
+    '<section class="card c7" aria-labelledby="h-staff"><div class="card-h"><h2 id="h-staff">Staff contacts</h2><p class="note">Admin users only</p></div><div class="contacts">' + admins + '</div></section>' +
+    '<section class="card c5" aria-labelledby="h-notes"><div class="card-h"><h2 id="h-notes">Your notes</h2><p class="note" id="notes-state">Saved on this device</p></div><label class="vh" for="notes">Notes about ' + esc(m.name) + '</label><textarea class="textarea" id="notes" data-slug="' + esc(m.slug) + '" placeholder="For example, Imam prefers WhatsApp…">' + esc(notes) + '</textarea></section>' +
+    '</div>';
+};
+
+var leadFilter = 'all';
+var vLeads = function (id) {
+  var L = D.leads.filter(function (l) { return leadFilter === 'all' || l.status === leadFilter; });
+  var counts = {}; D.leads.forEach(function (l) { counts[l.status] = (counts[l.status] || 0) + 1; });
+  var seg = '<div class="seg" role="group" aria-label="Filter leads">' + [['all', 'All', D.leads.length], ['New', 'New', counts.New || 0], ['Contacted', 'Contacted', counts.Contacted || 0], ['Set up', 'Set up', counts['Set up'] || 0], ['Not interested', 'Not interested', counts['Not interested'] || 0]].map(function (s) { return '<button data-lf="' + s[0] + '" aria-pressed="' + (leadFilter === s[0]) + '">' + s[1] + ' ' + n(s[2]) + '</button>'; }).join('') + '</div>';
+  if (!D.leads.length) return '<div class="card"><div class="empty"><b>No leads yet</b>Early-access sign-ups and contact messages from the website land here, newest first.</div></div>';
+  var sel = id ? D.leads.filter(function (l) { return l.id === id; })[0] : (window.innerWidth > 960 ? L[0] : null);
+  var chipCls = { 'New': 'new', 'Contacted': 'contacted', 'Set up': 'setup', 'Not interested': 'no' };
+  var list = L.length ? L.map(function (l) { return '<a class="lead-item" href="#lead-' + esc(l.id) + '"' + (sel && sel.id === l.id ? ' aria-current="true"' : '') + '><b>' + esc(l.school || l.name) + '</b><time>' + esc(l.when) + '</time><span class="meta">' + esc(l.kind) + ' · ' + esc(l.name) + '</span><span class="chip ' + chipCls[l.status] + '">' + esc(l.status) + '</span></a>'; }).join('') : '<div class="empty">No leads with this status.</div>';
+  var detail = sel ? leadDetail(sel) : '';
+  if (id && window.innerWidth <= 960) return '<a class="btn sm" href="#leads" style="align-self:flex-start">' + ic('back') + 'All leads</a>' + detail;
+  return '<div class="toolbar">' + seg + '</div><div class="leads"><section class="card lead-list" aria-label="Leads">' + list + '</section><div class="lead-detail-wrap">' + detail + '</div></div>';
+};
+var slugify = function (s) { return (s || 'new-madrasah').toLowerCase().normalize('NFKD').replace(/[^\w\s-]/g, '').trim().split(/\s+/).slice(0, 2).join('-').replace(/_/g, '-') || 'new-madrasah'; };
+var leadDetail = function (l) {
+  var rows = [['Type', l.kind], ['School', l.school || '—'], ['Name', l.name], ['Role', l.role], ['Email', l.email], ['Phone', l.phone ? '+' + l.phone : ''], ['Students', l.students ? n(l.students) : ''], ['Kind of school', l.type], ['Topic', l.topic], ['Received', l.when]].filter(function (r) { return r[1]; });
+  return '<section class="card lead-detail" aria-labelledby="h-lead"><div class="card-h"><h2 id="h-lead" style="overflow-wrap:anywhere">' + esc(l.school || l.name) + '</h2>' +
+    '<label class="vh" for="lead-status">Status</label><select class="select" id="lead-status" data-id="' + esc(l.id) + '" style="width:auto;min-width:160px">' + ['New', 'Contacted', 'Set up', 'Not interested'].map(function (s) { return '<option' + (l.status === s ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select></div>' +
+    '<dl>' + rows.map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('') + '</dl>' +
+    (l.message ? '<div class="msg">' + esc(l.message) + '</div>' : '') +
+    '<div class="btn-row"><a class="btn primary" href="mailto:' + esc(l.email) + '?subject=' + encodeURIComponent('Madressa System') + '">' + ic('mail') + 'Reply by email</a>' +
+    (l.phone ? '<a class="btn" href="https://wa.me/' + esc(l.phone) + '" target="_blank" rel="noopener">' + ic('wa') + 'WhatsApp</a>' : '<button class="btn" disabled title="No phone number given">' + ic('wa') + 'WhatsApp</button>') +
+    '<button class="btn" data-act="setup" data-id="' + esc(l.id) + '">Set up as a madrasah</button></div>' +
+    '<label class="field"><span>Notes</span><textarea class="textarea" id="lead-notes" data-id="' + esc(l.id) + '" placeholder="For example, called on Tuesday, wants a demo…">' + esc(l.notes) + '</textarea></label></section>';
+};
+
+var vServer = function () {
+  var S = D.server, M = D.madrasahs;
+  var days = ['Tue', '', 'Wed', '', 'Thu', '', 'Fri', '', 'Sat', '', 'Sun', '', 'Mon', 'Now'];
+  var metric = function (k, title, now, text, series, ref) { return '<section class="card c4" aria-labelledby="h-' + k + '"><div class="card-h"><h2 id="h-' + k + '">' + title + '</h2><span class="' + (ref && now >= ref ? 'status bad' : 'status') + '">' + now + '% now</span></div><p class="note">' + esc(text) + '</p>' + chart('s-' + k, series, { h: 140, axis: true, max: 100, ref: ref, unit: '%', labels: days.map(function (d, i) { return d || ('Day ' + (i + 1)); }), aria: title + ' over 7 days: ' + series.join(', ') + ' percent' }) + '</section>'; };
+  var cont = '<table class="t"><thead><tr><th scope="col">Container</th><th scope="col">State</th><th scope="col">Up for</th><th scope="col" class="r">Memory</th></tr></thead><tbody>' + S.containers.map(function (c) { return '<tr style="cursor:default"><td><code>' + esc(c[0]) + '</code></td><td><span class="status ' + (c[1] === 'Running' ? '' : 'bad') + '">' + esc(c[1]) + '</span></td><td>' + esc(c[2]) + '</td><td class="r">' + esc(c[3]) + '</td></tr>'; }).join('') + '</tbody></table>';
+  var bk = M.length ? '<table class="t"><thead><tr><th scope="col">Madrasah</th><th scope="col">Last night</th><th scope="col">Newest</th><th scope="col" class="r">Size</th></tr></thead><tbody>' + M.map(function (m) { return '<tr data-href="#madrasah-' + esc(m.slug) + '"><td><a class="name" href="#madrasah-' + esc(m.slug) + '">' + esc(m.name) + '</a></td><td>' + (m.backupOk ? '<span class="status">Ran</span>' : '<span class="status bad">Didn’t run</span>') + '</td><td>' + esc(m.backupWhen) + ' <span class="addr">' + n(m.backupAgeH) + ' hours old</span></td><td class="r">' + esc(m.backupSize) + '</td></tr>'; }).join('') + '</tbody></table>' : '<div class="empty">No madrasahs to back up yet.</div>';
+  return '<div class="grid">' + metric('disk', 'Disk', S.disk, S.diskText + ' used', S.diskSeries, 85) + metric('mem', 'Memory', S.mem, S.memText + ' used', S.memSeries, 90) + metric('cpu', 'CPU', S.cpu, 'Average across cores', S.cpuSeries, 0) + '</div>' +
+    '<div class="grid"><section class="card c6" aria-labelledby="h-cont"><div class="card-h"><h2 id="h-cont">Containers</h2><p class="note">' + n(S.containers.length) + ' total</p></div><div class="table-wrap">' + cont + '</div></section>' +
+    '<section class="card c6" aria-labelledby="h-bk"><div class="card-h"><h2 id="h-bk">Backups</h2><p class="note">Nightly at 02:00</p></div><div class="table-wrap">' + bk + '</div><p class="note">Off-server copies: not set up yet.</p></section></div>' +
+    '<section class="card" aria-labelledby="h-ver"><div class="card-h"><h2 id="h-ver">Version</h2></div><div class="kv"><div><small>Deployed</small><strong>' + esc(S.version) + '</strong></div><div><small>When</small><strong>' + esc(S.deployed) + '</strong></div><div><small>Madrasahs on it</small><strong>' + n(M.filter(function (m) { return m.version === S.version; }).length) + ' of ' + n(M.length) + '</strong></div></div></section>';
+};
+
+var vAlerts = function () {
+  var A = D.alerts;
+  var on = JSON.parse(store.get('alertsOn', 'null') || 'null') || { down: 1, back: 1, backup: 1, server: 1, signup: 1, contact: 1 };
+  var push = store.get('push', '0') === '1';
+  var types = [['down', 'A madrasah stops responding', 'After 2 checks in a row, about 10 minutes'], ['back', 'It comes back', ''], ['backup', 'A backup fails or is over 26 hours old', ''], ['server', 'Disk over 85% or memory over 90%', ''], ['signup', 'New early-access sign-up', ''], ['contact', 'New contact message', '']];
+  var hist = A.length ? '<div class="table-wrap"><table class="t"><thead><tr><th scope="col">Alert</th><th scope="col">About</th><th scope="col">Sent</th><th scope="col">Cleared</th><th scope="col">Sent by</th></tr></thead><tbody>' + A.slice(0, 50).map(function (a) { return '<tr style="cursor:default"><td>' + esc(a.what) + '</td><td style="overflow-wrap:anywhere;max-width:240px">' + esc(a.who) + '</td><td>' + esc(a.sent) + '</td><td>' + (a.cleared ? esc(a.cleared) : '<span class="status warn">Still open</span>') + '</td><td>' + esc(a.ch) + '</td></tr>'; }).join('') + '</tbody></table></div>' + (A.length > 50 ? '<p class="note">Showing the newest 50 of ' + n(A.length) + '.</p>' : '')
+    : '<div class="empty"><b>No alerts yet</b>When something goes wrong or a lead arrives, it’s listed here with when it cleared.</div>';
+  return '<div class="grid"><section class="card c8" aria-labelledby="h-hist"><div class="card-h"><h2 id="h-hist">History</h2><p class="note">One alert per problem until it clears</p></div>' + hist + '</section>' +
+    '<section class="card c4" aria-labelledby="h-set"><div class="card-h"><h2 id="h-set">Settings</h2></div>' +
+      '<div class="opt"><span><b>Push on this device</b><small>' + (push ? 'On for this browser' : 'Off for this browser') + '</small></span><button class="btn sm' + (push ? '' : ' primary') + '" data-act="push">' + (push ? 'Turn off' : 'Turn on') + '</button></div>' +
+      '<fieldset style="border:0;margin:0;padding:0"><legend class="note" style="margin:8px 0 2px">Send me alerts when</legend>' + types.map(function (t) { return '<label class="opt"><span>' + t[1] + (t[2] ? '<small>' + t[2] + '</small>' : '') + '</span><input class="switch" type="checkbox" role="switch" data-alert="' + t[0] + '"' + (on[t[0]] ? ' checked' : '') + '></label>'; }).join('') + '</fieldset>' +
+      '<label class="field"><span>Alert email</span><input class="input" type="email" id="alert-email" autocomplete="email" autocapitalize="none" spellcheck="false" value="' + esc(store.get('alertEmail', '')) + '" placeholder="you@example.org"></label>' +
+      '<p class="note" style="color:var(--amber-text)">Email isn’t connected to a sending service yet, so alerts only reach you by push for now.</p></section></div>';
+};
+
+var vAccount = function () {
+  return '<div class="grid"><section class="card c6" aria-labelledby="h-pw"><div class="card-h"><h2 id="h-pw">Change password</h2></div>' +
+    '<label class="field"><span>Current password</span><input class="input" type="password" id="pw-cur" autocomplete="current-password"></label>' +
+    '<label class="field"><span>New password <span class="hint">at least 12 characters</span></span><input class="input" type="password" id="pw-new" autocomplete="new-password" minlength="12"></label>' +
+    '<label class="field"><span>Repeat new password</span><input class="input" type="password" id="pw-rep" autocomplete="new-password"></label>' +
+    '<p class="err" id="pw-err" aria-live="polite"></p><button class="btn primary" data-act="pw" style="align-self:flex-start">Change password</button></section>' +
+    '<section class="card c6" aria-labelledby="h-sec"><div class="card-h"><h2 id="h-sec">Security</h2></div><div class="actions">' +
+      '<div class="action"><div><b>Reset the authenticator</b><small>You’ll set up a new 6-digit code on your phone.</small></div><button class="btn" data-act="totp">Reset</button></div>' +
+      '<div class="action"><div><b>Sign out everywhere</b><small>Every other device has to sign in again.</small></div><button class="btn danger" data-act="signout">Sign out</button></div></div>' +
+      '<h3 style="margin:8px 0 0;font-size:14px">Where you’re signed in</h3><ul class="list">' + D.sessions.map(function (s) { return '<li class="opt"><span><b>' + esc(s[0]) + '</b><small>' + esc(s[1]) + '</small></span><span class="note">' + esc(s[2]) + '</span></li>'; }).join('') + '</ul></section>' +
+    '<section class="card c12" aria-labelledby="h-more"><div class="card-h"><h2 id="h-more">Server</h2><a href="#server">Open server page</a></div><p class="note">Disk ' + D.server.disk + '% · memory ' + D.server.mem + '% · version ' + esc(D.server.version) + '. Server and Account are in this menu on a phone.</p></section></div>';
+};
+
+var vSignin = function (step) {
+  return '<div class="signin"><div class="signin-card"><div class="brand" style="padding:0"><span class="brand-mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B1F1E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10 12 4l9 6"/><path d="M5 10v9h14v-9"/></svg></span><span class="brand-name" translate="no">Madressa</span><span class="owner-pill">Owner</span></div>' +
+    (step === 2
+      ? '<h1>Enter your code</h1><p class="note">Open your authenticator app and type the 6-digit code for Madressa Owner.</p><label class="field"><span>6-digit code</span><input class="input otp" id="otp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" enterkeyhint="go"></label><p class="err" id="si-err" aria-live="polite"></p><button class="btn primary" data-act="otp">Sign in</button><a href="#signin">Back</a>'
+      : '<h1>Owner sign-in</h1><p class="note">Only the owner account can sign in here. There is no sign-up.</p><label class="field"><span>Email</span><input class="input" id="si-email" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" enterkeyhint="next"></label><label class="field"><span>Password</span><input class="input" id="si-pw" type="password" autocomplete="current-password" enterkeyhint="go"></label><p class="err" id="si-err" aria-live="polite"></p><button class="btn primary" data-act="si">Continue</button>') +
+    '<p class="note">Prototype: any values work. <a href="#overview">Skip to the dashboard</a></p></div></div>';
+};
+
+/* ---------- router ---------- */
+var firstView = true;
+var route = function () {
+  var h = (location.hash || '#overview').slice(1);
+  var app = document.getElementById('app');
+  if (h === 'signin' || h === 'signin-code') { app.innerHTML = vSignin(h === 'signin-code' ? 2 : 1); var f = app.querySelector('input'); if (f && !firstView) f.focus(); firstView = false; return; }
+  var title, crumb = '', body;
+  if (h.indexOf('madrasah-') === 0) {
+    var m = D.madrasahs.filter(function (x) { return 'madrasah-' + x.slug === h; })[0];
+    body = m ? vMadrasah(m.slug) : null;
+    title = m ? m.name : 'Madrasah not found'; crumb = '<a href="#madrasahs">Madrasahs</a>' + (m ? ' · ' + esc(hostOf(m)) : '');
+    if (!body) body = '<div class="card"><div class="empty"><b>Not found</b>It may have been removed. <a href="#madrasahs">Back to madrasahs</a></div></div>';
+  } else if (h.indexOf('lead-') === 0) { title = 'Leads'; body = vLeads(h.slice(5)); }
+  else if (h === 'madrasahs') { title = 'Madrasahs'; body = vMadrasahs(); }
+  else if (h === 'leads') { title = 'Leads'; body = vLeads(); }
+  else if (h === 'server') { title = 'Server'; body = vServer(); }
+  else if (h === 'alerts') { title = 'Alerts'; body = vAlerts(); }
+  else if (h === 'account') { title = 'Account'; body = vAccount(); }
+  else { h = 'overview'; title = 'Overview'; body = vOverview(); }
+  app.innerHTML = shell(h, title, crumb, body);
+  firstView = false;
+  drawCharts();
+  window.scrollTo(0, 0);
+};
+window.addEventListener('hashchange', route);
+
+/* ---------- sheet + toast ---------- */
+var layer = document.getElementById('layer'), lastFocus = null;
+var sheet = function (title, html, confirmLabel, onConfirm, danger) {
+  lastFocus = document.activeElement;
+  layer.innerHTML = '<div class="scrim" data-close><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t"><h2 id="sh-t">' + esc(title) + '</h2>' + html + '<div class="btn-row"><button class="btn" data-close>Cancel</button>' + (confirmLabel ? '<button class="btn ' + (danger ? 'danger' : 'primary') + '" data-ok>' + esc(confirmLabel) + '</button>' : '') + '</div></div></div>';
+  var s = layer.querySelector('.sheet'); (s.querySelector('[data-ok]') || s.querySelector('[data-close]')).focus();
+  layer.onclick = function (e) {
+    if (e.target.classList.contains('scrim') || e.target.closest('.btn[data-close]')) close();
+    else if (e.target.closest('[data-ok]')) { var r = onConfirm && onConfirm(s); if (r !== false) close(); }
+    else if (e.target.closest('[data-copy]')) copy(e.target.closest('[data-copy]'));
+  };
+};
+var close = function () { layer.innerHTML = ''; layer.onclick = null; if (lastFocus && document.contains(lastFocus)) lastFocus.focus(); };
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape' && layer.innerHTML) close();
+  if (e.key === 'Tab' && layer.innerHTML) { var f = layer.querySelectorAll('button, [href], input, select, textarea'); if (!f.length) return; var a = f[0], z = f[f.length - 1]; if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); } else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); } }
+});
+var toastT;
+var toast = function (msg) {
+  var old = document.querySelector('.toast'); if (old) old.remove();
+  var t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = msg; document.body.appendChild(t);
+  clearTimeout(toastT); toastT = setTimeout(function () { t.classList.add('out'); setTimeout(function () { t.remove(); }, 180); }, 3600);
+};
+var copy = function (btn) {
+  var text = btn.getAttribute('data-copy');
+  var done = function () { var o = btn.textContent; btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = o; }, 1500); };
+  try { navigator.clipboard.writeText(text).then(done, function () { selectText(btn); }); } catch (e) { selectText(btn); }
+};
+var selectText = function (btn) { var c = btn.parentElement.querySelector('code'); if (!c) return; var r = document.createRange(); r.selectNodeContents(c); var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); toast('Press Ctrl+C or Cmd+C to copy'); };
+
+/* ---------- events ---------- */
+document.addEventListener('click', function (e) {
+  var row = e.target.closest('tr[data-href]'); if (row && !e.target.closest('a,button')) { location.hash = row.getAttribute('data-href'); return; }
+  var s = e.target.closest('[data-sort]'); if (s) { sortMode = s.getAttribute('data-sort'); route(); return; }
+  var lf = e.target.closest('[data-lf]'); if (lf) { leadFilter = lf.getAttribute('data-lf'); route(); return; }
+  var b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+  var act = b.getAttribute('data-act'), m = D.madrasahs.filter(function (x) { return x.slug === b.getAttribute('data-slug'); })[0];
+  if (act === 'refresh') { toast('Checking every madrasah now…'); return; }
+  if (act === 'restart') sheet('Restart ' + m.name + '?', '<p>It will be unavailable for about 30 seconds. The server picks this up within a minute. It’s recorded in the audit log.</p>', 'Restart', function () { toast('Restart queued for ' + m.name + '.'); });
+  if (act === 'backup') sheet('Back up ' + m.name + ' now?', '<p>A backup starts within a minute. You’ll see it on the Server page when it’s done. It’s recorded in the audit log.</p>', 'Back up now', function () { toast('Backup queued for ' + m.name + '.'); });
+  if (act === 'link') sheet('Set-password link for…', '<label class="field"><span>Admin</span><select class="select" id="link-admin">' + m.admins.map(function (a, i) { return '<option value="' + i + '">' + esc(a.name) + ' · ' + esc(a.email) + '</option>'; }).join('') + '</select></label><p class="note">The link is made by ' + esc(m.name) + ' itself and logged in its audit log and yours. Send it to the admin privately.</p>', 'Make link', function (sh) {
+    var a = m.admins[Number(sh.querySelector('#link-admin').value)];
+    var link = 'https://' + hostOf(m) + '/set-password/3f9c2a7e81d4b6c0';
+    sh.innerHTML = '<h2 id="sh-t">Link for ' + esc(a.name) + '</h2><p class="note">Copy it and send it to them privately, for example on WhatsApp.</p><div class="cmd"><code>' + esc(link) + '</code><button class="btn sm" data-copy="' + esc(link) + '">' + ic('copy') + 'Copy</button></div><div class="btn-row"><button class="btn primary" data-close>Done</button></div>';
+    sh.querySelector('[data-copy]').focus();
+    return false;
+  });
+  if (act === 'setup') { var l = D.leads.filter(function (x) { return x.id === b.getAttribute('data-id'); })[0]; var cmd = './madrasah add ' + slugify(l.school || l.name); sheet('Set up ' + (l.school || l.name), '<p>Run this on the server. Nothing is created from the website.</p><div class="cmd"><code>' + esc(cmd) + '</code><button class="btn sm" data-copy="' + esc(cmd) + '">' + ic('copy') + 'Copy</button></div><p class="note">When it’s running, set this lead to “Set up”.</p>', null); }
+  if (act === 'push') { var on = store.get('push', '0') === '1'; store.set('push', on ? '0' : '1'); route(); toast(on ? 'Push turned off for this browser.' : 'Push turned on for this browser.'); }
+  if (act === 'totp') sheet('Reset the authenticator?', '<p>Your current 6-digit codes stop working. You’ll get a new key to add to your authenticator app straight away.</p>', 'Reset', function () { toast('New authenticator key ready.'); }, true);
+  if (act === 'signout') sheet('Sign out everywhere?', '<p>Every device, including this one, has to sign in again with your password and code.</p>', 'Sign out everywhere', function () { location.hash = '#signin'; }, true);
+  if (act === 'pw') { var cur = document.getElementById('pw-cur').value, nw = document.getElementById('pw-new').value, rp = document.getElementById('pw-rep').value, err = document.getElementById('pw-err');
+    err.textContent = !cur ? 'Enter your current password.' : nw.length < 12 ? 'Use at least 12 characters for the new password.' : nw !== rp ? 'The two new passwords don’t match.' : '';
+    if (!err.textContent) { toast('Password changed. Other devices are signed out.'); ['pw-cur', 'pw-new', 'pw-rep'].forEach(function (id) { document.getElementById(id).value = ''; }); } }
+  if (act === 'si') { var em = document.getElementById('si-email').value, pw = document.getElementById('si-pw').value, se = document.getElementById('si-err'); se.textContent = !em || !pw ? 'Enter your email and password.' : ''; if (!se.textContent) location.hash = '#signin-code'; }
+  if (act === 'otp') { var c = document.getElementById('otp').value.trim(), oe = document.getElementById('si-err'); oe.textContent = /^\d{6}$/.test(c) ? '' : 'Enter the 6 digits from your authenticator app.'; if (!oe.textContent) location.hash = '#overview'; }
+});
+document.addEventListener('change', function (e) {
+  var t = e.target;
+  if (t.id === 'data-mode') { store.set('data', t.value); location.reload(); }
+  if (t.id === 'lead-status') { var l = D.leads.filter(function (x) { return x.id === t.dataset.id; })[0]; l.status = t.value; leadState[l.id] = { status: l.status, notes: l.notes }; store.set('leads', JSON.stringify(leadState)); route(); toast('Status set to ' + t.value + '.'); }
+  if (t.dataset.alert) { var on = JSON.parse(store.get('alertsOn', 'null') || 'null') || { down: 1, back: 1, backup: 1, server: 1, signup: 1, contact: 1 }; on[t.dataset.alert] = t.checked ? 1 : 0; store.set('alertsOn', JSON.stringify(on)); }
+  if (t.id === 'alert-email') store.set('alertEmail', t.value);
+});
+document.addEventListener('input', function (e) {
+  var t = e.target;
+  if (t.id === 'notes') { store.set('notes.' + t.dataset.slug, t.value); var st = document.getElementById('notes-state'); if (st) st.textContent = 'Saved on this device'; }
+  if (t.id === 'lead-notes') { var l = D.leads.filter(function (x) { return x.id === t.dataset.id; })[0]; l.notes = t.value; leadState[l.id] = { status: l.status, notes: l.notes }; store.set('leads', JSON.stringify(leadState)); }
+  if (t.id === 'otp') t.value = t.value.replace(/\D/g, '').slice(0, 6);
+});
+document.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.target.id === 'si-pw' || e.target.id === 'otp')) { e.preventDefault(); document.querySelector('[data-act="' + (e.target.id === 'otp' ? 'otp' : 'si') + '"]').click(); } });
+
+route();
+})();
+</script>
