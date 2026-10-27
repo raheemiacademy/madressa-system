@@ -1334,3 +1334,15 @@ export const onboarding = pgTable('onboarding', {
   updatedAt: tz('updated_at').notNull().defaultNow()
 }, (t) => [check('onboarding_one', sql`${t.id} = 1`)]);
 
+
+// Marketing homepage: early-access sign-ups from the public form. No IP is kept (it's only used for the rate limit).
+export const earlyAccessSignup = pgTable('early_access_signup', {
+  id: serial('id').primaryKey(),
+  school: text('school').notNull(),
+  name: text('name').notNull(),
+  role: text('role').notNull(),
+  email: text('email').notNull(),
+  students: integer('students'),
+  type: text('type').notNull(),
+  createdAt: createdAt()
+}, (t) => [index('early_access_signup_created_idx').on(t.createdAt)]);

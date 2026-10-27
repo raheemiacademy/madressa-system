@@ -783,3 +783,11 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
   - **Limits:**
     - iPhones only allow notifications for apps added to the home screen (iOS 16.4+); the More page explains how.
     - On the free Render preview the server sleeps when idle, so notifications go out once it's awake.
+- **Marketing homepage and early access (your brief, 27/10/2026).** A port of `design-reference/website/index.html`; the other website pages aren't built.
+  - **Where it shows:** only on the copy that serves the main domain, which sets `MARKETING_SITE=1` (approved). Every madrasah's own copy keeps `/` going to `/admin` and has no `/api/early-access`. Sign-in cookies are scoped to `/admin`, `/teacher` and `/parent`, so `/` can't see who is signed in; nothing in auth changed.
+  - **Styles:** `src/styles/marketing.css`, every rule under `.ms`; the reference's colours are `.ms` tokens in `tokens.css`, values unchanged. Light only, as designed.
+  - **Font:** the reference's Fraunces has the optical-size axis and the app's doesn't, and both would share the name "Fraunces". So the homepage loads the reference's own file (Fraunces 400, opsz, latin, 35 KB, SIL OFL) with `next/font/local` under its own name (approved). Inter comes from the app as before.
+  - **Entrances:** content is visible at rest. Elements already on screen at load never animate; the rest play in just before they scroll into view, so nothing depends on an observer firing.
+  - **Sign-ups:** `early_access_signup` (migration 0014, approved), no IP stored. 5 per IP per hour through the existing `rate_limit`. Each one queues an email to `EARLY_ACCESS_NOTIFY_EMAIL`; nothing is sent while `EMAIL_DRIVER=log`.
+  - **Avatar contrast (your choice):** in the teacher sign-in mock-up, BK and MA use the darker indigo (`--action`, 5.6:1 with white) and HR has ink text on blue (7:1), instead of the reference's 3.7:1 and 2.2:1.
+  - **Offer box contrast (your choice):** its white tint is 10% instead of the reference's 12%, so the text passes 4.5:1 (about 4.6:1, was 4.36:1).

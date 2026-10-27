@@ -10,6 +10,15 @@ async function axe(page: Page) {
   expect(r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([]);
 }
 
+test('on a madrasah copy (no MARKETING_SITE) / still goes to the admin app, and there is no early-access endpoint', async ({ page, request }) => {
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/admin\/login$/);
+  await signIn(page);
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/admin$/);
+  expect((await request.post('/api/early-access', { data: { school: 'x' } })).status()).toBe(404);
+});
+
 test('wrong password shows one generic message; right password reaches the dashboard', async ({ page }) => {
   await page.goto('/admin/settings');
   await expect(page).toHaveURL(/\/admin\/login\?next=%2Fadmin%2Fsettings/);
