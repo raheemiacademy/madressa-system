@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { formatPence } from '@/lib/money';
 
 export type Row = {
-  name: string; host: string; version: string | null; status: 'up' | 'down' | 'missed' | 'waiting'; attention: string | null;
+  name: string; host: string; version: string | null; status: 'up' | 'down' | 'missed' | 'waiting' | 'paused'; attention: string | null;
   students: number | null; teachers: number | null; parents: number | null; parentsWithLogin: number | null;
   lastActive: string; quietDays: number; backup: string; backupOk: boolean; score: number;
   fees: { collected: number; invoiced: number } | null; // this month, pence
@@ -16,6 +16,7 @@ const SORTS = [['attention', 'Needs attention'], ['least', 'Least active'], ['bi
 
 function Status({ r }: { r: Row }) {
   if (r.status === 'down') return <span className="status bad">Down</span>;
+  if (r.status === 'paused') return <span className="status off">Paused</span>;
   if (r.status === 'waiting') return <span className="status off">Not checked yet</span>;
   if (r.attention) return <span className="status warn">Needs a look</span>;
   return <span className="status">Running</span>;

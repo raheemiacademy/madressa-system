@@ -27,22 +27,23 @@ const meterCls = (v: number, warn: number, bad: number) => `meter${v >= bad ? ' 
 function Strip({ s }: { s: OwnerState }) {
   const M = s.madrasahs, down = M.filter((m) => m.status === 'down'), flagged = M.filter((m) => m.attention);
   if (!s.health) return <Link className="strip warn" href="/owner/server"><span className="dot" /><span className="strip-text"><b>{s.healthProblem}.</b> The madrasahs can’t be checked until it’s back.</span><span className="go">Open</span></Link>;
-  if (!M.length) return <Link className="strip ok" href="/owner/server"><span className="dot" /><span className="strip-text"><b>No madrasahs yet.</b> Add the first one on the server with <code>./madrasah add &lt;name&gt;</code>.</span></Link>;
+  if (!M.length) return <Link className="strip ok" href="/owner/madrasahs"><span className="dot" /><span className="strip-text"><b>No madrasahs yet.</b> Add the first one on the Madrasahs page.</span><span className="go">Open</span></Link>;
   if (down.length) return <Link className="strip bad" href={`/owner/madrasahs/${encodeURIComponent(down[0]!.name)}`}><span className="dot" /><span className="strip-text"><b>{num(down.length)} {plural(down.length, 'madrasah is', 'madrasahs are')} down.</b> {down[0]!.name}: {down[0]!.attention!.text}</span><span className="go">Open</span></Link>;
   if (!s.lastCheckAt) return <div className="strip ok"><span className="dot" /><span className="strip-text"><b>Waiting for the first check.</b> Every madrasah is asked every 5 minutes.</span></div>;
-  if (flagged.length) return <Link className="strip warn" href="/owner/madrasahs"><span className="dot" /><span className="strip-text"><b>All {num(M.length)} {plural(M.length, 'madrasah', 'madrasahs')} running.</b> {num(flagged.length)} {plural(flagged.length, 'needs', 'need')} attention.</span><span className="go">Review</span></Link>;
-  return <div className="strip ok"><span className="dot" /><span className="strip-text"><b>All {num(M.length)} {plural(M.length, 'madrasah', 'madrasahs')} running.</b> Nothing needs you.</span></div>;
+  const live = M.filter((m) => m.status !== 'paused').length, paused = M.length - live ? ` ${num(M.length - live)} paused.` : '';
+  if (flagged.length) return <Link className="strip warn" href="/owner/madrasahs"><span className="dot" /><span className="strip-text"><b>All {num(live)} {plural(live, 'madrasah', 'madrasahs')} running.</b>{paused} {num(flagged.length)} {plural(flagged.length, 'needs', 'need')} attention.</span><span className="go">Review</span></Link>;
+  return <div className="strip ok"><span className="dot" /><span className="strip-text"><b>All {num(live)} {plural(live, 'madrasah', 'madrasahs')} running.</b>{paused} Nothing needs you.</span></div>;
 }
 
 export default async function OverviewPage() {
   await requireOwner();
   const s = await getOwnerState();
-  const M = s.madrasahs, up = M.filter((m) => m.status === 'up').length;
+  const M = s.madrasahs, up = M.filter((m) => m.status === 'up').length, live = M.filter((m) => m.status !== 'paused').length;
   const failed = M.filter((m) => !m.backup?.lastNightRan);
   const w = weeklyTotals(M), labels = w.starts.map((d) => `Week of ${weekLabel(d)}`);
   const tiles = [
-    <Link key="up" className="tile" href="/owner/madrasahs"><span className="label">Madrasahs up</span><span className="big">{num(up)} <small>of {num(M.length)}</small></span>
-      <span className="sub">{M.length ? (up === M.length ? 'All responding' : `${num(M.length - up)} not responding`) : 'None added yet'}</span></Link>,
+    <Link key="up" className="tile" href="/owner/madrasahs"><span className="label">Madrasahs up</span><span className="big">{num(up)} <small>of {num(live)}</small></span>
+      <span className="sub">{M.length ? `${up === live ? 'All responding' : `${num(live - up)} not responding`}${live < M.length ? ` · ${num(M.length - live)} paused` : ''}` : 'None added yet'}</span></Link>,
     <Link key="leads" className="tile" href="/owner/leads"><span className="label">New leads</span><span className="big">{num(s.newLeads)}</span><span className="sub">{s.newLeads ? 'Waiting for a reply' : 'All replied to'}</span></Link>,
     <Link key="bk" className="tile" href="/owner/server"><span className="label">Last night’s backups</span>
       <span className="big">{M.length ? (failed.length ? <>{num(M.length - failed.length)} <small>of {num(M.length)} OK</small></> : 'All OK') : '—'}</span>

@@ -9,6 +9,8 @@
 #   ./madrasah messages [name]                      contact-form messages from the main site, newest first
 #   ./madrasah owner <email>                        the owner dashboard's account (made, or reset if the phone is lost): prints a setup link
 #   ./madrasah backup [name]                        database dumps of every madrasah (or one) into ./backups (nightly from cron)
+#   ./madrasah suspend <name> | resume <name>       pause a madrasah (stopped, visitors see a "paused" page) or bring it back
+#   ./madrasah remove <name> [--yes]                final backup and keys into ./removed/<name>-<date>, then delete it for good
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")"
 IMAGE=madrasah-app:latest
@@ -29,6 +31,14 @@ start() { # (re)creates one madrasah's app container from the current image
     --env-file "tenants/$n.env" -v "ma-$n-files:/data" "${extra[@]}" --memory 900m --memory-swap 1400m "$IMAGE" >/dev/null
   echo "started ma-$n"
 }
+domain() { sed -n 's|^APP_URL=https://||p' "tenants/$1.env"; }
+site() { printf '%s {\n\tencode zstd gzip\n\treverse_proxy ma-%s:3000\n}\n' "$(domain "$1")" "$1" > "sites/$1.caddy"; }
+caddy_reload() { docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile; }
+madrasah_only() { # a madrasah that exists, never the main site
+  [[ -e tenants/${1:-}.env ]] || die "no such madrasah"
+  ! grep -q '^MARKETING_SITE=1' "tenants/$1.env" || die "that's the main site"
+}
+files_tgz() { docker run --rm -v "ma-$1-files:/data:ro" --entrypoint tar "$IMAGE" czf - -C /data .; } # works while it's stopped too
 
 # The owner dashboard (main site) asks each madrasah copy for its counts over the private network with this one token.
 owner_token() {
@@ -82,9 +92,9 @@ SQL
         echo "SETUP_CODE=$(hex 6)"
       fi
     } > "tenants/$n.env"
-    printf '%s {\n\tencode zstd gzip\n\treverse_proxy ma-%s:3000\n}\n' "$domain" "$n" > "sites/$n.caddy"
+    site "$n"
     start "$n"
-    docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile
+    caddy_reload
     echo "$n will be at https://$domain once it has started (about a minute)."
     if [[ $demo == --demo ]]; then
       for _ in $(seq 60); do docker logs "ma-$n" 2>&1 | grep -q 'Ready in' && break; sleep 3; done
@@ -95,7 +105,7 @@ SQL
     [[ -d src ]] || die "no ./src: run ship.sh from your computer"
     docker build -t "$IMAGE" src
     owner_setup
-    for n in $(tenants); do start "$n"; done
+    for n in $(tenants); do [[ -e tenants/$n.paused ]] || start "$n"; done # a paused one gets the new version when it's resumed
     docker image prune -f >/dev/null
     ;;
   password)
@@ -122,7 +132,43 @@ SQL
     echo "Every device signed in to the owner dashboard is signed out. Open this link within 24 hours to choose a password and add your authenticator:"
     docker exec ma-main npx tsx scripts/owner-setup.ts "$2"
     ;;
-  restart) [[ -e tenants/${2:-}.env ]] || die "no such madrasah"; start "$2" ;;
+  restart) [[ -e tenants/${2:-}.env ]] || die "no such madrasah"; [[ ! -e tenants/$2.paused ]] || die "$2 is paused: resume it instead"; start "$2" ;;
+  suspend)
+    n=${2:-}; madrasah_only "$n"
+    touch "tenants/$n.paused"
+    docker stop "ma-$n" >/dev/null 2>&1 || true
+    printf '%s {\n\theader Content-Type "text/html; charset=utf-8"\n\theader Cache-Control no-store\n\trespond `<!doctype html><html lang="en-GB"><meta name="viewport" content="width=device-width"><title>Paused</title><body style="font:18px/1.5 system-ui,sans-serif;max-width:32rem;margin:15vh auto;padding:0 16px;color:#1a1f3d"><h1 style="font-size:1.5rem">This madrasah’s system is paused</h1><p>Please contact the madrasah directly for now.</p></body></html>` 503\n}\n' "$(domain "$n")" > "sites/$n.caddy"
+    caddy_reload
+    echo "Paused $n. Its data stays as it is; ./madrasah resume $n brings it back."
+    ;;
+  resume)
+    n=${2:-}; madrasah_only "$n"
+    rm -f "tenants/$n.paused"
+    site "$n"; start "$n"; caddy_reload
+    echo "Resumed $n."
+    ;;
+  remove)
+    n=${2:-}; madrasah_only "$n"
+    if [[ ${3:-} != --yes ]]; then read -rp "Type $n to remove it for good: " typed; [[ $typed == "$n" ]] || die "Not removed."; fi
+    umask 077
+    keep="removed/$n-$(date +%F-%H%M%S)"; db="ma_${n//-/_}"
+    mkdir -p "$keep"
+    # The final backup comes first: if any of it fails, set -e stops here and nothing is deleted.
+    docker compose exec -T postgres pg_dump -U postgres -Fc "$db" > "$keep/database.dump"
+    files_tgz "$n" > "$keep/files.tgz"
+    cp "tenants/$n.env" "$keep/"; [[ ! -e tenants/$n.passwords ]] || cp "tenants/$n.passwords" "$keep/"
+    [[ -s $keep/database.dump && -s $keep/files.tgz ]] || die "The final backup is empty, so nothing was removed. It's in $keep."
+    docker rm -f "ma-$n" >/dev/null 2>&1 || true
+    rm -f "sites/$n.caddy"; caddy_reload
+    psql_su <<SQL
+drop database if exists $db;
+drop role if exists $db;
+SQL
+    docker volume rm "ma-$n-files" >/dev/null 2>&1 || true
+    [[ ! -d backups/$n ]] || mv "backups/$n" "$keep/backups"
+    rm -f "tenants/$n.env" "tenants/$n.passwords" "tenants/$n.paused"
+    echo "Removed $n. Its final backup and keys are in $PWD/$keep (kept until you delete them)."
+    ;;
   logs) docker logs --tail 200 -f "ma-${2:?name}" ;;
   list)
     for n in $(tenants); do
@@ -135,8 +181,8 @@ SQL
     for n in $names; do
       mkdir -p "backups/$n"
       docker compose exec -T postgres pg_dump -U postgres -Fc "ma_${n//-/_}" > "backups/$n/$(date +%F).dump"
-      docker exec "ma-$n" tar czf - -C /data . > "backups/$n/$(date +%F)-files.tgz"
+      files_tgz "$n" > "backups/$n/$(date +%F)-files.tgz"
       find "backups/$n" -type f -mtime +$KEEP_DAYS -delete
     done ;;
-  *) sed -n '2,9p' "$0"; exit 1 ;;
+  *) sed -n '2,13p' "$0"; exit 1 ;;
 esac

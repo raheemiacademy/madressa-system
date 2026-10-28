@@ -6,7 +6,11 @@ import { getOwnerState, requireOwner } from '@/server/next/owner';
 import type { StoredSummary } from '@/server/owner/checks';
 import { db } from '@/db';
 import { formatInstant } from '@/lib/dates';
+import { SUPPORT_ADMIN } from '@/lib/support';
+import { recentChanges } from '@/server/owner/manage';
 import { latestActions, madrasahNote } from '@/server/owner/safe-actions';
+import { changeLine } from '../change-line';
+import { ManageMadrasah } from '../Manage';
 import { Chart } from '../../../_ui/Chart';
 import { MadrasahNotes, SafeActions } from './SafeActions';
 import { Icon } from '../../../_ui/icons';
@@ -49,20 +53,26 @@ export default async function MadrasahPage({ params }: { params: Promise<{ name:
   const crumb = <><Link href="/owner/madrasahs">Madrasahs</Link>{m && ` · ${m.host}`}</>;
   if (!m) return <Page title="Madrasah not found" crumb={crumb}><NotYet title="Not found">It may have been removed. <Link href="/owner/madrasahs">Back to madrasahs</Link></NotYet></Page>;
 
-  const [actions, notes] = await Promise.all([latestActions(db, m.name), madrasahNote(db, m.name)]);
+  const [actions, notes, changes] = await Promise.all([latestActions(db, m.name), madrasahNote(db, m.name), recentChanges(db, s.now)]);
+  const change = changes.find((c) => c.madrasah === m.name && !c.finishedAt);
+  const pending = change ? `${change.madrasah} ${changeLine(change, formatInstant).text}` : null;
   const sm = m.summary, u = sm?.usage, weeks = sm?.weeks ?? [];
   const status = [
     ['Current', u?.byStatus.current], ['Waiting list', u?.byStatus.waiting], ['On hold', u?.byStatus.onHold], ['Left this year', u?.byStatus.leftThisYear]
   ] as const;
   const maxS = Math.max(1, ...status.map(([, v]) => v ?? 0));
   const reg = u?.registersThisWeek;
+  // Not set up yet: no admin besides Madressa's support account (or it hasn't answered yet, as when it's only just been added).
+  const needsSetup = m.status !== 'paused' && !(sm?.admins ?? []).some((a) => a.email.toLowerCase() !== SUPPORT_ADMIN.email.toLowerCase());
   return (
     <Page title={m.name} crumb={crumb}>
-      {m.status === 'down' ? <div className="strip bad"><span className="dot" /><span className="strip-text"><b>Not responding.</b> {m.attention!.text}</span></div>
+      {m.status === 'paused' ? <div className="strip warn"><span className="dot" /><span className="strip-text"><b>Paused.</b> Visitors see a page saying it’s paused. Nothing is deleted; resume it below.</span></div>
+        : needsSetup && sm ? <a className="strip warn" href="#h-manage"><span className="dot" /><span className="strip-text"><b>Not set up yet.</b> Send its first admin the setup code.</span><span className="go">Setup code</span></a>
+        : m.status === 'down' ? <div className="strip bad"><span className="dot" /><span className="strip-text"><b>Not responding.</b> {m.attention!.text}</span></div>
         : m.attention && <div className="strip warn"><span className="dot" /><span className="strip-text"><b>Needs a look.</b> {m.attention.text}</span></div>}
       <div className="grid">
         <section className="card c4" aria-labelledby="h-health">
-          <div className="card-h"><h2 id="h-health">Health</h2>{m.status === 'down' ? <span className="status bad">Down</span>
+          <div className="card-h"><h2 id="h-health">Health</h2>{m.status === 'paused' ? <span className="status off">Paused</span> : m.status === 'down' ? <span className="status bad">Down</span>
             : m.status === 'waiting' ? <span className="status off">Not checked yet</span>
             : <span className={`status${m.status === 'missed' ? ' warn' : ''}`}>{m.startedAt ? `Up ${duration(s.now.getTime() - m.startedAt.getTime())}` : 'Up'}</span>}</div>
           <div className="kv kv2">
@@ -107,7 +117,7 @@ export default async function MadrasahPage({ params }: { params: Promise<{ name:
         <section className="card c5" aria-labelledby="h-actions">
           <div className="card-h"><h2 id="h-actions">Safe actions</h2><p className="note">Each asks first and is logged</p></div>
           <SafeActions name={m.name} admins={(sm?.admins ?? []).map((a) => ({ name: a.name, email: a.email }))} lastBackup={m.backup ? whenShort(m.backup.at, s.now) : 'none yet'}
-            status={{ restart: actionStatus(actions.restart, s.now), backup: actionStatus(actions.backup, s.now) }} />
+            status={{ restart: actionStatus(actions.restart, s.now), backup: actionStatus(actions.backup, s.now) }} paused={m.status === 'paused'} />
         </section>
 
         <section className="card c7" aria-labelledby="h-staff">
@@ -130,6 +140,11 @@ export default async function MadrasahPage({ params }: { params: Promise<{ name:
         </section>
 
         <section className="card c5" aria-labelledby="h-notes"><MadrasahNotes name={m.name} initial={notes} /></section>
+
+        <section className="card c12" aria-labelledby="h-manage">
+          <div className="card-h"><h2 id="h-manage">Manage</h2><p className="note">Each asks first and is logged</p></div>
+          <ManageMadrasah name={m.name} paused={m.status === 'paused'} needsSetup={needsSetup} pending={pending} />
+        </section>
       </div>
     </Page>
   );

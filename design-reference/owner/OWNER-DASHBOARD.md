@@ -9,7 +9,7 @@ A private dashboard for you alone, to oversee every madrasah copy on the server.
 | Where | On the main site at **`/owner`**, e.g. https://213-32-71-244.sslip.io/owner (later yourdomain.com/owner) |
 | Sign-in | Your own login: password **plus a 6-digit code** from an authenticator app. Only one account exists, and nobody can sign up. |
 | What you can see | **Counts and staff contacts.** Numbers for each madrasah, plus its admins' names, emails and phones. **No children's or parents' names or details.** |
-| What you can do | **See everything, plus a few safe actions.** Creating and deleting madrasahs stays on the server. |
+| What you can do | **See everything, plus a few safe actions,** and (added 28/10/2026, your request) **add, pause, resume and remove madrasahs.** |
 | Sections | Health, Usage, Leads, Money |
 | Alerts | **Phone push**, **email**, and **new-lead alerts** |
 | Billing | Not now. It's in FUTURE.md (item 16), with a reminder for when early access ends. |
@@ -42,6 +42,7 @@ A private dashboard for you alone, to oversee every madrasah copy on the server.
   - last active, last backup;
   - this month's fees collected against invoiced.
 - Sort and filter by: needs attention, least active, or biggest.
+- **Add madrasah** (added 28/10/2026): a short name, a web address (yours, or `<name>.<main site's address>`), and real or demo. The address must already point at the server. The server sets it up within a minute or two; "Changes today" shows how each add, pause, resume and removal is getting on.
 
 ### 3. One madrasah (detail)
 - **Health:**
@@ -68,6 +69,10 @@ A private dashboard for you alone, to oversee every madrasah copy on the server.
 - **Safe actions:** each asks you to confirm and is recorded in an audit log.
   - **Copy a set-password link** for one of its admins (for a locked-out head teacher). The madrasah's own audit log records it as well.
   - **Restart** the copy.
+- **Manage** (added 28/10/2026), each asking first and recorded in the audit log:
+  - **Setup code** for its first admin, asked of the madrasah's own copy, only until that admin exists.
+  - **Pause / resume:** a paused copy is stopped and visitors see a "paused" page; nothing is deleted. It shows as Paused, isn't checked and raises no alerts.
+  - **Remove:** needs the madrasah's name typed and a fresh authenticator code. The server keeps a final backup of its database, files and keys in `/srv/madrasah/removed/` before deleting anything.
   - **Back up now.**
 - **Notes:** your own notes about the madrasah, such as "Imam prefers WhatsApp" or "go-live 01/12".
 
@@ -129,7 +134,9 @@ A private dashboard for you alone, to oversee every madrasah copy on the server.
 - **Checks:** the main site asks every 5 minutes and keeps the results, so trends and "last active" work.
 - **Server health:** a small script on the server writes disk, memory, containers and backup ages to a file every 5 minutes. The dashboard reads that file.
 - **Safe actions:**
-  - Restart and back up now go through a short request queue that the server script checks every minute. It does only those two things, for named madrasahs. The website never gets control of Docker.
+  - Restart and back up now go through a short request queue that the server script checks every minute. The website never gets control of Docker.
+  - Adding, pausing, resuming and removing use the same queue (`./madrasah add | suspend | resume | remove`), never for the main site; the script checks every name and address again.
+  - The setup code is asked of the new madrasah's copy through the same private network and token (`GET /api/owner/setup-code`).
   - The set-password link is asked of the madrasah's own copy through the private endpoint.
 - **Sign-in:** a separate "owner" login with its own cookie that only `/owner` sees.
   - The authenticator code is standard (TOTP) and built with what Node already has, so no new add-ons.
@@ -151,7 +158,7 @@ A private dashboard for you alone, to oversee every madrasah copy on the server.
 
 ## Not included
 - Looking inside a madrasah's records, or signing in as them.
-- Creating, suspending or deleting madrasahs from the web.
+- ~~Creating, suspending or deleting madrasahs from the web.~~ Added on 28/10/2026 at your request (see "Manage" above).
 - Billing the madrasahs (FUTURE.md item 16).
 - Children's or parents' details of any kind.
 

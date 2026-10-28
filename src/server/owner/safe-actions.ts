@@ -19,6 +19,7 @@ const WORDS: Record<SafeAction, string> = { restart: 'restart', backup: 'back up
 export async function requestAction(db: Db, actor: Actor, health: Health | null, name: string, action: unknown, now = new Date()): Promise<{ ok: true; already: boolean } | { ok: false; error: string }> {
   if (!ACTIONS.includes(action as SafeAction)) return { ok: false, error: 'Unknown action.' };
   if (!known(health, name)) return { ok: false, error: 'That madrasah isn’t on the server.' };
+  if (action === 'restart' && known(health, name)!.paused) return { ok: false, error: `${name} is paused. Resume it instead.` };
   // A request the script hasn't finished, made in the last 10 minutes, still stands.
   const [waiting] = await db.select({ id: ownerAction.id }).from(ownerAction)
     .where(and(eq(ownerAction.madrasah, name), eq(ownerAction.action, action as SafeAction), isNull(ownerAction.finishedAt), gt(ownerAction.requestedAt, new Date(now.getTime() - 10 * 60_000))));

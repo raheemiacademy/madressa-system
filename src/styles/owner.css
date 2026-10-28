@@ -93,6 +93,18 @@ body:has(.ow) { background: var(--bg); }
 .ow .action small { display: block; color: var(--muted); font-size: 13px; }
 @media (max-width: 480px) { .ow .action { grid-template-columns: minmax(0, 1fr); } }
 .ow .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.ow .form { display: flex; flex-direction: column; gap: 12px; }
+.ow .changes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ow .changes li { display: flex; gap: 10px; align-items: baseline; font-size: 14px; overflow-wrap: anywhere; }
+.ow .changes .status { flex: none; }
+/* Add a madrasah: real or demo, as two rows to pick from. */
+.ow .choices { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.ow .choices legend { font-size: 14px; font-weight: 500; padding: 0; margin-bottom: 6px; }
+.ow .choice { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: var(--panel-2); border: 1px solid transparent; cursor: pointer; }
+.ow .choice:has(input:checked) { border-color: var(--action); }
+.ow .choice input { margin: 3px 0 0; width: 18px; height: 18px; accent-color: var(--action); flex: none; }
+.ow .choice b { display: block; font-weight: 600; }
+.ow .choice small { display: block; color: var(--muted); font-size: 13px; }
 .ow .opt { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 0; border-top: 1px solid var(--hair); }
 .ow .opt:first-child { border-top: 0; }
 .ow .opt > span { min-width: 0; overflow-wrap: anywhere; }

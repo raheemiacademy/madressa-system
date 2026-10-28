@@ -27,7 +27,7 @@ const healthSchema = z.object({
   disk: bytes.optional(),
   containers: z.array(z.object({ name: z.string(), state: z.string(), exitCode: z.number(), startedAt: z.string(), memoryBytes: z.number().nullable() })).optional(),
   madrasahs: z.array(z.object({
-    name: z.string().regex(/^[a-z0-9-]+$/), url: z.string().nullable().optional(), internal: z.string(),
+    name: z.string().regex(/^[a-z0-9-]+$/), url: z.string().nullable().optional(), internal: z.string(), paused: z.boolean().optional(),
     backup: z.object({ at: z.string(), sizeBytes: z.number(), databaseBytes: z.number() }).nullable()
   })).optional(),
   imageCreatedAt: z.string().optional(),
@@ -67,7 +67,7 @@ export async function readHealth(): Promise<Health | null> {
 /** One round: ask every madrasah the health file lists, and keep the answers. */
 export async function runChecks(db: Db, health: Health | null, now = new Date(), fetcher: typeof fetch = fetch) {
   const token = process.env.OWNER_SUMMARY_TOKEN ?? '';
-  const list = health?.madrasahs ?? [];
+  const list = (health?.madrasahs ?? []).filter((m) => !m.paused); // a paused copy is stopped on purpose
   const rows = await Promise.all(list.map(async (m) => {
     try {
       const r = await fetcher(`${m.internal}/api/owner/summary`, { headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10_000), cache: 'no-store' });
@@ -91,7 +91,7 @@ export async function checksDue(db: DbOrTx, now = new Date()) {
 
 export type MadrasahState = {
   name: string; url: string | null; host: string;
-  status: 'up' | 'down' | 'missed' | 'waiting';
+  status: 'up' | 'down' | 'missed' | 'waiting' | 'paused';
   summary: StoredSummary | null; lastOkAt: Date | null; downSince: Date | null; failedChecks: number;
   backup: { at: Date; sizeBytes: number; lastNightRan: boolean } | null;
   memoryBytes: number | null; startedAt: Date | null;
@@ -116,7 +116,7 @@ export async function madrasahState(db: DbOrTx, m: NonNullable<Health['madrasahs
     .where(and(eq(ownerCheck.madrasah, m.name), eq(ownerCheck.ok, false), ...(lastOk ? [gt(ownerCheck.at, lastOk.at)] : [])));
   const failedChecks = failing[0]?.n ?? 0;
   const downSince = failedChecks ? new Date(failing[0]!.since!) : null;
-  const status = !recent.length ? 'waiting' : recent[0]!.ok ? 'up' : recent.length === 2 && !recent[1]!.ok ? 'down' : 'missed';
+  const status = m.paused ? 'paused' : !recent.length ? 'waiting' : recent[0]!.ok ? 'up' : recent.length === 2 && !recent[1]!.ok ? 'down' : 'missed';
   const summary = lastOk ? summarySchema.parse(lastOk.summary) : null;
   const container = health.containers?.find((c) => c.name === `ma-${m.name}`);
   const backupAt = m.backup ? new Date(m.backup.at) : null;
@@ -124,7 +124,8 @@ export async function madrasahState(db: DbOrTx, m: NonNullable<Health['madrasahs
   const lastActive = summary?.lastActiveAt ? new Date(summary.lastActiveAt) : null;
 
   let attention: MadrasahState['attention'] = null;
-  if (status === 'down') attention = { text: `Not responding for ${plural(minutes(now.getTime() - downSince!.getTime()), 'minute', 'minutes')} (${plural(failedChecks, 'check', 'checks')})`, since: downSince! };
+  if (status === 'paused') attention = null; // paused on purpose: nothing to look at
+  else if (status === 'down') attention = { text: `Not responding for ${plural(minutes(now.getTime() - downSince!.getTime()), 'minute', 'minutes')} (${plural(failedChecks, 'check', 'checks')})`, since: downSince! };
   else if (status === 'missed') attention = { text: 'Didn’t answer the last check', since: recent[0]!.at };
   else if (!backup) attention = { text: 'No backup yet', since: lastBackupRun(now) };
   else if (now.getTime() - backup.at.getTime() > BACKUP_LATE_HOURS * 3_600_000) attention = { text: `Newest backup is ${Math.floor((now.getTime() - backup.at.getTime()) / 3_600_000)} hours old`, since: new Date(backup.at.getTime() + BACKUP_LATE_HOURS * 3_600_000) };

@@ -1,4 +1,4 @@
-import { and, count, desc, eq, isNull, sql } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, isNull, notInArray, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Db, DbOrTx } from '@/db';
 import { loginIdentity, ownerAlert, pushQueue, setting } from '@/db/schema';
@@ -88,7 +88,8 @@ export async function evaluateAlerts(db: DbOrTx, s: OwnerState) {
   const now = s.now;
   for (const m of s.madrasahs) {
     const url = `/owner/madrasahs/${encodeURIComponent(m.name)}`;
-    if (m.status === 'down') await raiseAlert(db, { kind: 'down', key: `down:${m.name}`, about: m.name, title: `Not responding (${plural(m.failedChecks, 'check', 'checks')})`, url }, { now });
+    if (m.status === 'paused') await clearAlert(db, `down:${m.name}`, now); // paused on purpose, so no "responding again" news
+    else if (m.status === 'down') await raiseAlert(db, { kind: 'down', key: `down:${m.name}`, about: m.name, title: `Not responding (${plural(m.failedChecks, 'check', 'checks')})`, url }, { now });
     else if (m.status === 'up') {
       const since = await clearAlert(db, `down:${m.name}`, now);
       if (since) await raiseAlert(db, { kind: 'back', key: `back:${m.name}:${now.getTime()}`, about: m.name, title: `Responding again after ${plural(minutes(now.getTime() - since.getTime()), 'minute', 'minutes')}`, url }, { news: true, now });
@@ -97,6 +98,9 @@ export async function evaluateAlerts(db: DbOrTx, s: OwnerState) {
     if (late) await raiseAlert(db, { kind: 'backup', key: `backup:${m.name}`, about: m.name, title: late, url: '/owner/server' }, { now });
     else await clearAlert(db, `backup:${m.name}`, now);
   }
+  // A madrasah that has been removed: its problems go with it.
+  if (s.health) await db.update(ownerAlert).set({ clearedAt: now })
+    .where(and(isNull(ownerAlert.clearedAt), inArray(ownerAlert.kind, ['down', 'backup']), notInArray(ownerAlert.about, s.madrasahs.map((m) => m.name))));
   for (const [key, pct, limit, what] of [['disk', s.disk, DISK_LIMIT, 'disk'], ['memory', s.memory, MEMORY_LIMIT, 'memory']] as const) {
     if (pct === null) continue;
     if (pct >= limit) await raiseAlert(db, { kind: 'server', key, about: 'Server', title: `Server ${what} over ${limit}% (${pct}%)`, url: '/owner/server' }, { now });

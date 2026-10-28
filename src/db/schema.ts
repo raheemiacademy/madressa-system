@@ -169,8 +169,10 @@ export const ownerAction = pgTable('owner_action', {
   requestedAt: tz('requested_at').notNull().defaultNow(),
   startedAt: tz('started_at'),
   finishedAt: tz('finished_at'),
-  result: text('result') // 'Done', or what went wrong
-}, (t) => [check('owner_action_kind', sql`${t.action} in ('restart', 'backup')`)]);
+  result: text('result'), // 'Done', or what went wrong
+  address: text('address'), // add only: its web address
+  demo: boolean('demo').notNull().default(false) // add only: filled with sample data
+}, (t) => [check('owner_action_kind', sql`${t.action} in ('restart', 'backup', 'add', 'suspend', 'resume', 'remove')`)]);
 
 // Phones and browsers that asked for notifications (web push). Removed when the push service says the subscription has gone.
 export const pushSubscription = pgTable('push_subscription', {

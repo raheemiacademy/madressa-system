@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Owner dashboard: runs the safe actions asked for on the dashboard (cron, every minute; set up by ./madrasah update).
 
-Reads waiting requests from the main site's owner_action table and does only these two things, for a madrasah that exists
-on this server: `./madrasah restart <name>` or `./madrasah backup <name>`. Each request gets its start, finish and result.
-The website only writes the request; it never gets Docker access.
+Reads waiting requests from the main site's owner_action table and does only these things: `./madrasah restart | backup |
+suspend | resume | remove <name>` for a madrasah that exists on this server (never the main site), and `./madrasah add <name>
+<address> [--demo]` for a new name and address. Each request gets its start, finish and result. The website only writes the
+request; it never gets Docker access.
 
   ./owner-actions           run what's waiting
   ./owner-actions --check   run the self-checks
@@ -15,8 +16,9 @@ import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.realpath(__file__))
-ACTIONS = ('restart', 'backup')
+ACTIONS = ('restart', 'backup', 'suspend', 'resume', 'remove')
 NAME = re.compile(r'^[a-z0-9][a-z0-9-]{1,29}$')
+ADDRESS = re.compile(r'^[a-z0-9.-]+\.[a-z]{2,}$')  # the same rules as ./madrasah add
 
 
 def tenants():
@@ -28,17 +30,35 @@ def tenants():
     return out
 
 
-def allowed(name, action, copies):
-    """Only restart or back up, and only a madrasah (never the main site, never anything else)."""
-    return action in ACTIONS and bool(NAME.match(name)) and copies.get(name) is False
+def hosts():
+    """Every web address already in use on the server."""
+    out = set()
+    for path in glob.glob(os.path.join(HERE, 'tenants', '*.env')):
+        with open(path) as f:
+            out.update(line.strip()[len('APP_URL=https://'):] for line in f if line.startswith('APP_URL=https://'))
+    return out
+
+
+def command(name, action, address, demo, copies, used):
+    """The ./madrasah arguments for a request, or None to refuse it. Only a madrasah (never the main site, never anything
+    else) for the existing ones; only a new, plain name and an unused address for add."""
+    if not NAME.match(name):
+        return None
+    if action == 'add':
+        if name in copies or name == 'main' or not ADDRESS.match(address) or len(address) > 200 or address in used:
+            return None
+        return ['add', name, address] + (['--demo'] if demo else [])
+    if action not in ACTIONS or copies.get(name) is not False:
+        return None
+    return [action, name] + (['--yes'] if action == 'remove' else [])
 
 
 def parse(rows):
     out = []
     for line in rows.splitlines():
         parts = line.split('|')
-        if len(parts) == 3 and parts[0].isdigit():
-            out.append((int(parts[0]), parts[1], parts[2]))
+        if len(parts) == 5 and parts[0].isdigit():
+            out.append((int(parts[0]), parts[1], parts[2], parts[3], parts[4] == 't'))
     return out
 
 
@@ -65,28 +85,44 @@ def main():
         return
     psql(db, "update owner_action set finished_at = now(), result = 'Not picked up within an hour' "
              "where started_at is null and requested_at < now() - interval '1 hour';")
-    for rid, name, action in parse(psql(db, "select id, madrasah, action from owner_action where started_at is null order by id;")):
-        if not allowed(name, action, copies):
-            psql(db, "update owner_action set started_at = now(), finished_at = now(), result = 'Refused: not a madrasah on this server' where id = :'id';", id=rid)
+    changed = False
+    rows = psql(db, "select id, madrasah, action, coalesce(address, ''), demo from owner_action where started_at is null order by id;")
+    for rid, name, action, address, demo in parse(rows):
+        args = command(name, action, address, demo, copies, hosts())
+        if args is None:
+            why = 'that name or address is taken, or not allowed' if action == 'add' else 'not a madrasah on this server'
+            psql(db, "update owner_action set started_at = now(), finished_at = now(), result = :'res' where id = :'id';", id=rid, res=f'Refused: {why}')
             continue
         psql(db, "update owner_action set started_at = now() where id = :'id';", id=rid)
         try:
-            r = subprocess.run([os.path.join(HERE, 'madrasah'), action, name], capture_output=True, text=True, timeout=900, cwd=HERE)
+            r = subprocess.run([os.path.join(HERE, 'madrasah'), *args], capture_output=True, text=True, timeout=900, cwd=HERE, stdin=subprocess.DEVNULL)
             result = 'Done' if r.returncode == 0 else 'Failed: ' + ((r.stderr or r.stdout).strip().splitlines() or ['no output'])[-1]
         except subprocess.TimeoutExpired:
             result = 'Failed: took over 15 minutes'
         psql(db, "update owner_action set finished_at = now(), result = :'res' where id = :'id';", id=rid, res=result[:300])
         print(f'{action} {name}: {result}', flush=True)
+        copies = tenants()  # an add or remove changes what's on the server
+        changed = changed or action in ('add', 'suspend', 'resume', 'remove')
+    if changed:  # the dashboard sees the change now, not at the next 5-minute health run
+        subprocess.run([os.path.join(HERE, 'owner-health')], timeout=300, cwd=HERE)
 
 
 def check():
-    copies = {'demo': False, 'flc': False, 'main': True}
-    assert allowed('demo', 'restart', copies) and allowed('flc', 'backup', copies)
-    assert not allowed('main', 'restart', copies), 'never the main site'
-    assert not allowed('nope', 'restart', copies), 'only madrasahs that exist'
-    assert not allowed('demo', 'rm', copies), 'only the two actions'
-    assert not allowed('demo; rm -rf /', 'restart', {'demo; rm -rf /': False}), 'names are plain'
-    assert parse('12|demo|restart\n13|flc|backup\n\nbad line') == [(12, 'demo', 'restart'), (13, 'flc', 'backup')]
+    copies, used = {'demo': False, 'flc': False, 'main': True}, {'demo.example.org', 'example.org'}
+    ok = lambda n, a, addr='', demo=False: command(n, a, addr, demo, copies, used)
+    assert ok('demo', 'restart') == ['restart', 'demo'] and ok('flc', 'backup') == ['backup', 'flc']
+    assert ok('flc', 'suspend') == ['suspend', 'flc'] and ok('flc', 'resume') == ['resume', 'flc']
+    assert ok('flc', 'remove') == ['remove', 'flc', '--yes']
+    assert ok('main', 'restart') is None and ok('main', 'remove') is None, 'never the main site'
+    assert ok('nope', 'remove') is None, 'only madrasahs that exist'
+    assert ok('demo', 'rm') is None, 'only the listed actions'
+    assert command('demo; rm -rf /', 'restart', '', False, {'demo; rm -rf /': False}, used) is None, 'names are plain'
+    assert ok('new-one', 'add', 'new-one.example.org') == ['add', 'new-one', 'new-one.example.org']
+    assert ok('new-one', 'add', 'new-one.example.org', True) == ['add', 'new-one', 'new-one.example.org', '--demo']
+    assert ok('demo', 'add', 'x.example.org') is None and ok('main', 'add', 'x.example.org') is None, 'names already taken'
+    assert ok('new-one', 'add', 'demo.example.org') is None, 'addresses already taken'
+    assert ok('new-one', 'add', 'x.org; reboot') is None and ok('new-one', 'add', '') is None, 'addresses are plain'
+    assert parse('12|demo|restart||f\n13|new|add|new.example.org|t\n\nbad line') == [(12, 'demo', 'restart', '', False), (13, 'new', 'add', 'new.example.org', True)]
     print('owner-actions: self-checks passed')
 
 

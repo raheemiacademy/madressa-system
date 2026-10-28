@@ -174,6 +174,20 @@ export async function confirmAuthenticatorReset(db: Db, identityId: number, code
   return { ok: true };
 }
 
+/** A fresh authenticator code, asked for again before removing a madrasah. Each code works once. */
+export async function confirmOwnerCode(db: Db, identityId: number, code: string, now = new Date()): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!/^\d{6}$/.test(code)) return { ok: false, error: CODE_FORMAT };
+  if (!(await hitRateLimit(db, `owner-totp:${identityId}`, SIGN_IN_LIMIT, now))) return { ok: false, error: SLOW };
+  const t = await totpOf(db, identityId);
+  const step = t?.secret ? matchStep(decrypt(t.secret), code, now, t.lastStep) : null;
+  if (step === null) {
+    await audit(db, actor(identityId), { action: 'Wrong authenticator code when confirming', page: PAGE });
+    return { ok: false, error: CODE_BAD };
+  }
+  await db.update(ownerTotp).set({ lastStep: step, updatedAt: now }).where(eq(ownerTotp.identityId, identityId));
+  return { ok: true };
+}
+
 export async function signOutEverywhere(db: Db, identityId: number) {
   await invalidateAllSessions(db, identityId);
   await audit(db, actor(identityId), { action: 'Signed out of the owner dashboard everywhere', page: PAGE });

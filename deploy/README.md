@@ -80,6 +80,20 @@ It sends the committed code, builds it on the server (a few minutes) and restart
 
 `./madrasah add <name> <address> --demo` makes a copy filled with fictional sample data instead, and gives each sample login its own password.
 
+You can also do all of this from the owner dashboard: Madrasahs → **Add madrasah** queues the same command, and the madrasah's page shows its setup code.
+
+## Pausing and removing a madrasah
+
+```bash
+./madrasah suspend raheemi   # stopped; visitors see a "paused" page. Nothing is deleted
+./madrasah resume raheemi    # started again on the newest version
+./madrasah remove raheemi    # asks you to type the name, then deletes it for good
+```
+
+`remove` first puts a final backup in `removed/<name>-<date>/`: `database.dump`, `files.tgz`, its env file (with its keys) and its passwords file. Only then does it delete the container, site, database and files. The folder stays until you delete it. To bring a madrasah back from it, add it again with the same name, then restore the dump and files (`pg_restore --clean` into `ma_<name>`, and untar into its files volume) using the keys from the saved env file.
+
+The owner dashboard does the same from a madrasah's page (Manage). Removing there also needs a code from your authenticator app. `./madrasah update` leaves a paused madrasah stopped, and the nightly backup still backs it up.
+
 ## Passwords
 
 ```bash

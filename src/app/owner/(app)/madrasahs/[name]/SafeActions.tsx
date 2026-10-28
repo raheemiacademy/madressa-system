@@ -10,7 +10,7 @@ type Sheet = null | 'link' | 'restart' | 'backup';
 const failed = 'That didn’t work. Check your connection and try again.';
 
 /** One madrasah → Safe actions: each asks first, and is recorded in the audit log. */
-export function SafeActions({ name, admins, lastBackup, status }: { name: string; admins: { name: string; email: string }[]; lastBackup: string; status: { restart: string | null; backup: string | null } }) {
+export function SafeActions({ name, admins, lastBackup, status, paused }: { name: string; admins: { name: string; email: string }[]; lastBackup: string; status: { restart: string | null; backup: string | null }; paused: boolean }) {
   const router = useRouter();
   const { toast, toastBox } = useToast();
   const [sheet, setSheet] = useState<Sheet>(null);
@@ -43,8 +43,8 @@ export function SafeActions({ name, admins, lastBackup, status }: { name: string
       <div className="actions">
         <div className="action"><div><b>Set-password link</b><small>For a locked-out admin. Also logged in this madrasah’s audit log.</small></div>
           <button className="btn" type="button" onClick={() => setSheet('link')} disabled={!admins.length}>Get link</button></div>
-        <div className="action"><div><b>Restart</b><small>Unavailable for about 30 seconds.</small>{status.restart && <small>{status.restart}</small>}</div>
-          <button className="btn" type="button" onClick={() => setSheet('restart')}>Restart</button></div>
+        {!paused && <div className="action"><div><b>Restart</b><small>Unavailable for about 30 seconds.</small>{status.restart && <small>{status.restart}</small>}</div>
+          <button className="btn" type="button" onClick={() => setSheet('restart')}>Restart</button></div>}
         <div className="action"><div><b>Back up now</b><small>Runs within a minute. Last: {lastBackup}.</small>{status.backup && <small>{status.backup}</small>}</div>
           <button className="btn" type="button" onClick={() => setSheet('backup')}>Back up</button></div>
       </div>

@@ -16,6 +16,7 @@ import { evaluateAlerts, saveAlertSettings } from '@/server/owner/alerts';
 import { removePushSubscription, savePushSubscription } from '@/server/comm/push';
 import { ownerState, readHealth, runChecks } from '@/server/owner/checks';
 import { setLeadNotes, setLeadStatus } from '@/server/owner/leads';
+import { fetchSetupCode, requestAdd, requestChange } from '@/server/owner/manage';
 import { adminLink, requestAction, saveMadrasahNote } from '@/server/owner/safe-actions';
 
 const field = (fd: FormData, k: string) => String(fd.get(k) ?? '').slice(0, 200);
@@ -133,6 +134,28 @@ export async function requestActionAction(madrasah: string, action: string) {
 export async function adminLinkAction(madrasah: string, email: string) {
   const o = await requireOwner();
   return adminLink(db, owner(o), await readHealth(), String(madrasah), email);
+}
+
+/** Madrasahs → Add a madrasah: a request the server picks up within a minute. */
+export async function addMadrasahAction(raw: { name?: string; address?: string; demo?: boolean }) {
+  const o = await requireOwner();
+  const r = await requestAdd(db, owner(o), await readHealth(), { name: raw?.name, address: raw?.address, demo: raw?.demo });
+  if (r.ok) revalidatePath('/owner', 'layout');
+  return r;
+}
+
+/** One madrasah → Pause, Resume or Remove (removing also needs its name typed and an authenticator code). */
+export async function changeMadrasahAction(madrasah: string, action: string, confirm: { typed?: string; code?: string } = {}) {
+  const o = await requireOwner();
+  const r = await requestChange(db, owner(o), await readHealth(), String(madrasah), action, { typed: confirm?.typed, code: confirm?.code });
+  if (r.ok) revalidatePath('/owner', 'layout');
+  return r;
+}
+
+/** One madrasah → Setup code for its first admin, asked of that madrasah's copy. */
+export async function setupCodeAction(madrasah: string) {
+  const o = await requireOwner();
+  return fetchSetupCode(db, owner(o), await readHealth(), String(madrasah));
 }
 
 /** One madrasah → Your notes. */

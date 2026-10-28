@@ -102,7 +102,8 @@ def madrasahs():
             files = dumps[-1][:-5] + '-files.tgz'
             backup = {'at': iso(os.path.getmtime(dumps[-1])), 'sizeBytes': os.path.getsize(dumps[-1]) + (os.path.getsize(files) if os.path.exists(files) else 0),
                       'databaseBytes': os.path.getsize(dumps[-1])}
-        out.append({'name': name, 'url': vals.get('APP_URL'), 'internal': f'http://ma-{name}:3000', 'backup': backup})
+        out.append({'name': name, 'url': vals.get('APP_URL'), 'internal': f'http://ma-{name}:3000', 'backup': backup,
+                    'paused': os.path.exists(path[:-4] + '.paused')})  # ./madrasah suspend
     return out
 
 
