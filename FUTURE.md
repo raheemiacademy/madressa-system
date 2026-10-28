@@ -71,6 +71,12 @@ Things deliberately left out of the current build, kept so nothing is forgotten.
 16. **Billing the madrasahs: remind you when early access ends** (your request 27/10/2026)
     For the owner dashboard: a simple record per madrasah (plan, price per month, start date, paid-up-to date, notes; payments marked by you, no online payments). Not built during early access. **When early access is ending, bring this up** so it's ready before the first school pays.
 
+17. **"New version available" with an Update button for each madrasah** (your request 28/10/2026)
+    When you ship a new version, each madrasah's admin dashboard shows "New version available: see what's new and update". It opens a pop-up listing the new features, with a big **Update** button; the update takes a few seconds and the page reloads on the new version. One update covers that whole madrasah: its admin, teacher and parent portals are the same copy, so they all move together.
+    - **How it would work:** shipping builds the new version on the server but no longer restarts everyone. Pressing Update queues it for that madrasah (the same request queue the owner dashboard uses), and the server starts the new version next to the old one, switches over once it answers, then stops the old one, so nobody goes offline ("blue/green").
+    - **To decide when building:** whether you can still push an urgent security fix to everyone without waiting for them to press Update, and whether a madrasah that never updates gets updated anyway after a while. Database changes must keep working on both versions during the switch.
+    - The owner dashboard already shows which madrasahs are "Running an older version".
+
 ## Waiting on your details
 
 - **Student Diary / Daily Progress Tracker** (§12): its inner pages weren't visible in the inventory. Send the fields you want and it will be built.
