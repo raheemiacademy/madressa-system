@@ -6,6 +6,9 @@ export const d = (n: number) => ({ '--d': n }) as CSSProperties;
 /** A mock-up colour from the palette: avatar background (--g) or chip dot (--c). */
 export const tone = (prop: '--g' | '--c', token: 'indigo' | 'action' | 'violet' | 'blue' | 'muted' | 'bad' | 'ok') => ({ [prop]: `var(--${token})` }) as CSSProperties;
 
+/** A changing number with every digit the same width, so it never shifts as it counts (the display font has no tabular digits). */
+export const Digits = ({ children }: { children: string | number }) => <>{String(children).split(/(\d)/).map((c, i) => c && (/\d/.test(c) ? <span key={i} className="dg">{c}</span> : c))}</>;
+
 /** The khatam (eight-point star) pattern behind the hero and the footer. */
 export function Pattern({ id }: { id: string }) {
   return (

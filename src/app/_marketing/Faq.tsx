@@ -15,7 +15,7 @@ export function Faq() {
     <section className="section field-lav" aria-labelledby="faq-title">
       <div className="wrap faq-grid">
         <div className="faq-side">
-          <h2 id="faq-title" data-rise>Questions schools ask</h2>
+          <h2 id="faq-title" data-rise data-words>Questions schools ask</h2>
           <p data-rise style={d(1)}>Something we haven’t answered? <a href="/contact">Ask us directly</a> or read <a href="/faq">all the questions</a>.</p>
         </div>
         <div className="faq-list" data-rise style={d(1)}>

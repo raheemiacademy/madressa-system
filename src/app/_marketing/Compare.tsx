@@ -17,15 +17,15 @@ export function Compare() {
     <section className="section field-white" aria-labelledby="compare-title">
       <div className="wrap">
         <div className="section-head">
-          <h2 id="compare-title" data-rise>Paper, spreadsheets and twelve group chats?</h2>
+          <h2 id="compare-title" data-rise data-words>Paper, spreadsheets and twelve group chats?</h2>
           <p data-rise style={d(1)}>If any of these sound like your madressa, here’s what changes when it all lives in one place.</p>
         </div>
-        <div className="compare-wrap" data-rise style={d(2)} tabIndex={0} role="region" aria-labelledby="compare-title">{/* focusable so it can be scrolled from the keyboard on a phone */}
+        <div className="compare-wrap" tabIndex={0} role="region" aria-labelledby="compare-title">{/* focusable so it can be scrolled from the keyboard on a phone */}
           <table className="compare">
             <caption className="vh">How running a madressa changes with {PRODUCT_NAME}</caption>
             <thead><tr><th scope="col">The job</th><th scope="col">The question</th><th scope="col">With {PRODUCT_NAME}</th></tr></thead>
             <tbody>
-              {ROWS.map(([job, today, withUs]) => <tr key={job}><th scope="row">{job}</th><td className="old">{today}</td><td className="new">{withUs}</td></tr>)}
+              {ROWS.map(([job, today, withUs], i) => <tr key={job} data-rise style={d(i + 1)}><th scope="row">{job}</th><td className="old">{today}</td><td className="new">{withUs}</td></tr>)}
             </tbody>
           </table>
         </div>

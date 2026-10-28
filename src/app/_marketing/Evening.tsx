@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { PRODUCT_NAME } from '@/lib/marketing';
+import { Digits } from './bits';
 
 /*
  * The hero's live thing: the dashboard during an evening of classes, and a slider through it (4:30–8:00 pm).
  * Without JavaScript the dashboard shows 5:25 pm and the slider stays hidden. With it, the evening plays on its own while it's
  * on screen: 4:30 to 8:00 in about 14 seconds, a pause at 8:00, a fade, and round again. It holds while the visitor hovers,
  * drags or tabs to it, and carries on a few seconds after they let go; the button stops it for good (WCAG 2.2.2). With reduced
- * motion it doesn't play by itself: it sits at the visitor's time (or 5:20 pm outside 4:30–8:00) until they move it.
+ * motion it doesn't play by itself: it sits at the visitor's time (or 5:20 pm outside 4:30–8:00) until they move it or press Play.
  */
 const START = 16 * 60 + 30;
 const MAX = 42; // 5-minute steps from 4:30 to 8:00
@@ -61,10 +62,9 @@ export function Evening() {
     if (reduce || !('IntersectionObserver' in window)) {
       const now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes();
       const at = nowMin >= START && nowMin <= 20 * 60 ? Math.round((nowMin - START) / 5) : Math.round((17 * 60 + 20 - START) / 5);
-      L.shown = happened(minuteAt(at)).length; setV(at); setStopped(true);
-      return;
-    }
-    show(0);
+      L.shown = happened(minuteAt(at)).length; L.v = at; setV(at); setStopped(true); stopRef.current = true;
+      if (!('IntersectionObserver' in window)) return;
+    } else show(0); // with reduced motion the loop still runs, stopped, so Play works
     const io = new IntersectionObserver((en) => { L.visible = !!en[0]?.isIntersecting; }, { threshold: 0.35 });
     io.observe(wrap.current!);
     let raf = 0, last = performance.now();
@@ -107,7 +107,7 @@ export function Evening() {
     : registers < 8 ? `Registers are being taken in ${8 - registers}${8 - registers === 1 ? ' class.' : ' classes.'}`
     : t < 19 * 60 ? 'Every register is in. Attendance is 93.2% tonight.' : 'Classes are finishing. Reminders and reports go out.';
   const items = happened(t).slice(-4).reverse();
-  const kpi = (id: string, value: string | number) => <strong id={id} key={String(value)} className={v === null ? undefined : 'kpi-tick'}>{value}</strong>;
+  const kpi = (id: string, value: string | number) => <strong id={id} key={String(value)} className={v === null ? undefined : 'kpi-tick'}><Digits>{value}</Digits></strong>;
 
   return (
     <div className="evening-wrap" ref={wrap}
@@ -140,7 +140,7 @@ export function Evening() {
         <div className="evening-head">
           <label htmlFor="ev-range">Drag through an evening of classes</label>
           <div className="evening-now">
-            <output className="evening-time" htmlFor="ev-range">{v === null ? '5:20 pm' : hhmm(t)}</output>
+            <output className="evening-time" htmlFor="ev-range"><Digits>{v === null ? '5:20 pm' : hhmm(t)}</Digits></output>
             <button type="button" className="evening-play" aria-label={stopped ? 'Play the evening' : 'Pause the evening'}
               onClick={() => { const next = !stopped; setStopped(next); if (!next) { live.current.resumeAt = 0; if (live.current.v >= MAX) show(0); } }}>
               {stopped

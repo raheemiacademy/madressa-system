@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from 'react';
 
-/** Today in the visitor's own calendar: "Monday 26 October · 5 Jumada al-Awwal 1448 AH". Shows "Today" until the browser fills it in. */
-export function Today({ className }: { className?: string }) {
+/**
+ * Today in the visitor's own calendar: "Monday 26 October · 5 Jumada al-Awwal 1448 AH". Shows "Today" until the browser fills it in.
+ * `stacked` puts the Islamic date on its own, smaller line under the usual one (the contact page).
+ */
+export function Today({ className, stacked }: { className?: string; stacked?: boolean }) {
   const [parts, setParts] = useState<{ greg: string; hijri: string } | null>(null);
   useEffect(() => {
     const now = new Date();
@@ -12,7 +15,7 @@ export function Today({ className }: { className?: string }) {
     try { hijri = new Intl.DateTimeFormat('en-GB-u-ca-islamic-umalqura', { day: 'numeric', month: 'long', year: 'numeric' }).format(now); } catch { hijri = ''; }
     setParts({ greg, hijri });
   }, []);
-  return <p className={className}>{parts ? <><b>{parts.greg}</b>{parts.hijri && ` · ${parts.hijri}`}</> : 'Today'}</p>;
+  return <p className={className}>{parts ? <><b>{parts.greg}</b>{parts.hijri && (stacked ? <span>{parts.hijri}</span> : ` · ${parts.hijri}`)}</> : 'Today'}</p>;
 }
 
 /** This year, from the visitor's clock. */

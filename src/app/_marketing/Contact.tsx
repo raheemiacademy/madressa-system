@@ -11,7 +11,7 @@ export function Contact() {
   return (
     <Shell current="/contact">
       <PageHero title="Talk to us" lede="Questions about your madressa, moving your records, or early access. A real person replies.">
-        <Today className="dates" />
+        <Today className="dates dates-stacked" stacked />
       </PageHero>
       <section className="section field-lav" aria-labelledby="ways-title">
         <div className="wrap contact-grid">

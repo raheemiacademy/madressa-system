@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { d, tone } from './bits';
+import { d, Digits, tone } from './bits';
 
 function Chapter({ id, time, title, children, bullets, pic }: { id: string; time: string; title: string; children: ReactNode; bullets: string[]; pic: ReactNode }) {
   return (
@@ -21,14 +21,21 @@ const Frag = ({ title, small, children }: { title: string; small: string; childr
 
 const MARKS: [string, ...string[]][] = [['Maryam Akhtar', 'P', 'P', 'P', 'P'], ['Ayaan Malik', 'P', 'L', 'P', 'P'], ['Hamza Javed', 'P', 'P', 'P', 'L'], ['Inaya Saleem', 'P', 'P', 'P', 'N'], ['Mikail Raza', 'U', 'P', 'P', 'P']];
 
+/*
+ * One evening, start to finish. On wide screens (Motion.tsx adds .pinned) the evening stays on screen while the visitor scrolls:
+ * the clock runs from 4:45 to 8:00, each chapter takes its turn and the sky darkens (your request, 28/10/2026). Elsewhere, and
+ * without JavaScript or with reduced motion, the chapters simply follow one another. The fire drill comes after, at any time.
+ */
 export function Chapters() {
   return (
-    <section className="section field-lav" id="evening-tour" aria-labelledby="tour-title">
+    <section className="section field-lav tour" id="evening-tour" aria-labelledby="tour-title">
+      <div className="tour-run"><div className="tour-stage"><div className="tour-sky" aria-hidden="true" />
       <div className="wrap">
         <div className="section-head">
           <h2 id="tour-title" data-rise>One evening, start to finish</h2>
           <p data-rise style={d(1)}>Follow a weekday at a madressa: from teachers arriving to the last message home. This is the system doing each job at its hour.</p>
         </div>
+        <p className="tour-clock" aria-hidden="true"><Digits>4:45</Digits></p>
         <div className="chapters">
           <Chapter id="c1" time="4:45" title="Teachers sign in"
             bullets={['Kiosk PIN, phone or the office can log it', 'Weekly hours and absences for every teacher', 'DBS numbers and expiry dates kept with their record']}
@@ -93,7 +100,12 @@ export function Chapters() {
             </Frag>}>
             Set your fees once per class. Invoices are made through the year, payments are recorded with receipts, and reminders go out for what’s overdue.
           </Chapter>
-
+        </div>
+        <div className="tour-bar" aria-hidden="true"><i /><span>4:30</span><span>5:30</span><span>6:30</span><span>7:30</span><span>8:00</span></div>
+      </div>
+      </div></div>
+      <div className="wrap">
+        <div className="chapters after-tour">
           <Chapter id="c6" time="Any time" title="Fire drill, in one hold"
             bullets={['Hold-to-start, so it can’t be set off by accident', 'Built from tonight’s registers and teacher sign-ins', 'A saved record of every drill']}
             pic={<div className="frag frag-drill" data-ui>
@@ -101,6 +113,10 @@ export function Chapters() {
                 <p className="drill-title">Start a fire drill</p>
                 <p className="drill-help">Press and hold for 2 seconds</p>
                 <div className="hold" data-rise style={d(3)} aria-hidden="true"><span>Hold to start</span><span className="fill">Keep holding…</span></div>
+              </div>
+              <div className="drill-live" aria-hidden="true">
+                <small>Fire drill live · 17:32</small><b>Everyone out</b>
+                <p><span><span data-to="214"><Digits>214</Digits></span> of 214 children safe</span><span><span data-to="12"><Digits>12</Digits></span> of 12 staff</span></p>
               </div>
             </div>}>
             Press and hold for two seconds. Every class gets a live roll call of the children and staff signed in today, and teachers mark their class safe from their phone.

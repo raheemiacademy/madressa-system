@@ -7,7 +7,7 @@ export function SwitchAndData() {
     <section className="section field-white" aria-labelledby="switch-title">
       <div className="wrap duo">
         <div>
-          <h2 id="switch-title" data-rise>We move your records for you</h2>
+          <h2 id="switch-title" data-rise data-words>We move your records for you</h2>
           <p className="lede" data-rise style={d(1)}>Bring your spreadsheets, paper lists or an export from another system. We import students, parents, classes and fees, free of charge.</p>
           <ol className="steps" data-rise style={d(2)}>
             <li><strong>Send us what you have</strong><span>Spreadsheets, exports or photos of the register. Whatever you keep today is fine.</span></li>
@@ -16,7 +16,7 @@ export function SwitchAndData() {
           </ol>
         </div>
         <div>
-          <h2 id="data-title" data-rise>Children’s data, handled properly</h2>
+          <h2 id="data-title" data-rise data-words>Children’s data, handled properly</h2>
           <p className="lede" data-rise style={d(1)}>You are trusted with information about other people’s children. The system is built around keeping it safe.</p>
           <ul className="points" data-rise style={d(2)}>
             <li><svg {...svg}><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z" /><path d="m9 12 2 2 4-4" /></svg><div><strong>UK GDPR compliant</strong>Personal data is collected, stored and shared in line with UK GDPR.</div></li>
