@@ -22,7 +22,7 @@ test('compose to a class, read the reply state, then reply and lock', async ({ p
   await expect(page.getByText('Delivered').first()).toBeAttached(); // grey ticks on our message
   await page.getByLabel('Reply').fill('A reminder for tomorrow.');
   await page.getByRole('button', { name: 'Reply & lock' }).click();
-  await expect(page.getByRole('status').filter({ hasText: 'Reply sent and conversation locked.' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: 'Reply sent and conversation locked.' })).toBeVisible({ timeout: 15_000 }); // after the 5-second Undo send
   await page.getByRole('link', { name: 'Locked (archived)' }).click();
   await expect(page.getByRole('link', { name: /Sample trip letter/ }).first()).toBeVisible();
 });

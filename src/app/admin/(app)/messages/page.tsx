@@ -3,8 +3,8 @@ import { asc, isNull } from 'drizzle-orm';
 import { db } from '@/db';
 import { contact, teacher } from '@/db/schema';
 import { Chip } from '@/components/Chip';
-import { SelectField, TextArea } from '@/components/Fields';
-import { ActionButton, Form } from '@/components/Form';
+import { ActionButton } from '@/components/Form';
+import { Reply } from '@/components/Reply';
 import { RefreshOnce } from '@/components/RefreshOnce';
 import { Ticks } from '@/components/Ticks';
 import { Icon } from '@/components/Icon';
@@ -14,6 +14,7 @@ import { requireAdmin } from '@/server/next/actor';
 import { adminCan } from '@/server/permissions';
 import { inbox, markTeacherParentSeen, openThread, teacherParentNew, type InboxFilter } from '@/server/comm/messages';
 import { bulkAction, deleteMessageAction, deleteThreadAction, replyAction } from './actions';
+import { BulkForm } from './Bulk';
 
 export const metadata = { title: 'Messages' };
 const BOXES = { inbox: 'Inbox', locked: 'Locked (archived)', other: 'Teacher ↔ parent' } as const;
@@ -75,7 +76,7 @@ export default async function Messages({ searchParams }: { searchParams: Promise
         <section className="ra-card ra-c5" aria-label="Conversations">
           {box !== 'other' && <nav className="ra-filters" aria-label="Who">{Object.entries(WHO).map(([k, l]) => <Link key={k} className="ra-filter" aria-current={(who ?? 'all') === k ? 'page' : undefined} href={q({ who: k === 'all' ? undefined : k, t: undefined })}>{l}</Link>)}</nav>}
           {threads.length === 0 ? <p className="ra-empty">{box === 'locked' ? 'No locked conversations.' : box === 'other' ? 'No teacher ↔ parent conversations yet.' : 'Nothing here yet.'}</p> : (
-            <Form action={bulkAction} card={false} savebar={false} submit="Apply to selected">
+            <BulkForm action={bulkAction} canDelete={canDelete}>
               <ul className="ra-msg-list" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
                 {threads.map((t) => (
                   <li key={t.id} className="ra-msg-row">
@@ -92,8 +93,7 @@ export default async function Messages({ searchParams }: { searchParams: Promise
                   </li>
                 ))}
               </ul>
-              {canEdit && <SelectField name="op" label="Selected conversations" options={[{ value: 'read', label: 'Mark read' }, { value: 'unread', label: 'Mark unread' }, { value: 'lock', label: 'Archive (lock)' }, { value: 'unlock', label: 'Unlock' }, ...(adminCan(admin.staff, 'delete') ? [{ value: 'delete', label: 'Delete' }] : [])]} />}
-            </Form>
+            </BulkForm>
           )}
         </section>
 
@@ -115,11 +115,7 @@ export default async function Messages({ searchParams }: { searchParams: Promise
                 ))}
               </div>
               {canEdit && open.thread.withOffice && (
-                <Form action={replyAction.bind(null, open.thread.id)} card={false} savebar={false} submit="Reply" resetOnSuccess encType="multipart/form-data">
-                  <TextArea name="body" label="Reply" rows={4} />
-                  <div className="ra-field"><label htmlFor="r-att">Attach a file</label><input className="ra-input" id="r-att" name="attachment" type="file" style={{ paddingTop: 8 }} /></div>
-                  <button className="ra-btn" name="lock" value="1">Reply &amp; lock</button>
-                </Form>
+                <Reply key={open.thread.id} action={replyAction.bind(null, open.thread.id)} me={admin.name} lockable attach />
               )}
               {!open.thread.withOffice && <p className="ra-note">This conversation is between a teacher and a parent. Admins can read it for oversight.</p>}
             </>

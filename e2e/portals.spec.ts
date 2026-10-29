@@ -104,7 +104,7 @@ test('parent writes to the office and the office replies', async ({ browser, pag
   await page.getByRole('link', { name: /Sample question about the trip/ }).click();
   await page.getByRole('textbox', { name: 'Reply' }).fill('Pick-up is at 15:30.');
   await page.getByRole('button', { name: 'Reply', exact: true }).click();
-  await expect(page.getByRole('status').filter({ hasText: /Reply sent/ }).first()).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: /Reply sent/ }).first()).toBeVisible({ timeout: 15_000 }); // after the 5-second Undo send
   await p.page.reload();
   await expect(p.page.getByText('Pick-up is at 15:30.')).toBeVisible();
   await p.ctx.close();

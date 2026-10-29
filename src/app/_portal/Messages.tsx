@@ -3,6 +3,7 @@ import { Ticks } from '@/components/Ticks';
 import Link from 'next/link';
 import { SelectField, TextArea, TextField } from '@/components/Fields';
 import { Form } from '@/components/Form';
+import { Reply } from '@/components/Reply';
 import { formatInstant } from '@/lib/dates';
 import { initials } from '@/lib/text';
 import type { FormState } from '@/lib/validate';
@@ -48,7 +49,7 @@ export function Conversation({ data, fileBase, reply }: { data: NonNullable<Awai
         ))}
       </section>
       {data.thread.locked ? <p className="rp-empty">This conversation is closed. Start a new message if you need to.</p> : (
-        <Form action={reply} submit="Send reply" savebar={false} resetOnSuccess><TextArea name="body" label="Reply" rows={4} enterKeyHint="send" /></Form>
+        <Reply action={reply} submit="Send reply" me="You" portal />
       )}
     </>
   );

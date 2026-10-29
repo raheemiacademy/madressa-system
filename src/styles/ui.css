@@ -805,6 +805,13 @@ th[aria-sort] .ra-sort span { opacity: 1; color: var(--ra-accent-text); }
 @media (hover: hover) and (pointer: fine) { .ra-classfees-name:hover b { color: var(--ra-accent-text); text-decoration: underline; } }
 
 /* Messages: search bar with a filter, read ticks, and delete on each message */
+/* Messages: the bulk bar shows once something is ticked; a reply shows at once while it's being sent */
+.ra-bulk { position: sticky; bottom: 0; display: flex; align-items: center; gap: 4px 6px; flex-wrap: wrap; padding: 6px 8px 6px 12px; border-radius: 12px; background: var(--ra-tint); border: 1px solid var(--color-border-line); font-size: 13px; transition: opacity 180ms var(--ra-ease-out); }
+@starting-style { .ra-bulk { opacity: 0; } }
+.ra-bulk b { margin-right: auto; font-weight: 600; }
+article.sending .ra-bubble { opacity: .8; }
+.ra-sending { display: inline-flex; align-items: center; gap: 4px; }
+.ra-sending svg { width: 13px; height: 13px; }
 .ra-msg-search { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; }
 .ra-msg-search .ra-findbar { flex: 1 1 260px; max-width: none; }
 .ra-msg-search .ra-select { flex: 0 1 240px; }
