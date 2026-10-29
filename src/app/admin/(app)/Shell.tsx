@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useRef, useTransition } from 'react';
+import { Suspense, useEffect, useRef, useState, useTransition } from 'react';
 import { useSideGlide } from '@/components/Glide';
 import { Icon } from '@/components/Icon';
 import { LiveBadges } from '@/components/LiveBadges';
+import { PageOutline } from '@/components/PageOutline';
 import { SoundToggle } from '@/components/SoundToggle';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { TabBar, type Tab } from '@/app/_portal/TabBar';
@@ -26,6 +27,7 @@ type Props = {
 export function Shell({ school, logoSrc, userName, userEmail, todayLabel, years, yearId, drillPlaces, drillRunning, notifications, unreadMessages, areas, children }: Props) {
   const pathname = usePathname();
   const side = useSideGlide(pathname);
+  const going = useSlowPage(pathname);
   const crumb = crumbFor(pathname);
   const home = pathname === '/admin';
   // Phone app (design-reference/mobile/Main): ≤5 tabs at the bottom; everything else is under More.
@@ -43,7 +45,7 @@ export function Shell({ school, logoSrc, userName, userEmail, todayLabel, years,
   return (
     <div className="ra">
       <a className="skip-link" href="#main">Skip to content</a>
-      <div className="ra-shell">
+      <div className="ra-shell" onClickCapture={going.click}>
         <aside ref={side.box} className="ra-side" aria-label="Main menu">
           <span ref={side.hl} className="ra-side-hl" aria-hidden="true" />
           <Link className="ra-brand" href="/admin">
@@ -93,7 +95,7 @@ export function Shell({ school, logoSrc, userName, userEmail, todayLabel, years,
           </header>
           {drillRunning && !pathname.startsWith('/admin/fire-drill') && <div className="ra-banner ra-alert" role="alert" style={{ margin: '12px 28px 0' }}><div><b>A fire drill is running.</b></div><Link className="ra-link" href="/admin/fire-drill">Open roll call</Link></div>}
           <Suspense fallback={null}><SetupBanner /></Suspense>
-          <main id="main" tabIndex={-1} className="ra-content">{children}</main>
+          <main id="main" tabIndex={-1} className="ra-content">{going.to ? <PageOutline /> : children}</main>
           <div className="ra-tabbar"><TabBar tabs={tabs} /></div>
           <LiveBadges url="/admin/api/badges" counts={{ messages: unreadMessages, notifications }} />
         </div>
@@ -171,4 +173,23 @@ function SetupBanner() {
       <Link className="ra-link" href="/admin">Back to the checklist</Link>
     </div>
   );
+}
+
+/**
+ * Students, Fees, Reports and Search can take a moment to load. A click on a link to one of them shows the page's outline at
+ * once (PageOutline) until the new page arrives, so the tap never looks ignored. Not a loading.tsx: a loading boundary on
+ * those pages sometimes left a save (Add fees) spinning after the page refreshed.
+ */
+const SLOW = /^\/admin\/(students|fees|reports|search)(\/|$)/;
+function useSlowPage(pathname: string) {
+  const [to, setTo] = useState<string | null>(null);
+  useEffect(() => setTo(null), [pathname]);
+  useEffect(() => { if (!to) return; const t = setTimeout(() => setTo(null), 15_000); return () => clearTimeout(t); }, [to]);
+  const click = (e: React.MouseEvent) => {
+    const a = (e.target as Element).closest<HTMLAnchorElement>('a[href]');
+    if (!a || a.target || a.hasAttribute('download') || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const url = new URL(a.href);
+    if (url.origin === location.origin && SLOW.test(url.pathname) && url.pathname !== pathname) setTo(url.pathname);
+  };
+  return { to, click };
 }

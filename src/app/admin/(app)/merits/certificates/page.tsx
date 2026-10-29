@@ -11,6 +11,7 @@ import { issueAction, saveTemplateAction } from '../actions';
 import { MeritTabs } from '../MeritTabs';
 import { PeoplePicker } from '../PeoplePicker';
 import { rostersFor } from '../rosters';
+import { FileDrop } from '@/components/FileDrop';
 
 export const metadata = { title: 'Certificates' };
 type T = Awaited<ReturnType<typeof listCertificateTemplates>>[number];
@@ -26,7 +27,7 @@ function TemplateFields({ t }: { t?: T }) {
         <TextField name="name" id={`tn-${k}`} label="Template name" defaultValue={t?.name ?? ''} />
         <SelectField name="size" id={`ts-${k}`} label="Size" defaultValue={t?.size ?? 'A4'} options={['A4', 'A5', 'A6'].map((s) => ({ value: s, label: s }))} />
         <SelectField name="orientation" id={`to-${k}`} label="Orientation" defaultValue={t?.orientation ?? 'landscape'} options={[{ value: 'landscape', label: 'Landscape' }, { value: 'portrait', label: 'Portrait' }]} />
-        <div className="ra-field"><label htmlFor={`tf-${k}`}>Background PDF{t?.fileId ? ' (uploaded; choose a file to replace it)' : ''}</label><input className="ra-input" id={`tf-${k}`} name="file" type="file" accept="application/pdf,.pdf" style={{ paddingTop: 8 }} /></div>
+        <FileDrop name="file" id={`tf-${k}`} label={`Background PDF${t?.fileId ? ' (uploaded; choose a file to replace it)' : ''}`} accept="application/pdf,.pdf" />
       </div>
       <div className="ra-table-wrap" tabIndex={0}><table className="ra-table">
         <thead><tr><th>Item</th><th>Across (mm)</th><th>Up (mm)</th><th>Size (pt)</th></tr></thead>

@@ -8,6 +8,7 @@ import { actorOf, requireAdmin } from '@/server/next/actor';
 import { parseCsv, parseXlsx } from '@/server/people/csv';
 import { applyMapping, guessMapping, targetsFor, usesTemplate } from '@/server/people/column-match';
 import { checkRows, commitRows, quickAddRows, type ImportKind, type RowResult } from '@/server/people/imports';
+import { takeUploads } from '@/server/uploads';
 
 export type ImportState = { rows?: Record<string, string>[]; results?: RowResult[]; done?: string; error?: string;
   match?: { headers: string[]; raw: Record<string, string>[]; mapping: Record<string, string> } } | undefined;
@@ -22,6 +23,7 @@ export async function previewImport(kind: ImportKind, _p: ImportState, fd: FormD
   await requireAdmin('edit');
   if (!KINDS.includes(kind)) return { error: 'Unknown import' };
   let parsed: { rows: Record<string, string>[]; headers?: string[]; error?: string };
+  await takeUploads(fd); // the file came up first, with progress (FileDrop)
   const file = fd.get('file');
   const pasted = String(fd.get('paste') ?? '').trim();
   const quick = String(fd.get('quick') ?? '').trim();

@@ -6,6 +6,7 @@ import { requireAdmin } from '@/server/next/actor';
 import { saveTab } from '@/server/settings';
 import { storeUpload } from '@/server/storage';
 import { formToValues, tabByKey } from '@/settings/tabs';
+import { takeUploads } from '@/server/uploads';
 
 export type TabFormState = { ok?: boolean; message?: string; errors?: Record<string, string> } | undefined;
 
@@ -19,6 +20,7 @@ export async function saveTabAction(key: string, _prev: TabFormState, fd: FormDa
   for (const f of tab.fields) {
     if (f.type === 'secret') secrets[f.name] = String(fd.get(f.name) ?? '').slice(0, 500);
     if (f.type === 'file') {
+      await takeUploads(fd); // the file came up first, with progress (FileDrop)
       const up = fd.get(f.name);
       if (up instanceof File && up.size > 0) {
         const r = await storeUpload(db, up, f.kind, 'portal-background', admin.identityId);

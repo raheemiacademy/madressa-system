@@ -6,6 +6,7 @@ import { SaveBar } from '@/components/SaveBar';
 import { penceToInput } from '@/lib/money';
 import { LINK_ICONS, tabByKey, type Field } from '@/settings/tabs';
 import { saveTabAction, type TabFormState } from './actions';
+import { FileDrop } from '@/components/FileDrop';
 
 type Link = { label: string; url: string; icon: string };
 
@@ -64,7 +65,7 @@ function FieldInput({ f, value, error }: { f: Field; value: unknown; error?: str
     case 'secret': input = <input className="ra-input" {...common} type="password" autoComplete="new-password" placeholder={value ? 'Saved. Leave blank to keep it' : ''} />; break;
     case 'file': input = (
       <>
-        <input className="ra-input" {...common} type="file" accept={f.accept} style={{ paddingTop: 8 }} />
+        <FileDrop name={f.name} id={id} accept={f.accept} describedBy={described} />
         {typeof value === 'string' && (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element -- uploaded branding file */}

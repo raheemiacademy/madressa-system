@@ -9,6 +9,7 @@ import type { FormState } from '@/lib/validate';
 import { actorOf, requireAdmin } from '@/server/next/actor';
 import { createKiosk, KIOSK_COOKIE, revokeKiosk, saveLogs } from '@/server/attendance/teacher-logs';
 import { csvDate, parseCsv } from '@/server/people/csv';
+import { takeUploads } from '@/server/uploads';
 
 /** Rows come in as row.<i>.<field>. */
 function rowsFrom(fd: FormData) {
@@ -27,6 +28,7 @@ export async function saveLogsAction(_p: FormState, fd: FormData): Promise<FormS
 /** CSV columns: teacher (name or ID), date (DD/MM/YYYY), time_in, time_out, absent. */
 export async function importLogsAction(_p: FormState, fd: FormData): Promise<FormState> {
   const a = await requireAdmin('edit');
+  await takeUploads(fd); // the file came up first, with progress (FileDrop)
   const f = fd.get('file');
   const text = f instanceof File && f.size ? (f.size > 2_000_000 ? '' : await f.text()) : String(fd.get('paste') ?? '');
   const parsed = parseCsv(text);

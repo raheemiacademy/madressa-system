@@ -8,6 +8,7 @@ import { adminCan } from '@/server/permissions';
 import { awardMerits, deleteAwards, issueCertificates, saveAchievement, saveCertificateTemplate, saveCompetition, saveMerit, saveTeam } from '@/server/learning/merits';
 import { createSale, markDelivered, saveProduct } from '@/server/learning/products';
 import { storeUpload } from '@/server/storage';
+import { takeUploads } from '@/server/uploads';
 
 const done = () => revalidatePath('/admin', 'layout');
 const all = (fd: FormData, k: string) => fd.getAll(k).map(String);
@@ -55,6 +56,7 @@ export async function issueAction(_p: FormState, fd: FormData): Promise<FormStat
 export async function saveTemplateAction(id: number | null, _p: FormState, fd: FormData): Promise<FormState> {
   const a = await requireAdmin('edit');
   let fileId: string | undefined;
+  await takeUploads(fd); // the file came up first, with progress (FileDrop)
   const f = fd.get('file');
   if (f instanceof File && f.size) {
     const up = await storeUpload(db, f, 'pdf', 'certificate-template', a.identityId);
@@ -85,6 +87,7 @@ export async function saveCompetitionAction(id: number | null, _p: FormState, fd
 export async function saveProductAction(id: number | null, _p: FormState, fd: FormData): Promise<FormState> {
   const a = await requireAdmin('edit');
   let imageFileId: string | undefined;
+  await takeUploads(fd); // the file came up first, with progress (FileDrop)
   const f = fd.get('image');
   if (f instanceof File && f.size) {
     const up = await storeUpload(db, f, 'image', 'product-image', a.identityId);

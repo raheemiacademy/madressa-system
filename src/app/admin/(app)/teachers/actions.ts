@@ -10,11 +10,13 @@ import { actorOf, requestMeta, requireAdmin } from '@/server/next/actor';
 import { setSessionCookie } from '@/server/next/session-cookie';
 import { deleteTeachers, emergencyFromForm, openTeacherPortalAs, saveTeacher, setHours } from '@/server/people/teachers';
 import { storeUpload } from '@/server/storage';
+import { takeUploads } from '@/server/uploads';
 
 export async function saveTeacherAction(id: number | undefined, _p: FormState, fd: FormData): Promise<FormState> {
   const a = await requireAdmin('edit');
   const r = await saveTeacher(db, actorOf(a), formObject(fd), emergencyFromForm(fd), fd, id);
   if (!r.ok) return { errors: r.errors, message: 'Check the highlighted fields.' };
+  await takeUploads(fd); // the file came up first, with progress (FileDrop)
   const photo = fd.get('photo');
   if (photo instanceof File && photo.size) {
     const up = await storeUpload(db, photo, 'image', 'teacher-photo', a.identityId);

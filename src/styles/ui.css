@@ -553,6 +553,25 @@ button.ra-mk { cursor: pointer; }
 .ra-kpi-ic { background: color-mix(in srgb, var(--ra-lav) 22%, transparent); } /* one neutral tint: the figure is the star, not the icon */
 .ra-banner > .ra-banner-ic { flex: none; }
 .ra-kpi-ic svg, .ra-banner-ic svg { width: 16px; height: 16px; }
+/* File boxes (FileDrop): drop or choose; the icon lifts while a file is over it; one row with a real progress bar, ✓ or Retry */
+.ra-drop { display: grid; justify-items: center; gap: 4px; padding: 20px 16px; border: 2px dashed var(--color-border-line); border-radius: var(--ra-r); text-align: center; color: var(--color-fg-muted); cursor: pointer; transition: border-color .15s ease, background-color .15s ease; }
+.ra-drop svg { width: 24px; height: 24px; color: var(--ra-accent-text); transition: transform 200ms var(--ra-ease-out); }
+.ra-drop b, .ra-drop u { color: var(--color-fg); }
+.ra-drop.is-over, .ra-drop:focus-within { border-color: var(--ra-accent); background: color-mix(in srgb, var(--ra-accent) 8%, transparent); }
+.ra-drop.is-over svg { transform: translateY(-4px); }
+.ra-up { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; padding: 8px 0 2px; font-size: 14px; animation: ra-rise 200ms var(--ra-ease-out) both; }
+.ra-up .nm { overflow-wrap: anywhere; }
+.ra-up .st { font-size: 13px; color: var(--color-fg-muted); font-variant-numeric: tabular-nums; text-align: right; }
+.ra-up .st .ok { display: inline-block; color: var(--color-ok); animation: ra-tick 240ms var(--ra-ease-out) both; }
+.ra-up-bar { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--ra-hairline); overflow: hidden; }
+.ra-up-bar i { display: block; height: 100%; background: var(--ra-accent); transform-origin: left; transform: scaleX(var(--p, 0)); transition: transform 200ms var(--ra-ease-out); }
+.ra-up[data-state="fail"] .ra-up-bar i { background: var(--color-bad); }
+.ra-up[data-state="done"] .ra-up-bar i { background: var(--color-ok); }
+@media (prefers-reduced-motion: reduce) {
+  .ra-drop svg, .ra-up-bar i { transition: none; }
+  .ra-drop.is-over svg { transform: none; }
+  .ra-up, .ra-up .st .ok { animation: ra-fade 200ms ease both; }
+}
 /* A slow page fades in over its loading outline (PageOutline) */
 .ra-in { animation: ra-fade 200ms ease both; }
 /* Page not found: the logo turns once into place and the words rise */

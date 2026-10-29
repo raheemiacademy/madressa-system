@@ -10,6 +10,7 @@ import { actorOf, requireAdmin } from '@/server/next/actor';
 import { deleteHomeworkTemplate, emailYearReport, homeworkBulk, saveHomework, saveHomeworkTemplate, sendReminders, setCompleted } from '@/server/learning/homework';
 import { readTab } from '@/server/settings';
 import { storeAttachment } from '@/server/storage';
+import { takeUploads } from '@/server/uploads';
 
 const done = () => revalidatePath('/admin', 'layout');
 const ids = (fd: FormData, k = 'ids') => fd.getAll(k).map(Number).filter((n) => Number.isInteger(n) && n > 0);
@@ -17,6 +18,7 @@ const ids = (fd: FormData, k = 'ids') => fd.getAll(k).map(Number).filter((n) => 
 export async function saveHomeworkAction(_p: FormState, fd: FormData): Promise<FormState> {
   const a = await requireAdmin('edit');
   let fileId: string | null = null;
+  await takeUploads(fd); // the file came up first, with progress (FileDrop)
   const f = fd.get('file');
   if (f instanceof File && f.size) {
     const r = await storeAttachment(db, f, (await readTab(db, 'homework')).teacherExtensions as string[], 'homework', a.identityId);

@@ -7,6 +7,7 @@ import { requireAdmin } from '@/server/next/actor';
 import { yearAndClasses } from '../../students/year-classes';
 import { composeAction } from '../actions';
 import { ContactPicker } from '../ContactPicker';
+import { FileDrop } from '@/components/FileDrop';
 
 export const metadata = { title: 'Compose message' };
 
@@ -32,7 +33,7 @@ export default async function Compose({ searchParams }: { searchParams: Promise<
           <SelectField name="faoRank" label="Replies are for the attention of" options={[{ value: '', label: 'All admins' }, ...ranks.map((r) => ({ value: r.rank!, label: r.rank! }))]} />
           <TextField name="subject" label="Subject" full autoComplete="off" />
           <TextArea name="body" label="Message" rows={8} />
-          <div className="ra-field"><label htmlFor="c-att">Attachment</label><input className="ra-input" id="c-att" name="attachment" type="file" style={{ paddingTop: 8 }} /></div>
+          <FileDrop name="attachment" label="Attachment" id="c-att" />
         </div>
         <button className="ra-btn" name="lock" value="1">Send &amp; lock</button>
       </Form>

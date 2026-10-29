@@ -6,6 +6,7 @@ import { SelectField, TextArea, TextField } from '@/components/Fields';
 import { Form } from '@/components/Form';
 import { Icon } from '@/components/Icon';
 import { saveTeacherAction } from './actions';
+import { FileDrop } from '@/components/FileDrop';
 
 export type TeacherValues = {
   id?: number; name: string; dob: string; gender: string; email: string; tel: string; mobile: string; status: string; startDate: string; leftDate: string;
@@ -66,7 +67,7 @@ export function TeacherForm({ t, statuses, genders, fields, answers }: { t: Teac
           <label htmlFor="f-photo">Photo</label>
           {/* eslint-disable-next-line @next/next/no-img-element -- private uploaded photo */}
           {t.photo && <img className="ra-photo" src={`/admin/files/${t.photo}`} alt="Current photo" />}
-          <input className="ra-input" id="f-photo" name="photo" type="file" accept="image/png,image/jpeg,image/webp" style={{ paddingTop: 8 }} />
+          <FileDrop name="photo" id="f-photo" accept="image/png,image/jpeg,image/webp" />
         </div>
       </div>
       {fields.length > 0 && <fieldset className="ra-fieldset"><legend>More details</legend><CustomFieldInputs fields={fields} values={answers} /></fieldset>}

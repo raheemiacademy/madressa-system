@@ -52,7 +52,8 @@ Ease-out `cubic-bezier(0.23, 1, 0.32, 1)`.
 - Sign in: after a right password, in the existing 0.4s, the fields fade and "Welcome back" rises (280ms). New password: a 4px bar fills towards the 10-character rule (orange, then green); it measures only that rule.
 - Add fees: after "Record payment" the receipt slides down out of a slot under the form (560ms), with Open receipt and Email to parent.
 - Reply: the paper plane on the button flies off and comes back (600ms).
-- Slow pages (Students, Fees, Reports, Search) show their outline at once (loading.tsx, the pulsing .ra-skel blocks), then fade in (200ms).
+- Slow pages (Students, Fees, Reports, Search): a click on a link to one shows its outline at once (the admin Shell draws the pulsing .ra-skel blocks until it arrives), then the page fades in (200ms). Not loading.tsx: a loading boundary there sometimes left a save spinning.
+- File boxes (FileDrop): drop or choose a file; it uploads at once with a bar of the real bytes sent (200ms steps), then ✓ pops in, or the reason with Retry. Saving during an upload waits for it.
 - Page not found: the logo turns once into place (600ms) and the words rise.
 - Messages: a sent reply rises in (200ms); a conversation that arrives while the inbox is open drops in at the top (260ms) with one 300ms pop of its count, and the rows below slide down.
 - No keyboard-shortcut animation, and no chart animation anywhere else. Reduced motion: opacity only, and nothing on the dashboard counts, draws or grows.

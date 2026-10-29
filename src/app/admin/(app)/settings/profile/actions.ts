@@ -6,10 +6,12 @@ import { formObject, type FormState } from '@/lib/validate';
 import { requireAdmin } from '@/server/next/actor';
 import { saveProfile } from '@/server/profile';
 import { storeUpload } from '@/server/storage';
+import { takeUploads } from '@/server/uploads';
 
 export async function saveProfileAction(_prev: FormState, fd: FormData): Promise<FormState> {
   const admin = await requireAdmin('super');
   let logo: string | null | undefined;
+  await takeUploads(fd); // the file came up first, with progress (FileDrop)
   const up = fd.get('logo');
   if (up instanceof File && up.size > 0) {
     const r = await storeUpload(db, up, 'image', 'logo', admin.identityId);

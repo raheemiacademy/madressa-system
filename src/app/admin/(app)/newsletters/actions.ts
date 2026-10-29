@@ -14,6 +14,7 @@ import { renderNewsletter, saveNewsletter, sendNewsletter } from '@/server/comm/
 import { readTab } from '@/server/settings';
 import { removeStored, storeAttachment, storeUpload } from '@/server/storage';
 import { currentYear } from '@/server/academic-years';
+import { takeUploads } from '@/server/uploads';
 
 const done = () => revalidatePath('/admin', 'layout');
 
@@ -53,6 +54,7 @@ export async function deleteNewsletterAction(id: number) {
 /** Image manager: images are checked by their bytes; other files must use the school's allowed extensions. Both are public (they're used in emails). */
 export async function uploadFileAction(_p: FormState, fd: FormData): Promise<FormState> {
   const a = await requireAdmin('marketing');
+  await takeUploads(fd); // the file came up first, with progress (FileDrop)
   const f = fd.get('file');
   if (!(f instanceof File) || !f.size) return { errors: { file: 'Choose a file' } };
   const image = /^image\//.test(f.type);

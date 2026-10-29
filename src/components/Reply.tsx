@@ -5,6 +5,7 @@ import type { FormState } from '@/lib/validate';
 import { FormErrors } from './Fields';
 import { TextArea } from './Fields';
 import { Icon } from './Icon';
+import { FileDrop } from './FileDrop';
 
 type Action = (prev: FormState, fd: FormData) => Promise<FormState>;
 const HOLD = 5; // seconds of "Undo send"
@@ -43,7 +44,7 @@ export function Reply({ action, submit = 'Reply', me, portal = false, lockable =
     const body = sentBody.current;
     sentBody.current = null;
     setSending(null);
-    if (state.ok) { const f = form.current?.elements.namedItem('attachment') as HTMLInputElement | null; if (f) f.value = ''; return; }
+    if (state.ok) { form.current?.reset(); return; } // empties the file box (the reply box is already empty)
     const b = box();
     if (b && !b.value) b.value = body;
     setFailed(state.message ?? 'Not sent. Please try again.');
@@ -83,8 +84,8 @@ export function Reply({ action, submit = 'Reply', me, portal = false, lockable =
           held.current = fd;
           const b = box();
           if (b) b.value = '';
-          const file = fd.get('attachment');
-          if (file instanceof File && file.size > 0) { setSending({ body, left: 0 }); send(fd); return; }
+          const file = fd.get('upload:attachment'); // FileDrop's token for a file that's already up
+          if (file) { setSending({ body, left: 0 }); send(fd); return; }
           setSending({ body, left: HOLD });
           let left = HOLD;
           timer.current = setInterval(() => { left -= 1; if (left > 0) setSending({ body, left }); else send(fd); }, 1000);
@@ -92,7 +93,7 @@ export function Reply({ action, submit = 'Reply', me, portal = false, lockable =
         <FormErrors.Provider value={state?.ok ? undefined : state?.errors}>
           {failed && <div className="ra-banner ra-alert" role="alert"><div>Not sent: {failed} Your message is back in the box.</div></div>}
           <TextArea name="body" label="Reply" rows={4} enterKeyHint="send" />
-          {attach && <div className="ra-field"><label htmlFor="r-att">Attach a file</label><input className="ra-input" id="r-att" name="attachment" type="file" style={{ paddingTop: 8 }} /></div>}
+          {attach && <FileDrop name="attachment" label="Attach a file" id="r-att" />}
           <div className="ra-toolbar">
             <button ref={plane} className="ra-btn primary" disabled={pending || !!sending}><Icon name="send" />{submit}</button>
             {lockable && <button className="ra-btn" name="lock" value="1" disabled={pending || !!sending}>Reply &amp; lock</button>}

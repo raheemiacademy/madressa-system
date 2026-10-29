@@ -5,6 +5,7 @@ import { requireAdmin } from '@/server/next/actor';
 import { newsletterFiles } from '@/server/comm/newsletters';
 import { deleteFileAction, uploadFileAction } from '../actions';
 import { CommTabs } from '../CommTabs';
+import { FileDrop } from '@/components/FileDrop';
 
 export const metadata = { title: 'Image manager' };
 
@@ -16,7 +17,7 @@ export default async function Files() {
       <div className="ra-page-h"><div><h1>Image manager</h1><p>Images and files for newsletters. They’re public, because they appear in emails, so don’t upload anything private.</p></div></div>
       <CommTabs admin={admin} current="/admin/newsletters/files" />
       <Form action={uploadFileAction} submit="Upload" encType="multipart/form-data" resetOnSuccess>
-        <div className="ra-field"><label htmlFor="nf-file">Image or file</label><input className="ra-input" id="nf-file" name="file" type="file" style={{ paddingTop: 8 }} /></div>
+        <FileDrop name="file" label="Image or file" id="nf-file" />
       </Form>
       <section className="ra-card" aria-label="Files">
         {files.length === 0 ? <p className="ra-empty">No images or files yet.</p> : (

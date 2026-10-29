@@ -22,6 +22,7 @@ import { groupNamesFor } from '@/server/people/registration';
 import { siblingsOf } from '@/server/people/siblings';
 import { getStudent } from '@/server/people/students';
 import { copyAddressAction } from '../../contacts/actions';
+import { FileDrop } from '@/components/FileDrop';
 import {
   deleteAttachmentAction, deleteNoteAction, deleteOneStudentAction, saveNoteAction, setConsentAction, setLinkFlagsAction, unlinkContactAction, uploadAttachmentAction
 } from '../actions';
@@ -156,7 +157,7 @@ export default async function StudentProfile({ params }: { params: Promise<{ id:
           )}
           {canEdit && (
             <Form action={uploadAttachmentAction.bind(null, id)} card={false} savebar={false} submit="Upload" resetOnSuccess>
-              <TextField name="file" label="Add a file" type="file" style={{ paddingTop: 8 }} />
+              <FileDrop name="file" label="Add a file" />
             </Form>
           )}
         </section>

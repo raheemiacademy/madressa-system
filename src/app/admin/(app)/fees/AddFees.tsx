@@ -98,6 +98,7 @@ export function AddFeesDialog({ today, methods, statuses }: { today: string; met
             <div className="ra-rcpt" role="status" aria-label="Receipt">
               <div className="ra-note">Receipt {slip.receipts.map((id) => `R${id}`).join(', ')} · {slip.method} · {formatCalendarDate(slip.on)}</div>
               <div className="ra-rcpt-row"><span>{student.name}</span><span className="amt">{formatPence(parsePounds(slip.amount) ?? 0)}</span></div>
+              <div className="ra-rcpt-row ra-note"><span>{slip.family ? 'Family balance now' : 'Balance now'}</span><span>{formatPence(slip.left)}{slip.left ? '' : ' ✓'}</span></div>
               <div className="ra-toolbar">
                 {slip.receipts.map((id) => <Link key={id} className="ra-btn" href={`/admin/fees/receipt/${id}`} onClick={() => dlg.current?.close()}><Icon name="receipt" />Open receipt{slip.receipts.length > 1 ? ` R${id}` : ''}</Link>)}
                 {slip.receipts.length === 1 && <ActionButton action={quickSendReceiptAction.bind(null, slip.receipts[0]!)} label="Email to parent" />}

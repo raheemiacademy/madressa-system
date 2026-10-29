@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState, useTransition } from 'react';
 import type { ImportKind } from '@/server/people/imports';
 import { commitImport, previewImport, previewMatched, type ImportState } from './actions';
+import { FileDrop } from '@/components/FileDrop';
 
 type Actions = { preview: (p: ImportState, fd: FormData) => Promise<ImportState>; commit: (rows: Record<string, string>[]) => Promise<ImportState> };
 type Target = { value: string; label: string };
@@ -27,8 +28,7 @@ export function ImportFlow({ kind, extra, actions, targets = [] }: { kind: Impor
         <div className="ra-card-h"><div><h2>1. Upload</h2><div className="ra-note">{kind === 'fees' ? 'The first row must be the column headings from the template.' : 'Use our template, or your own spreadsheet: the first row must be its column headings, and you’ll match them up next.'}</div></div></div>
         {uploaded?.error && !checked && <p role="alert" className="ra-banner ra-alert" style={{ margin: 0 }}>{uploaded.error}</p>}
         <div className="ra-fields">
-          <div className="ra-field"><label htmlFor="imp-file">CSV or Excel file</label>
-            <input className="ra-input" id="imp-file" name="file" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style={{ paddingTop: 8 }} /></div>
+          <FileDrop name="file" label="CSV or Excel file" id="imp-file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
           <div className="ra-field full"><label htmlFor="imp-paste">Or paste rows (with the heading row)</label><textarea className="ra-textarea" id="imp-paste" name="paste" rows={4} spellCheck={false} /></div>
           {extra}
         </div>

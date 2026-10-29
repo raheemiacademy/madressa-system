@@ -133,7 +133,6 @@ test('each Fees figure opens its list; All invoices filters and sorts', async ({
   await page.getByLabel('Sort by').selectOption('balance');
   await page.getByRole('button', { name: 'Show invoices' }).click();
   await expect(page).toHaveURL(/status=Overdue/);
-  await expect(page.getByRole('table').locator('tbody tr').first()).toBeVisible(); // the loading outline shows first
   const statuses = await page.getByRole('table').locator('tbody tr td:last-child').allTextContents();
   expect(statuses.length).toBeGreaterThan(0);
   expect(statuses.every((x) => x.includes('Overdue'))).toBe(true);

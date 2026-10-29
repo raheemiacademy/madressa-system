@@ -5,6 +5,7 @@ import { TextArea, TextField } from '@/components/Fields';
 import { SaveBar } from '@/components/SaveBar';
 import type { FormState } from '@/lib/validate';
 import { saveProfileAction } from './actions';
+import { FileDrop } from '@/components/FileDrop';
 
 type P = { name: string; logoFileId: string | null; logoUrl: string | null; address: string | null; city: string | null; postcode: string | null; email: string | null; noReplyEmail: string | null; bccEmail: string | null; receiptSenderEmail: string | null; receiptSenderName: string | null; tel: string | null; fax: string | null };
 
@@ -19,7 +20,7 @@ export function ProfileForm({ profile: p }: { profile: P | null }) {
         <TextField name="name" label="School name" defaultValue={v('name')} error={e('name')} required autoComplete="organization" full />
         <div className="ra-field full">
           <label htmlFor="f-logo">Logo</label>
-          <input className="ra-input" id="f-logo" name="logo" type="file" accept="image/png,image/jpeg,image/webp" style={{ paddingTop: 8 }} aria-describedby={e('logo') ? 'f-logo-err' : 'f-logo-help'} aria-invalid={e('logo') ? true : undefined} />
+          <FileDrop name="logo" id="f-logo" accept="image/png,image/jpeg,image/webp" describedBy={e('logo') ? 'f-logo-err' : 'f-logo-help'} />
           <span className="help" id="f-logo-help">Upload a PNG, JPEG or WebP image up to 5 MB, or give a web address below.</span>
           {e('logo') && <span className="err" id="f-logo-err">{e('logo')}</span>}
           {p?.logoFileId && (

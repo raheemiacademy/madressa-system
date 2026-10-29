@@ -8,6 +8,7 @@ import type { FormState } from '@/lib/validate';
 import { resolveYear } from '@/server/academic-years';
 import { actorOf, requireAdmin } from '@/server/next/actor';
 import { AREAS, restoreDefaultParagraphs, saveEntries, saveParagraphs, saveReport } from '@/server/learning/eoty';
+import { takeUploads } from '@/server/uploads';
 
 const done = () => revalidatePath('/admin', 'layout');
 const lines = (v: FormDataEntryValue | null) => String(v ?? '').split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
@@ -45,6 +46,7 @@ export async function entriesAction(reportId: number, _p: FormState, fd: FormDat
 
 export async function paragraphsAction(_p: FormState, fd: FormData): Promise<FormState> {
   const a = await requireAdmin('edit');
+  await takeUploads(fd); // the file came up first, with progress (FileDrop)
   const file = fd.get('backup');
   let raw: unknown;
   if (file instanceof File && file.size) {

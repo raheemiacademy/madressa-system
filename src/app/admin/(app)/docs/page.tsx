@@ -7,6 +7,7 @@ import { adminCan } from '@/server/permissions';
 import { listDocs } from '@/server/portal/docs';
 import { yearAndClasses } from '../students/year-classes';
 import { addDocAction, deleteDocAction } from './actions';
+import { FileDrop } from '@/components/FileDrop';
 
 export const metadata = { title: 'Shared files' };
 const WHO: Record<string, string> = { parents: 'Parents', teachers: 'Teachers', both: 'Parents and teachers' };
@@ -24,7 +25,7 @@ export default async function Docs() {
           <div className="ra-fields">
             <TextField name="title" label="Title" />
             <SelectField name="audience" label="Who can see it" options={Object.entries(WHO).map(([value, label]) => ({ value, label }))} />
-            <div className="ra-field"><label htmlFor="doc-file">File</label><input className="ra-input" id="doc-file" name="file" type="file" style={{ paddingTop: 8 }} /></div>
+            <FileDrop name="file" label="File" id="doc-file" />
           </div>
           {options.length > 0 && <Checks name="classIds" legend="Only these classes (leave empty for everyone)" options={options} />}
         </Form>

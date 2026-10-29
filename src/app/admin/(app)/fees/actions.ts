@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { asc, eq, sql } from 'drizzle-orm';
+import { asc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { PAYMENT_STATUSES, invoice, student } from '@/db/schema';
 import { formatCalendarDate } from '@/lib/dates';
@@ -22,6 +22,7 @@ import { sendReceipts, sendReminders } from '@/server/comm/notify';
 import { deleteStructure, saveStructure, setClassStructure } from '@/server/fees/structures';
 import { parseCsv } from '@/server/people/csv';
 import type { RowResult } from '@/server/people/imports';
+import { takeUploads } from '@/server/uploads';
 
 const done = () => revalidatePath('/admin', 'layout');
 
@@ -59,7 +60,7 @@ export async function paymentOptionsAction(studentId: number) {
 }
 
 /** What the Add fees box shows on the receipt slip after a payment is recorded (the receipt numbers are the payment IDs). */
-export type Slip = { receipts: number[]; amount: string; method: string; on: string };
+export type Slip = { receipts: number[]; amount: string; method: string; on: string; left: number; family: boolean };
 
 export async function recordPaymentAction(_p: FormState, fd: FormData): Promise<FormState & { slip?: Slip }> {
   const a = await requireFees();
@@ -69,8 +70,11 @@ export async function recordPaymentAction(_p: FormState, fd: FormData): Promise<
   const r = await recordPayment(db, actorOf(a), { ...formObject(fd), invoiceId: studentIds.length ? '' : target, studentIds });
   if (!r.ok) return { errors: r.errors, message: 'Check the highlighted fields.' };
   done();
+  // What's still to pay afterwards (as the box's own "to pay" figures count it): the student's, or the family's when paid together.
+  const who = studentIds.length ? studentIds : [sid];
+  const left = (await invoiceRows(db, inArray(invoice.studentId, who))).reduce((t, i) => t + Math.max(0, i.amountPence - i.received - i.pending), 0);
   return { ok: true, message: r.ids.length > 1 ? `Payment recorded across ${r.ids.length} invoices.` : 'Payment recorded.',
-    slip: { receipts: r.ids, amount: String(fd.get('amount') ?? ''), method: String(fd.get('method') ?? ''), on: String(fd.get('receivedOn') ?? '') } };
+    slip: { receipts: r.ids, amount: String(fd.get('amount') ?? ''), method: String(fd.get('method') ?? ''), on: String(fd.get('receivedOn') ?? ''), left, family: who.length > 1 } };
 }
 
 /* ───────── Invoices and payments ───────── */
@@ -282,6 +286,7 @@ export type FeeImportState = { rows?: Record<string, string>[]; results?: RowRes
 
 export async function previewFeeImport(_p: FeeImportState, fd: FormData): Promise<FeeImportState> {
   await requireFees();
+  await takeUploads(fd); // the file came up first, with progress (FileDrop)
   const file = fd.get('file');
   const pasted = String(fd.get('paste') ?? '').trim();
   let text = pasted;

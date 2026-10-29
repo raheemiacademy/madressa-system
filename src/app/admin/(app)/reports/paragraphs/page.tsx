@@ -5,6 +5,7 @@ import { requireAdmin } from '@/server/next/actor';
 import { adminCan } from '@/server/permissions';
 import { AREAS, PARAGRAPH_VARS, paragraphs } from '@/server/learning/eoty';
 import { paragraphsAction, restoreDefaultsAction } from '../actions';
+import { FileDrop } from '@/components/FileDrop';
 
 export const metadata = { title: 'Paragraph templates' };
 const LEVELS = ['1 (lowest)', '2', '3', '4', '5 (highest)'];
@@ -34,7 +35,7 @@ export default async function Paragraphs() {
       {canEdit && (
         <Form action={paragraphsAction} submit="Restore backup" encType="multipart/form-data">
           <div className="ra-card-h"><div><h2>Restore a backup</h2><div className="ra-note">Choose a file made with “Download backup”. It replaces all 15 paragraphs.</div></div></div>
-          <div className="ra-field"><label htmlFor="pb-file">Backup file</label><input className="ra-input" id="pb-file" name="backup" type="file" accept=".json,application/json" style={{ paddingTop: 8 }} /></div>
+          <FileDrop name="backup" label="Backup file" id="pb-file" accept=".json,application/json" />
         </Form>
       )}
     </div>

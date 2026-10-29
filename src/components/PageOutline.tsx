@@ -1,6 +1,6 @@
 /**
- * A slow page's loading.tsx: the page's shape (heading, a button, rows) in the dashboard's pulsing grey blocks, shown at
- * once so a tap never looks ignored. The page itself then fades in (.ra-in on its root).
+ * A slow page's shape (heading, a button, rows) in the dashboard's pulsing grey blocks, shown by the admin Shell the moment a
+ * link to one is clicked, so a tap never looks ignored. The page itself then fades in (.ra-in on its root).
  */
 export function PageOutline() {
   return (

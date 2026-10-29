@@ -12,6 +12,7 @@ import { todayIso } from '@/server/people/common';
 import { yearAndClasses } from '../students/year-classes';
 import { deliveredAction, saleAction, saveProductAction } from '../merits/actions';
 import { MeritTabs } from '../merits/MeritTabs';
+import { FileDrop } from '@/components/FileDrop';
 
 export const metadata = { title: 'Shop' };
 type P = Awaited<ReturnType<typeof listProducts>>[number];
@@ -27,7 +28,7 @@ function ProductFields({ p }: { p?: P }) {
         <TextField name="meritPrice" id={`pm-${k}`} label="Price in merits" inputMode="numeric" defaultValue={p?.p.meritPrice != null ? String(p.p.meritPrice) : ''} help="Blank if it can’t be bought with merits." />
         <TextField name="stock" id={`ps-${k}`} label="Stock" inputMode="numeric" defaultValue={p?.p.stock != null ? String(p.p.stock) : ''} help="Blank for unlimited." />
         <TextField name="description" id={`pd-${k}`} label="Description" full defaultValue={p?.p.description ?? ''} />
-        <div className="ra-field"><label htmlFor={`pi-${k}`}>Image</label><input className="ra-input" id={`pi-${k}`} name="image" type="file" accept="image/png,image/jpeg,image/webp" style={{ paddingTop: 8 }} /></div>
+        <FileDrop name="image" label="Image" id={`pi-${k}`} accept="image/png,image/jpeg,image/webp" />
       </div>
       <Check name="active" label="Active (on sale)" defaultChecked={p?.p.active ?? true} />
     </>

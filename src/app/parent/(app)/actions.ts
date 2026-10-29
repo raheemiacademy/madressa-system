@@ -16,6 +16,7 @@ import { parseRecipient, recipientsFor } from '@/server/portal/messages';
 import { confirmDetails, removeHomeworkUpload, setWalkHome, uploadHomework } from '@/server/portal/parent';
 import { visibleCategory, visibleTopic } from '@/server/portal/shared';
 import { todayIso } from '@/server/people/common';
+import { takeUploads } from '@/server/uploads';
 
 /* §20 Parent portal actions. Each one checks the session, the section and the child again: what the page showed is never trusted. */
 
@@ -70,6 +71,7 @@ export async function payByDirectDebitAction(): Promise<{ error?: string; messag
 export async function uploadHomeworkAction(studentId: number, homeworkId: number, _: FormState, fd: FormData): Promise<FormState> {
   const p = await requireParent('Homework');
   try {
+    await takeUploads(fd); // the file came up first, with progress (FileDrop)
     const f = fd.get('file');
     const r = await uploadHomework(db, p.actor, p.ctx, studentId, homeworkId, f instanceof File ? f : null);
     if (!r.ok) return { ok: false, message: r.error };

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Check, SelectField, TextArea, TextField } from '@/components/Fields';
 import { Form } from '@/components/Form';
 import { saveHomeworkAction } from './actions';
+import { FileDrop } from '@/components/FileDrop';
 
 type Opt = { value: string; label: string };
 
@@ -32,7 +33,7 @@ export function HomeworkForm({ classes, rosters, teachers, templates, defaultDea
         )}
       </fieldset>
       <TextArea name="instructions" label="Instructions" rows={6} value={instructions} onChange={(e) => setInstructions(e.target.value)} />
-      <div className="ra-field"><label htmlFor="hw-file">File for students (optional)</label><input className="ra-input" id="hw-file" name="file" type="file" style={{ paddingTop: 8 }} /></div>
+      <FileDrop name="file" label="File for students (optional)" id="hw-file" />
       <div className="ra-checks">
         <Check name="lockAfterDeadline" label="Lock after the deadline" />
         <Check name="allowUploads" label="Let families upload their work" />

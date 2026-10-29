@@ -10,11 +10,13 @@ import { actorOf, requireAdmin } from '@/server/next/actor';
 import { bulkThreads, compose, deleteMessage, deleteRange, reply } from '@/server/comm/messages';
 import { readTab } from '@/server/settings';
 import { storeAttachment } from '@/server/storage';
+import { takeUploads } from '@/server/uploads';
 
 const done = () => revalidatePath('/admin', 'layout');
 const actor = (a: Awaited<ReturnType<typeof requireAdmin>>) => ({ ...actorOf(a), staffId: a.staff.id });
 
 async function attachment(fd: FormData, identityId: number): Promise<{ id: string | null } | { error: string }> {
+  await takeUploads(fd); // the file came up first, with progress (FileDrop)
   const f = fd.get('attachment');
   if (!(f instanceof File) || !f.size) return { id: null };
   const r = await storeAttachment(db, f, (await readTab(db, 'storage')).allowedExtensions as string[], 'message', identityId);

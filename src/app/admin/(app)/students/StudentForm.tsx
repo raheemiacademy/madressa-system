@@ -7,6 +7,7 @@ import { Form } from '@/components/Form';
 import { Icon } from '@/components/Icon';
 import { searchContactsAction } from '../contacts/actions';
 import { saveStudentAction } from './actions';
+import { FileDrop } from '@/components/FileDrop';
 
 type Opt = { value: string; label: string };
 export type ContactRow = { key: number; contactId: number | null; display: string; name: string; email: string; tel: string; mobile: string; altMobile: string; type: string; relation: string; isPrimary: boolean; portalAccess: boolean };
@@ -57,7 +58,7 @@ export function StudentForm({ s, contacts, classes, statuses, genders, contactTy
           <label htmlFor="f-photo">Photo</label>
           {/* eslint-disable-next-line @next/next/no-img-element -- private uploaded photo */}
           {s.photo && <img className="ra-photo" src={`/admin/files/${s.photo}`} alt="Current photo" />}
-          <input className="ra-input" id="f-photo" name="photo" type="file" accept="image/png,image/jpeg,image/webp" style={{ paddingTop: 8 }} />
+          <FileDrop name="photo" id="f-photo" accept="image/png,image/jpeg,image/webp" />
           <PhotoError />
         </div>
       </div>

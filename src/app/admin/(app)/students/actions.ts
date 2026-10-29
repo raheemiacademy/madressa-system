@@ -21,6 +21,7 @@ import { bulkUpdate, contactLinksFromForm, deleteStudents, saveStudent } from '@
 import { confirmsSchoolName } from '@/server/profile';
 import { readTab } from '@/server/settings';
 import { removeStored, storeAttachment, storeUpload } from '@/server/storage';
+import { takeUploads } from '@/server/uploads';
 
 const done = (path = '/admin/students') => revalidatePath(path, 'layout');
 const ids = (fd: FormData, name = 'ids') => fd.getAll(name).map(Number).filter((n) => Number.isInteger(n) && n > 0);
@@ -39,6 +40,7 @@ export async function saveStudentAction(id: number | undefined, _p: FormState, f
     const fee = y ? await createAdmissionFees(db, actorOf(a), [r.id], y) : { ok: false as const, error: 'Add an academic year first.' };
     if (!fee.ok) return { message: `The student was saved, but the admission fee wasn’t: ${fee.error}` };
   }
+  await takeUploads(fd); // the file came up first, with progress (FileDrop)
   const photo = fd.get('photo');
   if (photo instanceof File && photo.size) {
     const up = await storeUpload(db, photo, 'image', 'student-photo', a.identityId);
@@ -125,6 +127,7 @@ export async function deleteNoteAction(studentId: number, noteId: number) {
 
 export async function uploadAttachmentAction(studentId: number, _p: FormState, fd: FormData): Promise<FormState> {
   const a = await requireAdmin('edit');
+  await takeUploads(fd); // the file came up first, with progress (FileDrop)
   const f = fd.get('file');
   if (!(f instanceof File) || !f.size) return { errors: { file: 'Choose a file' } };
   const allowed = (await readTab(db, 'storage')).allowedExtensions as string[];

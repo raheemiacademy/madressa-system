@@ -9,6 +9,7 @@ import { requireParent } from '@/server/next/portal';
 import { childHomework } from '@/server/portal/parent';
 import { removeUploadAction, uploadHomeworkAction } from '../actions';
 import { KidSwitch, NoKids, pickKid } from '../kids';
+import { FileDrop } from '@/components/FileDrop';
 
 export const metadata = { title: 'Homework' };
 const STATUS: Record<string, string> = { 'Handed in': 'var(--color-ok)', Due: 'var(--ra-blue)', Missed: 'var(--color-bad)' };
@@ -47,8 +48,7 @@ export default async function Homework({ searchParams }: { searchParams: Promise
                 )}
                 {h.canUpload && !h.uploadFileId && (
                   <Form action={uploadHomeworkAction.bind(null, kid.id, h.id)} submit="Hand in" savebar={false} card={false} encType="multipart/form-data">
-                    <div className="ra-field"><label htmlFor={`up-${h.id}`}>Add a recording, photo or PDF</label>
-                      <input className="ra-input" id={`up-${h.id}`} name="file" type="file" accept="audio/*,image/*,application/pdf,video/webm,video/mp4" style={{ paddingTop: 8 }} /></div>
+                    <FileDrop name="file" label="Add a recording, photo or PDF" id={`up-${h.id}`} accept="audio/*,image/*,application/pdf,video/webm,video/mp4" />
                   </Form>
                 )}
                 {!h.allowUploads && <p className="ra-note" style={{ margin: 0 }}>No upload needed: the teacher will mark it in class.</p>}

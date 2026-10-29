@@ -5,6 +5,7 @@ import { Checks, SelectField, TextArea } from '@/components/Fields';
 import { Form } from '@/components/Form';
 import { ContactPicker } from '../messages/ContactPicker';
 import { sendSmsAction } from './actions';
+import { FileDrop } from '@/components/FileDrop';
 
 /** Texts are 160 characters, or 153 each when a message is split. */
 const parts = (n: number) => (n <= 160 ? 1 : Math.ceil(n / 153));
@@ -26,7 +27,7 @@ export function SmsForm({ groups, classes, templates }: { groups: [string, strin
       <details>
         <summary className="ra-link" style={{ display: 'inline-grid' }}>Add numbers from a CSV</summary>
         <div className="ra-fields">
-          <div className="ra-field"><label htmlFor="sms-csv">CSV file</label><input className="ra-input" id="sms-csv" name="csv" type="file" accept=".csv,text/csv" style={{ paddingTop: 8 }} /></div>
+          <FileDrop name="csv" label="CSV file" id="sms-csv" accept=".csv,text/csv" />
           <TextArea name="paste" label="Or paste: one number per line, optionally followed by a comma and a name" rows={4} spellCheck={false} />
         </div>
       </details>
