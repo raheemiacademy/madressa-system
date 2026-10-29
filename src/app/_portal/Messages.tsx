@@ -1,5 +1,6 @@
 import { RefreshOnce } from '@/components/RefreshOnce';
 import { Ticks } from '@/components/Ticks';
+import { Empty } from '@/components/Empty';
 import Link from 'next/link';
 import { SelectField, TextArea, TextField } from '@/components/Fields';
 import { Form } from '@/components/Form';
@@ -13,7 +14,11 @@ type Action = (prev: FormState, fd: FormData) => Promise<FormState>;
 
 /** A portal user's conversations (design: message list item with initials, unread dot). */
 export function Inbox({ threads, base }: { threads: Awaited<ReturnType<typeof partyInbox>>; base: string }) {
-  if (!threads.length) return <p className="rp-empty">No messages yet.</p>;
+  if (!threads.length) return (
+    <Empty portal icon="mail" href={`${base}/new`} action={base.startsWith('/parent') ? 'Message the office' : 'New message'}>
+      {base.startsWith('/parent') ? 'No messages yet. Questions about fees, absences or anything else go straight to the office.' : 'No messages yet.'}
+    </Empty>
+  );
   return (
     <ul className="ra-msg-list ra-card" style={{ listStyle: 'none', margin: 0, padding: 6 }}>
       {threads.map((t) => (

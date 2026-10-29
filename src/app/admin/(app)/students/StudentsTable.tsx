@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { Chip } from '@/components/Chip';
+import { Empty } from '@/components/Empty';
 import { Check, SelectField, TextField } from '@/components/Fields';
 import { Form } from '@/components/Form';
 import { RowActions, type RowAction } from '@/components/RowMenu';
@@ -22,7 +23,8 @@ export function StudentsTable({ rows, classes, statuses, canEdit, canDelete, can
   const hidden = sel.map((id) => <input key={id} type="hidden" name="ids" value={id} />);
   return (
     <>
-      {rows.length === 0 ? <p className="ra-empty">{filtered ? 'Nothing matches these filters.' : 'No students yet. Add one, or import a CSV.'}</p> : (
+      {rows.length === 0 ? (filtered ? <p className="ra-empty">Nothing matches these filters.</p>
+        : <Empty icon="users" href={canEdit ? '/admin/students/new' : undefined} action="Add student">No students yet. Add them one by one, or bring in a spreadsheet with Import.</Empty>) : (
         <div className="ra-table-wrap" tabIndex={0} style={{ maxHeight: 620 }}>
           <table className="ra-table">
             <thead><tr>

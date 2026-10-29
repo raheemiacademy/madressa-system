@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { contact, teacher } from '@/db/schema';
 import { Chip } from '@/components/Chip';
 import { ActionButton } from '@/components/Form';
+import { Empty } from '@/components/Empty';
 import { Reply } from '@/components/Reply';
 import { RefreshOnce } from '@/components/RefreshOnce';
 import { Ticks } from '@/components/Ticks';
@@ -98,7 +99,7 @@ export default async function Messages({ searchParams }: { searchParams: Promise
         </section>
 
         <section className="ra-card ra-c7" aria-labelledby="th-h">
-          {!open ? <p className="ra-empty">Choose a conversation to read it.</p> : (
+          {!open ? <Empty icon="chat" href={canEdit ? '/admin/messages/new' : undefined} action="New message">Pick a conversation to read it.</Empty> : (
             <>
               <div className="ra-card-h"><div><h2 id="th-h">{open.thread.subject}</h2>
                 <div className="ra-note">{open.people.map((p) => `${p.name} (${ROLE[p.kind]})`).join(', ')}{open.thread.faoRank ? ` · for ${open.thread.faoRank}` : ''}{open.thread.locked ? ' · locked: parents and teachers can’t reply' : ''}</div></div>

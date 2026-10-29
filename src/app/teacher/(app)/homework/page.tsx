@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Empty } from '@/components/Empty';
 import { db } from '@/db';
 import { PortalHead } from '@/app/_portal/Head';
 import { Check, SelectField, TextArea, TextField } from '@/components/Fields';
@@ -23,7 +24,7 @@ export default async function Homework() {
       <PortalHead title="Homework" />
       <main className="rp-main">
         {!classes.length ? <p className="rp-empty">You don’t have the Homework privilege for any class. The office can turn it on.</p> : (
-          <Form action={homeworkAction} submit="Set homework" savebar={false} resetOnSuccess>
+          <Form id="set-homework" action={homeworkAction} submit="Set homework" savebar={false} resetOnSuccess>
             <h2 style={{ margin: 0 }}>Set homework</h2>
             <div className="ra-fields">
               <SelectField name="classId" label="Class" full options={classes.map((c) => ({ value: String(c.id), label: c.name }))} />
@@ -40,7 +41,7 @@ export default async function Homework() {
           </Form>
         )}
         <h2>Recent</h2>
-        {!recent.length ? <p className="rp-empty">No homework set yet.</p> : (
+        {!recent.length ? <Empty portal icon="book" href={classes.length ? '#set-homework' : undefined} action="Set homework">No homework set yet.</Empty> : (
           <ul className="rp-list">
             {recent.map((r) => {
               const pct = r.total ? Math.round((r.completed / r.total) * 100) : 0;

@@ -1,4 +1,5 @@
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { Empty } from '@/components/Empty';
 import Link from 'next/link';
 import { PushToggle } from '@/app/_portal/PushToggle';
 import { vapidKeys } from '@/server/comm/push';
@@ -69,11 +70,14 @@ export default async function Today() {
               <small>Homework done</small><strong>{latest.completed} <span style={{ fontSize: 15, color: 'var(--color-fg-muted)' }}>of {latest.total}</span></strong><small>{latest.h.title}</small>
             </Link>
           )}
-          <div className="rp-tile">
-            <small>Parent notes</small><strong>{notes.length}</strong>
-            <small>{notes.length ? `${plural(absent, 'absence')}, ${plural(notes.length - absent, 'late')} today` : 'None today'}</small>
-          </div>
+          {notes.length > 0 && (
+            <div className="rp-tile">
+              <small>Parent notes</small><strong>{notes.length}</strong>
+              <small>{`${plural(absent, 'absence')}, ${plural(notes.length - absent, 'late')} today`}</small>
+            </div>
+          )}
         </div>
+        {notes.length === 0 && <Empty portal icon="note" href="/teacher/register" action="Open today’s register">No notes from parents for today.</Empty>}
         {notes.length > 0 && (
           <ul className="rp-list" aria-label="Parent notes today">
             {notes.map(({ n, firstName, surname }) => <li key={n.id}><span className="t">{firstName} {surname}</span><span className="v ra-muted">{n.kind === 'late' ? `Late${n.expectedArrival ? `, ${n.expectedArrival.slice(0, 5)}` : ''}` : 'Absent'}</span>{n.reason && <span className="m">{n.reason}</span>}</li>)}

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { db } from '@/db';
 import { TrendChart } from '@/components/charts';
 import { MoreTools } from '@/components/MoreTools';
+import { Empty } from '@/components/Empty';
 import { Chip } from '@/components/Chip';
 import { Icon } from '@/components/Icon';
 import { pct1, summarise } from '@/lib/attendance';
@@ -73,7 +74,7 @@ export default async function Register({ searchParams }: { searchParams: Promise
             return (
               <div key={date}>
                 {range !== 'today' && <h3 style={{ margin: '4px 0', fontSize: 13 }}>{formatCalendarDate(date, 'EEE d MMM')}</h3>}
-                {due.length === 0 ? <p className="ra-empty">No registers due.</p> : (
+                {due.length === 0 ? <Empty icon="check" href="/admin/register/daily" action="Open the daily register">No registers are due {range === 'today' ? 'today' : 'on this day'}.</Empty> : (
                   <div className="ra-table-wrap" tabIndex={0}><table className="ra-table">
                     <thead><tr><th>Class</th><th>Register</th><th className="num">Attendance</th></tr></thead>
                     <tbody>{due.map((r) => (

@@ -44,7 +44,7 @@ test('messages: search bar with a filter, delete one message, and live counts', 
   await threads.first().click();
   page.once('dialog', (d) => d.accept());
   await page.getByRole('button', { name: /^Delete this message from/ }).first().click();
-  await expect(page.getByText('Choose a conversation to read it.')).toBeVisible(); // its only message went, so the conversation did too
+  await expect(page.getByText('Pick a conversation to read it.')).toBeVisible(); // its only message went, so the conversation did too
   await expect(threads).toHaveCount(before - 1);
   await expect(page.getByRole('combobox', { name: 'Filter by teacher or contact' })).toBeVisible();
   const counts = await (await page.request.get('/admin/api/badges')).json();
