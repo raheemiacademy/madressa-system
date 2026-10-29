@@ -15,7 +15,7 @@ export function BulkForm({ action, canDelete, children }: { action: (p: FormStat
   useEffect(() => { dialog.current?.close(); if (state?.ok) clear(); }, [state]);
   const some = n === 1 ? '1 conversation' : `${n} conversations`;
   return (
-    <form ref={form} className="ra-form" noValidate onChange={() => setN(form.current?.querySelectorAll('input[name="ids"]:checked').length ?? 0)}
+    <form ref={form} method="post" className="ra-form" noValidate onChange={() => setN(form.current?.querySelectorAll('input[name="ids"]:checked').length ?? 0)}
       onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget, (e.nativeEvent as SubmitEvent).submitter); startTransition(() => act(fd)); }}>
       {children}
       {n > 0 && (

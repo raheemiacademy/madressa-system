@@ -25,7 +25,7 @@ export function Form({ action, children, submit = 'Save changes', card = true, r
   return (
     // Submitted through onSubmit, not the action prop: React 19 resets a form after every action-prop submit, which wiped
     // everything typed when one field was wrong. resetOnSuccess still clears the forms that ask for it.
-    <form ref={ref} id={id} noValidate className={card ? 'ra-card ra-form' : 'ra-form'} encType={encType}
+    <form ref={ref} id={id} method="post" noValidate className={card ? 'ra-card ra-form' : 'ra-form'} encType={encType}
       onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget, (e.nativeEvent as SubmitEvent).submitter); startTransition(() => act(fd)); }}>
       <FormErrors.Provider value={state?.errors}>
         <FormMessage state={state} />

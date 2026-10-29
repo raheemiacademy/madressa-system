@@ -69,7 +69,7 @@ export function Reply({ action, submit = 'Reply', me, portal = false, lockable =
           </article>
         </div>
       )}
-      <form ref={form} className="ra-form" noValidate encType={attach ? 'multipart/form-data' : undefined}
+      <form ref={form} method="post" className="ra-form" noValidate encType={attach ? 'multipart/form-data' : undefined}
         onSubmit={(e) => {
           e.preventDefault();
           if (sending) return;

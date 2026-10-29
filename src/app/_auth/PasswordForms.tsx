@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { PasswordInput } from '@/components/PasswordInput';
 import type { Portal } from '@/server/auth';
@@ -21,8 +21,9 @@ function Card({ school, title, intro, state, children }: { school: string; title
 }
 
 /** One password field (the eye button replaces "Type it again"), with the length rule shown up front and ticked as you type. */
-function NewPassword() {
+function NewPassword({ state }: { state: LoginState }) {
   const [len, setLen] = useState(0);
+  useEffect(() => setLen(0), [state]); // React empties the box after every submit
   const ok = len >= 10;
   return (
     <div className="ra-field"><label htmlFor="password">New password</label>
@@ -54,7 +55,7 @@ export function SetPasswordForm({ portal, school, token }: { portal: Portal; sch
   const [state, action, pending] = useActionState<LoginState, FormData>(setPasswordAction.bind(null, portal, token), undefined);
   return (
     <Card school={school} title="Choose your password" intro="This confirms your email address and signs you in." state={state}>
-      <form action={action} className="ra-form" noValidate><NewPassword /><button className="ra-btn primary" disabled={pending}>{pending ? 'Saving…' : 'Save and sign in'}</button></form>
+      <form action={action} className="ra-form" noValidate><NewPassword state={state} /><button className="ra-btn primary" disabled={pending}>{pending ? 'Saving…' : 'Save and sign in'}</button></form>
     </Card>
   );
 }
@@ -64,7 +65,7 @@ export function ChangePasswordForm({ portal, school }: { portal: Portal; school:
   const [state, action, pending] = useActionState<LoginState, FormData>(changePasswordAction.bind(null, portal), undefined);
   return (
     <Card school={school} title="Choose your own password" intro="The school set your current password, so please choose a new one before you carry on." state={state}>
-      <form action={action} className="ra-form" noValidate><NewPassword /><button className="ra-btn primary" disabled={pending}>{pending ? 'Saving…' : 'Save password'}</button></form>
+      <form action={action} className="ra-form" noValidate><NewPassword state={state} /><button className="ra-btn primary" disabled={pending}>{pending ? 'Saving…' : 'Save password'}</button></form>
     </Card>
   );
 }
