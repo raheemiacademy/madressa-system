@@ -32,8 +32,10 @@ function Tip({ tip }: { tip: { x: number; y: number; title: string; lines: strin
   );
 }
 
+const NO_HOLIDAYS: { title: string; from: string; to: string }[] = []; // stable default, so a re-render (tooltip) doesn't redraw
+
 /** Weekly attendance line (Register "Attendance trend" and the dashboard). */
-export function TrendChart({ data, empty = 'No registers taken yet this term.', animate = false }: { data: { week: string; rate: number }[]; empty?: string; animate?: boolean }) {
+export function TrendChart({ data, holidays = NO_HOLIDAYS, empty = 'No registers taken yet this term.', animate = false }: { data: { week: string; rate: number }[]; holidays?: { title: string; from: string; to: string }[]; empty?: string; animate?: boolean }) {
   const box = useRef<HTMLDivElement>(null);
   const svg = useRef<SVGSVGElement>(null);
   const W = useWidth(box);
@@ -45,21 +47,27 @@ export function TrendChart({ data, empty = 'No registers taken yet this term.', 
     const s = d3.select(el);
     s.selectAll('*').remove();
     const rows = data.map((r) => ({ d: new Date(`${r.week}T00:00:00Z`), v: r.rate }));
-    const indigo = css(el, '--ra-indigo'), blue = css(el, '--ra-blue'), violet = css(el, '--ra-violet');
+    const indigo = css(el, '--ra-indigo'), violet = css(el, '--ra-violet');
     const lo = Math.max(0, Math.floor(((d3.min(rows, (r) => r.v) ?? 90) - 2) / 2) * 2);
     const y = d3.scaleLinear([lo, 100], [H - 26, 10]);
     const yt = y.ticks(5);
     const ml = 44, last = rows[rows.length - 1]!, mr = 56;
     const ext = d3.extent(rows, (r) => r.d) as [Date, Date];
     if (+ext[0] === +ext[1]) { ext[0] = d3.utcDay.offset(ext[0], -3); ext[1] = d3.utcDay.offset(ext[1], 3); }
+    // Holidays are banded over the weeks they fall in (each week is plotted at its Monday), so a missing week has a reason.
+    const half = (d: Date, n: number) => d3.utcHour.offset(d, n * 84);
+    const hol = holidays.map((h) => ({ title: h.title, a: d3.utcMonday.floor(new Date(`${h.from}T00:00:00Z`)), b: d3.utcMonday.floor(new Date(`${h.to}T00:00:00Z`)) })).filter((h) => h.b >= ext[0]);
+    if (hol.length) ext[1] = new Date(Math.max(+ext[1], ...hol.map((h) => +half(h.b, 1))));
     const x = d3.scaleUtc(ext, [ml, W - mr]);
     s.append('g').selectAll('line').data(yt).join('line').attr('x1', ml).attr('x2', W - mr).attr('y1', (d) => y(d)).attr('y2', (d) => y(d)).attr('stroke', 'var(--ra-chart-grid)');
     s.append('g').selectAll('text').data(yt).join('text').attr('x', ml - 8).attr('y', (d) => y(d) + 4).attr('text-anchor', 'end').text((d) => `${d}%`);
     const step = Math.ceil(rows.length / Math.max(2, Math.min(rows.length, Math.floor((W - ml - mr) / 70))));
     s.append('g').selectAll('text').data(rows.filter((_, i) => i % step === 0)).join('text').attr('x', (d) => x(d.d)).attr('y', H - 6).attr('text-anchor', 'middle').text((d) => dayFmt(d.d));
-    const grad = s.append('defs').append('linearGradient').attr('id', 'ra-trend-grad').attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 1);
-    [[0, 0.32], [0.5, 0.1], [1, 0]].forEach(([o, a]) => grad.append('stop').attr('offset', o!).attr('style', `stop-color:${blue};stop-opacity:${a}`));
-    s.append('path').datum(rows).attr('class', animate ? 'ra-draw-after' : null).attr('fill', 'url(#ra-trend-grad)').attr('d', d3.area<{ d: Date; v: number }>().x((d) => x(d.d)).y0(y(lo)).y1((d) => y(d.v)));
+    // No shaded area: filled from a cut-off axis it made a five-point change look like empty to full. The y labels show where the axis starts.
+    const band = s.append('g').attr('class', 'ra-hol').selectAll('g').data(hol).join('g');
+    band.append('rect').attr('x', (h) => Math.max(ml, x(half(h.a, -1)))).attr('width', (h) => Math.min(W - mr, x(half(h.b, 1))) - Math.max(ml, x(half(h.a, -1))))
+      .attr('y', 10).attr('height', H - 36).attr('rx', 4);
+    band.append('text').attr('x', (h) => x(new Date((+h.a + +h.b) / 2))).attr('y', 24).attr('text-anchor', 'middle').text((h) => h.title);
     // First view of the dashboard: the line draws in, then its end dot and label fade in (DESIGN.md Motion).
     const line = s.append('path').datum(rows).attr('class', animate ? 'ra-draw' : null).attr('fill', 'none').attr('stroke', indigo).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('d', d3.line<{ d: Date; v: number }>().x((d) => x(d.d)).y((d) => y(d.v)));
     if (animate) line.style('--len', String((line.node() as SVGPathElement).getTotalLength()));
@@ -74,11 +82,11 @@ export function TrendChart({ data, empty = 'No registers taken yet this term.', 
         setTip({ x: Math.min(W - 150, x(r.d) + 12), y: Math.max(0, y(r.v) - 50), title: `Week of ${dayFmt(r.d)}`, lines: [`${pct1(r.v)} attendance`] });
       })
       .on('mouseleave', () => { hov.style('opacity', 0); setTip(null); });
-  }, [data, W, animate]);
+  }, [data, holidays, W, animate]);
   if (!data.length) return <div className="ra-chart"><p className="ra-empty">{empty}</p></div>;
   return (
     <div ref={box} className="ra-chart" style={{ minHeight: H }}>
-      <svg ref={svg} width="100%" height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Weekly attendance: ${data.map((r) => `${dayFmt(new Date(`${r.week}T00:00:00Z`))} ${pct1(r.rate)}`).join(', ')}`} />
+      <svg ref={svg} width="100%" height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Weekly attendance: ${data.map((r) => `${dayFmt(new Date(`${r.week}T00:00:00Z`))} ${pct1(r.rate)}`).join(', ')}${holidays.map((h) => `; ${h.title} ${dayFmt(new Date(`${h.from}T00:00:00Z`))} to ${dayFmt(new Date(`${h.to}T00:00:00Z`))}`).join('')}`} />
       <Tip tip={tip} />
     </div>
   );

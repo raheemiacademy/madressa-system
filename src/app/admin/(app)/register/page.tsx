@@ -9,6 +9,7 @@ import { plural } from '@/lib/text';
 import { requireAdmin } from '@/server/next/actor';
 import { addDays, codeMap, marksBetween, registerStatus, weeklyTrend } from '@/server/attendance/registers';
 import { countNotices, countPendingRequests } from '@/server/attendance/requests';
+import { holidaysBetween } from '@/server/holidays';
 import { todayIso } from '@/server/people/common';
 import { globalSearch } from '@/server/people/search';
 import { yearAndClasses } from '../students/year-classes';
@@ -25,12 +26,13 @@ export default async function Register({ searchParams }: { searchParams: Promise
   const { year, options } = await yearAndClasses();
   const days = range === 'today' ? [today] : range === 'yesterday' ? [addDays(today, -1)] : Array.from({ length: 7 }, (_, i) => addDays(today, -i));
   const monthStart = `${today.slice(0, 7)}-01`;
-  const [statusByDay, notices, requests, trend, marks, codes, found] = await Promise.all([
+  const [statusByDay, notices, requests, trend, marks, codes, found, holidays] = await Promise.all([
     year ? Promise.all(days.map(async (d) => ({ date: d, rows: await registerStatus(db, year.id, d) }))) : Promise.resolve([]),
     countNotices(db, today), countPendingRequests(db),
     year ? weeklyTrend(db, year.startsOn, today) : Promise.resolve([]),
     marksBetween(db, monthStart, today), codeMap(db),
-    sp.q ? globalSearch(db, sp.q, 10) : Promise.resolve(null)
+    sp.q ? globalSearch(db, sp.q, 10) : Promise.resolve(null),
+    year ? holidaysBetween(db, year.startsOn, today) : Promise.resolve([])
   ]);
   const monthPct = (classId: number) => summarise(marks.filter((m) => m.classId === classId), codes).standardPct;
   const classId = Number(sp.class) || Number(options[0]?.value) || null;
@@ -97,7 +99,7 @@ export default async function Register({ searchParams }: { searchParams: Promise
 
         <section className="ra-card ra-c12" aria-labelledby="tr-h">
           <div className="ra-card-h"><div><h2 id="tr-h">Attendance trend</h2><div className="ra-note">Whole school, weekly, this year</div></div></div>
-          <TrendChart data={trend} />
+          <TrendChart data={trend} holidays={holidays} />
         </section>
 
         <section className="ra-card ra-c12" aria-labelledby="qs-h">

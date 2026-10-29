@@ -16,6 +16,7 @@ import { LATEST } from '@/lib/releases';
 import { formatChange, initials, plural } from '@/lib/text';
 import { resolveYear } from '@/server/academic-years';
 import { weeklyTrend } from '@/server/attendance/registers';
+import { holidaysBetween } from '@/server/holidays';
 import { countNotices, countPendingRequests } from '@/server/attendance/requests';
 import { attendanceFigures, outstandingWeekAgo, parentFigures, studentFigures, teacherSignIns, unreadMessages } from '@/server/dashboard';
 import { dashboard as feesDashboard, paymentList } from '@/server/fees/reports';
@@ -201,7 +202,8 @@ async function Headline({ today, yearId, yearStart, fees, anim }: { today: strin
 
 async function Trend({ from, to, animate }: { from: string | null; to: string | null; animate: boolean }) {
   if (!from || !to || to < from) return <p className="ra-empty">No registers taken yet this year.</p>;
-  return <TrendChart data={await weeklyTrend(db, from, to)} empty="No registers taken yet this year." animate={animate} />;
+  const [data, holidays] = await Promise.all([weeklyTrend(db, from, to), holidaysBetween(db, from, to)]);
+  return <TrendChart data={data} holidays={holidays} empty="No registers taken yet this year." animate={animate} />;
 }
 
 async function Messages({ me }: { me: { id: number; rank: string | null; isSuper: boolean } }) {

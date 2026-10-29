@@ -1,4 +1,4 @@
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq, gte, lte } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Db, DbOrTx } from '@/db';
 import { academicYear, holiday } from '@/db/schema';
@@ -15,6 +15,12 @@ export const holidayInput = z.object({
   studentsAttend: checkbox, teachersAttend: checkbox,
   allClasses: checkbox
 }).refine((v) => v.endsOn >= v.startsOn, { path: ['endsOn'], message: 'The end date can’t be before the start date' });
+
+/** Whole-school holidays (no classes for anyone) overlapping a date range, to mark on attendance charts. */
+export const holidaysBetween = (db: DbOrTx, from: string, to: string) =>
+  db.select({ title: holiday.title, from: holiday.startsOn, to: holiday.endsOn }).from(holiday)
+    .where(and(eq(holiday.allClasses, true), eq(holiday.studentsAttend, false), lte(holiday.startsOn, to), gte(holiday.endsOn, from)))
+    .orderBy(asc(holiday.startsOn));
 
 export const listHolidays = (db: DbOrTx, yearId: number) =>
   db.select().from(holiday).where(eq(holiday.academicYearId, yearId)).orderBy(asc(holiday.startsOn));
