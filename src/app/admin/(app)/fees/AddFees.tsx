@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { SelectField, TextField } from '@/components/Fields';
-import { Form } from '@/components/Form';
+import { ActionButton, Form } from '@/components/Form';
 import { Icon } from '@/components/Icon';
-import { findStudentsAction, paymentOptionsAction, recordPaymentAction } from './actions';
+import { formatCalendarDate } from '@/lib/dates';
+import { formatPence, parsePounds } from '@/lib/money';
+import { findStudentsAction, paymentOptionsAction, quickSendReceiptAction, recordPaymentAction, type Slip } from './actions';
 
 type Pick = { id: number; name: string };
 type Options = Awaited<ReturnType<typeof paymentOptionsAction>>;
@@ -30,12 +32,13 @@ export function AddFeesDialog({ today, methods, statuses }: { today: string; met
   const [found, setFound] = useState<Awaited<ReturnType<typeof findStudentsAction>>>([]);
   const [target, setTarget] = useState('');
   const [round, setRound] = useState(0);
+  const [slip, setSlip] = useState<Slip>();
   const [, start] = useTransition();
 
   useEffect(() => {
     const open = (e: Event) => {
       const d = (e as CustomEvent<{ student?: Pick; invoiceId?: number }>).detail;
-      setStudent(d.student ?? null); setPreset(d.invoiceId); setOpts(null); setQ(''); setFound([]); setRound((r) => r + 1);
+      setStudent(d.student ?? null); setPreset(d.invoiceId); setSlip(undefined); setOpts(null); setQ(''); setFound([]); setRound((r) => r + 1);
       dlg.current?.showModal();
     };
     window.addEventListener(EVENT, open);
@@ -66,9 +69,11 @@ export function AddFeesDialog({ today, methods, statuses }: { today: string; met
           ))}
         </div>
       ) : (
-        <Form key={`${student.id}-${round}`} action={recordPaymentAction} card={false} savebar={false} submit="Record payment" resetOnSuccess>
+        <>
+        <Form key={`${student.id}-${round}`} action={recordPaymentAction} card={false} savebar={false} submit="Record payment" resetOnSuccess
+          onSuccess={(s) => setSlip((s as { slip?: Slip }).slip)}>
           <input type="hidden" name="studentId" value={student.id} />
-          <p style={{ margin: 0 }}><strong>{student.name}</strong> · <Link className="ra-link" href={`/admin/fees/student/${student.id}`} onClick={() => dlg.current?.close()}>Fees</Link> · <button type="button" className="ra-link" onClick={() => setStudent(null)}>Change student</button></p>
+          <p style={{ margin: 0 }}><strong>{student.name}</strong> · <Link className="ra-link" href={`/admin/fees/student/${student.id}`} onClick={() => dlg.current?.close()}>Fees</Link> · <button type="button" className="ra-link" onClick={() => { setStudent(null); setSlip(undefined); }}>Change student</button></p>
           {!opts ? <p className="ra-note" role="status">Loading invoices…</p> : (
             <>
               {opts.family.map((f) => <input key={f.id} type="hidden" name="familyIds" value={f.id} />)}
@@ -87,6 +92,20 @@ export function AddFeesDialog({ today, methods, statuses }: { today: string; met
             </>
           )}
         </Form>
+        {/* The receipt slides out under the form, like a till printing it. */}
+        {slip && (
+          <div className="ra-rcpt-slot">
+            <div className="ra-rcpt" role="status" aria-label="Receipt">
+              <div className="ra-note">Receipt {slip.receipts.map((id) => `R${id}`).join(', ')} · {slip.method} · {formatCalendarDate(slip.on)}</div>
+              <div className="ra-rcpt-row"><span>{student.name}</span><span className="amt">{formatPence(parsePounds(slip.amount) ?? 0)}</span></div>
+              <div className="ra-toolbar">
+                {slip.receipts.map((id) => <Link key={id} className="ra-btn" href={`/admin/fees/receipt/${id}`} onClick={() => dlg.current?.close()}><Icon name="receipt" />Open receipt{slip.receipts.length > 1 ? ` R${id}` : ''}</Link>)}
+                {slip.receipts.length === 1 && <ActionButton action={quickSendReceiptAction.bind(null, slip.receipts[0]!)} label="Email to parent" />}
+              </div>
+            </div>
+          </div>
+        )}
+        </>
       )}
     </dialog>
   );

@@ -48,7 +48,12 @@ Ease-out `cubic-bezier(0.23, 1, 0.32, 1)`.
 - Dashboard, first view of the session only: KPI figures count up (900ms, ease-out cubic, equal-width digit slots), the weekly attendance line draws in (700ms), fee bars grow from 0 (600ms, 40ms stagger).
 - Working buttons: a spinner in place of the label, then "Saved ✓" / "Done ✓" pops in (240ms) for 1.2s; the button keeps its width.
 - Sign in ↔ "email me a link": one card, the track slides one card-width (300ms) and the address changes without a page load.
-- Portal tab bar: the current-tab highlight slides to the pressed tab (250ms), stretching up to 1.6× on the way. The one allowed motion on nav; the tabs themselves still don't scale.
+- Nav highlights slide; the items themselves still don't scale. Portal tab bar: the current-tab highlight slides to the pressed tab (250ms), stretching up to 1.6× on the way. Sidebars: the highlight slides to the page you open (280ms). Section tabs and filter chips: one dark pill slides from the current chip to the pressed one (280ms); chips are outlined, not filled, so it shows as it passes.
+- Sign in: after a right password, in the existing 0.4s, the fields fade and "Welcome back" rises (280ms). New password: a 4px bar fills towards the 10-character rule (orange, then green); it measures only that rule.
+- Add fees: after "Record payment" the receipt slides down out of a slot under the form (560ms), with Open receipt and Email to parent.
+- Reply: the paper plane on the button flies off and comes back (600ms).
+- Slow pages (Students, Fees, Reports, Search) show their outline at once (loading.tsx, the pulsing .ra-skel blocks), then fade in (200ms).
+- Page not found: the logo turns once into place (600ms) and the words rise.
 - Messages: a sent reply rises in (200ms); a conversation that arrives while the inbox is open drops in at the top (260ms) with one 300ms pop of its count, and the rows below slide down.
 - No keyboard-shortcut animation, and no chart animation anywhere else. Reduced motion: opacity only, and nothing on the dashboard counts, draws or grows.
 

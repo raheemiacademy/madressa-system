@@ -39,6 +39,13 @@ button, select, input, textarea { touch-action: manipulation; font: inherit; col
 .ra-nav-btn[aria-current="page"] { background: color-mix(in srgb, var(--ra-accent-on-ink) 14%, transparent); color: var(--ra-on-ink); font-weight: 500; }
 .ra-nav-btn[aria-current="page"] svg { color: var(--ra-accent-on-ink); }
 .ra-nav-btn[aria-current="page"]::before { content: ""; position: absolute; left: -12px; top: 10px; bottom: 10px; width: 3px; border-radius: 0 3px 3px 0; background: var(--ra-accent-on-ink); }
+/* Once the script runs, one highlight (the same fill and bar) slides to the page you open (useSideGlide) */
+.ra-side { isolation: isolate; }
+.ra-side-hl { position: absolute; z-index: -1; border-radius: var(--ra-r); background: color-mix(in srgb, var(--ra-accent-on-ink) 14%, transparent); transform-origin: 0 0; pointer-events: none; opacity: 0; }
+.ra-side-hl::before { content: ""; position: absolute; left: -12px; top: 10px; bottom: 10px; width: 3px; border-radius: 0 3px 3px 0; background: var(--ra-accent-on-ink); }
+.ra-side.has-hl .ra-side-hl { opacity: 1; }
+.ra-side.has-hl .ra-nav-btn[aria-current="page"] { background: transparent; }
+.ra-side.has-hl .ra-nav-btn[aria-current="page"]::before { content: none; }
 @media (hover: hover) and (pointer: fine) { .ra-nav-btn:hover { color: var(--ra-on-ink); background: color-mix(in srgb, var(--ra-on-ink) 6%, transparent); } }
 
 .ra-main { min-width: 0; background: var(--ra-surface); display: flex; flex-direction: column; }
@@ -175,9 +182,13 @@ button, select, input, textarea { touch-action: manipulation; font: inherit; col
 .ra-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .ra-toolbar .grow { flex: 1 1 220px; }
 .ra-filters { display: flex; gap: 6px; flex-wrap: wrap; }
-.ra-filter { cursor: pointer; min-height: 32px; padding: 0 12px; border-radius: 999px; font-size: 13px; border: 1px solid var(--color-border-line); background: var(--color-panel); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; color: var(--color-fg); text-decoration: none; }
+.ra-filter { cursor: pointer; min-height: 32px; padding: 0 12px; border-radius: 999px; font-size: 13px; border: 1px solid var(--color-border-line); background: transparent; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; color: var(--color-fg); text-decoration: none; }
 .ra-filter[aria-pressed="true"], .ra-filter[aria-current="page"] { background: var(--ra-primary); color: var(--ra-on-primary); border-color: transparent; }
 .ra-filter b { font-weight: 600; }
+/* Pressing a chip slides one pill from the current chip to it (FilterPills); the chips are outlined so it shows as it passes */
+.ra-filters.has-pill { position: relative; isolation: isolate; }
+.ra-fpill { position: absolute; z-index: -1; border-radius: 999px; background: var(--ra-primary); transform-origin: 0 0; pointer-events: none; }
+.ra-filters.has-pill .ra-filter[aria-pressed="true"], .ra-filters.has-pill .ra-filter[aria-current="page"] { background: transparent; }
 @media (pointer: coarse) { .ra-filter { min-height: 40px; } }
 
 /* Banners */
@@ -240,7 +251,11 @@ fieldset.ra-fieldset legend { font-size: 13px; font-weight: 500; padding: 0 4px;
 .ra-auth-card .ra-btn { min-height: 48px; font-size: 15px; }
 .ra-auth .ra-input { min-height: 48px; font-size: 16px; }
 /* Sign in ↔ "email me a link": both sides sit in one card and the track slides one card across */
-.ra-auth-card.ra-slide { display: block; overflow: hidden; }
+.ra-auth-card.ra-slide { display: block; overflow: hidden; position: relative; }
+/* Signed in: in the same 0.4s the fields fade and "Welcome back" rises in their place */
+.ra-auth-card.is-welcome .ra-slide-track { opacity: 0; transition: opacity 200ms var(--ra-ease-out); }
+.ra-welcome { position: absolute; inset: 0; display: grid; place-content: center; gap: 4px; text-align: center; animation: ra-rise 280ms var(--ra-ease-out) 80ms both; }
+@media (prefers-reduced-motion: reduce) { .ra-welcome { animation: ra-fade 200ms ease both; } }
 .ra-slide-track { display: grid; grid-template-columns: 100% 100%; align-items: start; transition: transform 300ms var(--ra-ease-out); }
 .ra-slide-track > * { min-width: 0; display: flex; flex-direction: column; gap: 18px; transition: opacity 300ms var(--ra-ease-out); }
 .ra-slide-track > [inert] { opacity: 0; }
@@ -263,6 +278,11 @@ fieldset.ra-fieldset legend { font-size: 13px; font-weight: 500; padding: 0 4px;
 .ra-rules li { display: flex; align-items: center; gap: 6px; color: var(--color-fg-muted); }
 .ra-rules li svg { width: 14px; height: 14px; flex: none; }
 .ra-rules li.ok { color: var(--color-ok); }
+/* New password: a thin bar fills towards the length rule, then turns green */
+.ra-pw-meter { display: block; height: 4px; border-radius: 2px; background: var(--ra-hairline); overflow: hidden; }
+.ra-pw-meter i { display: block; height: 100%; background: var(--color-warn); transform-origin: left; transform: scaleX(var(--p, 0)); transition: transform 200ms var(--ra-ease-out); }
+.ra-pw-meter.ok i { background: var(--color-ok); }
+@media (prefers-reduced-motion: reduce) { .ra-pw-meter i { transition: none; } }
 @media (hover: hover) and (pointer: fine) { .ra-pw-eye:hover { color: var(--ra-accent-text); } }
 /* Browser autofill keeps the field's own colours (no light-blue boxes in dark mode) */
 .ra-input:autofill, .ra-input:-webkit-autofill { box-shadow: 0 0 0 40px var(--color-bg) inset; -webkit-text-fill-color: var(--color-fg); caret-color: var(--color-fg); }
@@ -288,14 +308,14 @@ fieldset.ra-fieldset legend { font-size: 13px; font-weight: 500; padding: 0 4px;
 }
 @container (max-width: 860px) {
   .ra-shell { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
-  .ra-side { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding: 8px 12px; gap: 6px; align-items: center; overscroll-behavior-x: contain; scrollbar-width: none; height: auto; position: static; padding-top: calc(8px + env(safe-area-inset-top, 0px)); }
+  .ra-side { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding: 8px 12px; gap: 6px; align-items: center; overscroll-behavior-x: contain; scrollbar-width: none; height: auto; position: relative; padding-top: calc(8px + env(safe-area-inset-top, 0px)); }
   .ra-brand { padding: 0 8px 0 0; }
   .ra-nav-label, .ra-side-foot { display: none; }
   /* Visually hidden, so the brand link still has a name for screen readers */
   .ra-brand-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .ra-nav-group { flex-direction: row; }
   .ra-nav-btn { white-space: nowrap; }
-  .ra-nav-btn[aria-current="page"]::before { left: 12px; right: 12px; top: auto; bottom: 2px; width: auto; height: 2px; border-radius: 2px; }
+  .ra-nav-btn[aria-current="page"]::before, .ra-side-hl::before { left: 12px; right: 12px; top: auto; bottom: 2px; width: auto; height: 2px; border-radius: 2px; }
   .ra-c4, .ra-c5, .ra-c6, .ra-c7, .ra-c8 { grid-column: span 12; }
   .ra-page, .ra-top { padding-left: 16px; padding-right: 16px; }
   .ra-top { position: static; }
@@ -499,6 +519,18 @@ button.ra-mk { cursor: pointer; }
 /* A reply you send rises into the conversation */
 .ra-thread > article.sending { animation: ra-rise 200ms var(--ra-ease-out) both; }
 @media (prefers-reduced-motion: reduce) { .ra-thread > article.sending { animation: ra-fade 200ms ease both; } }
+/* Add fees: the receipt slides down out of a slot under the form after a payment is recorded */
+.ra-rcpt-slot { overflow: hidden; margin-top: 14px; border-top: 3px solid var(--color-border-line); border-radius: 2px; padding: 0 10px 2px; }
+.ra-rcpt { background: var(--color-bg); border: 1px solid var(--color-border-line); border-top: 0; border-radius: 0 0 12px 12px; padding: 14px 16px; display: grid; gap: 6px; font-size: 14px; animation: ra-print 560ms var(--ra-ease-out) both; }
+@keyframes ra-print { from { transform: translateY(-100%); } }
+.ra-rcpt-row { display: flex; justify-content: space-between; gap: 12px; }
+.ra-rcpt .amt { font-family: var(--font-serif), Georgia, serif; font-size: 1.5rem; line-height: 1; }
+.ra-rcpt .ra-toolbar { border-top: 1px dashed var(--color-border-line); padding-top: 10px; margin-top: 4px; }
+@media (prefers-reduced-motion: reduce) { .ra-rcpt { animation: ra-fade 200ms ease both; } }
+/* Reply's paper plane flies off up and right, and comes back */
+.ra-btn.fly svg { animation: ra-fly 600ms var(--ra-ease-out); }
+@keyframes ra-fly { 55% { transform: translate(26px, -22px) rotate(-10deg); opacity: 0; } 56% { transform: translate(-18px, 14px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .ra-btn.fly svg { animation: none; } }
 .ra-bubble { background: var(--ra-tint); border-radius: 4px 14px 14px 14px; padding: 14px 16px; line-height: 1.6; overflow-wrap: anywhere; }
 .ra-rich { border: 1px solid var(--color-border-line); border-radius: var(--ra-r); background: var(--color-bg); padding: 8px; display: grid; gap: 8px; }
 .ra-rich-body { min-height: 220px; padding: 8px 10px; outline: none; line-height: 1.6; overflow-wrap: anywhere; }
@@ -521,6 +553,14 @@ button.ra-mk { cursor: pointer; }
 .ra-kpi-ic { background: color-mix(in srgb, var(--ra-lav) 22%, transparent); } /* one neutral tint: the figure is the star, not the icon */
 .ra-banner > .ra-banner-ic { flex: none; }
 .ra-kpi-ic svg, .ra-banner-ic svg { width: 16px; height: 16px; }
+/* A slow page fades in over its loading outline (PageOutline) */
+.ra-in { animation: ra-fade 200ms ease both; }
+/* Page not found: the logo turns once into place and the words rise */
+.ra-404 { align-items: center; text-align: center; }
+.ra-404-star { width: 56px; height: 56px; animation: ra-turn 600ms var(--ra-ease-out) both; }
+.ra-404 > div, .ra-404 > .ra-toolbar { animation: ra-rise 280ms var(--ra-ease-out) 120ms both; }
+@keyframes ra-turn { from { transform: rotate(-45deg) scale(.8); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .ra-404-star, .ra-404 > div, .ra-404 > .ra-toolbar { animation: ra-fade 200ms ease both; } }
 .ra-skel { border-radius: var(--ra-r-sm); background: color-mix(in srgb, var(--ra-lav) 18%, transparent); animation: ra-pulse 1.4s ease-in-out infinite; }
 
 /* Portals (Phase 8): parent and teacher apps. Ported from design-reference/mobile/*.dc.html */

@@ -44,7 +44,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
   const canEdit = adminCan(admin.staff, 'edit');
 
   return (
-    <div className="ra-page">
+    <div className="ra-page ra-in">
       <div className="ra-page-h">
         <div><h1>Students</h1><p>Records, classes, contacts and status</p></div>
         <div className="ra-toolbar">

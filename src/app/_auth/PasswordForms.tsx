@@ -20,7 +20,10 @@ function Card({ school, title, intro, state, children }: { school: string; title
   );
 }
 
-/** One password field (the eye button replaces "Type it again"), with the length rule shown up front and ticked as you type. */
+/**
+ * One password field (the eye button replaces "Type it again"), with the length rule shown up front and ticked as you type.
+ * A thin bar fills towards the rule (it measures only the real rule, not a made-up "strength").
+ */
 function NewPassword({ state }: { state: LoginState }) {
   const [len, setLen] = useState(0);
   useEffect(() => setLen(0), [state]); // React empties the box after every submit
@@ -28,6 +31,7 @@ function NewPassword({ state }: { state: LoginState }) {
   return (
     <div className="ra-field"><label htmlFor="password">New password</label>
       <PasswordInput id="password" name="password" autoComplete="new-password" minLength={10} required aria-describedby="pw-rules" onInput={(e) => setLen(e.currentTarget.value.length)} />
+      <span className={`ra-pw-meter${ok ? ' ok' : ''}`} aria-hidden="true"><i style={{ '--p': Math.min(len, 10) / 10 } as React.CSSProperties} /></span>
       <ul className="ra-rules" id="pw-rules" aria-live="polite">
         <li className={ok ? 'ok' : undefined}><Icon name="check" />{ok ? 'At least 10 characters ✓' : `At least 10 characters${len ? ` (${10 - len} more)` : ''}`}</li>
       </ul>

@@ -47,7 +47,9 @@ export function LoginForm({ portal, title, school, next }: { portal: Portal; tit
 
   return (
     <main className="ra-auth">
-      <div ref={card} className="ra-auth-card ra-slide" data-panel={shown}>
+      <div ref={card} className={`ra-auth-card ra-slide${done ? ' is-welcome' : ''}`} data-panel={shown}>
+        {/* In the 0.4s before the page moves on, the fields fade and this rises in its place. */}
+        {done && <div className="ra-welcome" role="status"><span className="ra-muted" style={{ fontSize: 13 }}>{school}</span><h1>Welcome back</h1></div>}
         <div className="ra-slide-track">
           <form data-p="signin" action={action} noValidate inert={shown !== 'signin'}>
             {on('signin') && <>

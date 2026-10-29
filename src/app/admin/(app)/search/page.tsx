@@ -18,7 +18,7 @@ export default async function Search({ searchParams }: { searchParams: Promise<{
   );
   const li = { display: 'flex', justifyContent: 'space-between', gap: 12, padding: '8px 0', borderBottom: '1px solid var(--ra-hairline)', flexWrap: 'wrap' } as const;
   return (
-    <div className="ra-page">
+    <div className="ra-page ra-in">
       <div className="ra-page-h"><div><h1>Search</h1><p>{q ? <>Results for “{q}”</> : 'Find students, contacts and teachers'}</p></div></div>
       <form className="ra-m-only ra-search-m" role="search" action="/admin/search">
         <input className="ra-input" name="q" type="search" defaultValue={q} autoComplete="off" spellCheck={false} enterKeyHint="search" placeholder="Name, #ID, email or phone" aria-label="Search students, contacts and teachers" />

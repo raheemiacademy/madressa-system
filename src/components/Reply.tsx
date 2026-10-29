@@ -22,6 +22,7 @@ export function Reply({ action, submit = 'Reply', me, portal = false, lockable =
   const [sending, setSending] = useState<{ body: string; left: number } | null>(null);
   const [failed, setFailed] = useState('');
   const form = useRef<HTMLFormElement>(null);
+  const plane = useRef<HTMLButtonElement>(null); // its paper plane flies off when a reply is sent
   const held = useRef<FormData | null>(null); // waiting out the 5 seconds
   const sentBody = useRef<string | null>(null); // sent, waiting for the server's answer
   const latest = useRef(action);
@@ -77,6 +78,8 @@ export function Reply({ action, submit = 'Reply', me, portal = false, lockable =
           const body = String(fd.get('body') ?? '').trim();
           setFailed('');
           if (!body) { startTransition(() => act(fd)); return; } // the server says what's missing
+          const p = plane.current;
+          if (p) { p.classList.remove('fly'); void p.offsetWidth; p.classList.add('fly'); }
           held.current = fd;
           const b = box();
           if (b) b.value = '';
@@ -91,7 +94,7 @@ export function Reply({ action, submit = 'Reply', me, portal = false, lockable =
           <TextArea name="body" label="Reply" rows={4} enterKeyHint="send" />
           {attach && <div className="ra-field"><label htmlFor="r-att">Attach a file</label><input className="ra-input" id="r-att" name="attachment" type="file" style={{ paddingTop: 8 }} /></div>}
           <div className="ra-toolbar">
-            <button className="ra-btn primary" disabled={pending || !!sending}>{submit}</button>
+            <button ref={plane} className="ra-btn primary" disabled={pending || !!sending}><Icon name="send" />{submit}</button>
             {lockable && <button className="ra-btn" name="lock" value="1" disabled={pending || !!sending}>Reply &amp; lock</button>}
             <span role="status" aria-live="polite">{state?.ok && !sending ? state.message : ''}</span>
           </div>

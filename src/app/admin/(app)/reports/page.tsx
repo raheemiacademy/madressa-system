@@ -16,7 +16,7 @@ export default async function Reports() {
   const { year } = await yearAndClasses();
   const rows = await listReports(db, year?.id);
   return (
-    <div className="ra-page">
+    <div className="ra-page ra-in">
       <div className="ra-page-h"><div><h1>End-of-term reports</h1><p>Teachers’ comments, scores, exam results, attendance and homework, generated as a report per student</p></div>
         <div className="ra-toolbar">{adminCan(admin.staff, 'edit') && <Link className="ra-btn primary" href="/admin/reports/new"><Icon name="plus" />New report</Link>}<Link className="ra-btn" href="/admin/reports/paragraphs">Paragraph templates</Link></div></div>
       <div className="ra-more"><span className="ra-more-l">More</span>{LEARNING_TOOLS.filter(([h]) => h !== '/admin/reports').map(([h, l]) => <Link key={h} className="ra-btn" href={h}>{l}</Link>)}</div>

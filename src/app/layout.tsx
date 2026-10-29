@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Fraunces, Inter } from 'next/font/google';
 import '@/styles/tokens.css';
 import '@/styles/ui.css';
+import { FilterPills } from '@/components/Glide';
 import { THEME_SCRIPT } from '@/lib/theme';
 
 // next/font downloads these at build time and serves them from our own origin — no runtime request to Google.
@@ -23,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     // The theme script sets data-theme before React hydrates, so React is told not to mind it.
     <html lang="en-GB" className={`${inter.variable} ${fraunces.variable}`} suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} /></head>
-      <body>{children}</body>
+      <body>{children}<FilterPills /></body>
     </html>
   );
 }

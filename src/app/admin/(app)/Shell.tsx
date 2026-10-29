@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useTransition } from 'react';
+import { useSideGlide } from '@/components/Glide';
 import { Icon } from '@/components/Icon';
 import { LiveBadges } from '@/components/LiveBadges';
 import { SoundToggle } from '@/components/SoundToggle';
@@ -24,6 +25,7 @@ type Props = {
 
 export function Shell({ school, logoSrc, userName, userEmail, todayLabel, years, yearId, drillPlaces, drillRunning, notifications, unreadMessages, areas, children }: Props) {
   const pathname = usePathname();
+  const side = useSideGlide(pathname);
   const crumb = crumbFor(pathname);
   const home = pathname === '/admin';
   // Phone app (design-reference/mobile/Main): ≤5 tabs at the bottom; everything else is under More.
@@ -42,7 +44,8 @@ export function Shell({ school, logoSrc, userName, userEmail, todayLabel, years,
     <div className="ra">
       <a className="skip-link" href="#main">Skip to content</a>
       <div className="ra-shell">
-        <aside className="ra-side" aria-label="Main menu">
+        <aside ref={side.box} className="ra-side" aria-label="Main menu">
+          <span ref={side.hl} className="ra-side-hl" aria-hidden="true" />
           <Link className="ra-brand" href="/admin">
             {mark}
             <span className="ra-brand-text"><span className="ra-brand-name">{school}</span><span className="ra-brand-sub">School admin</span></span>

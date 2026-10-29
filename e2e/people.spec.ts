@@ -40,6 +40,7 @@ test('bulk-activate waiting-list students into a class', async ({ page }) => {
   await signIn(page);
   await page.goto('/admin/students?status=Waiting+List');
   const boxes = page.getByRole('checkbox', { name: /^Select Test Student/ });
+  await expect(boxes.first()).toBeVisible(); // the loading outline shows first
   const n = await boxes.count();
   expect(n).toBeGreaterThan(0);
   for (let i = 0; i < n; i++) await boxes.nth(i).check();

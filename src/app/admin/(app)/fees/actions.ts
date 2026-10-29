@@ -58,7 +58,10 @@ export async function paymentOptionsAction(studentId: number) {
   };
 }
 
-export async function recordPaymentAction(_p: FormState, fd: FormData): Promise<FormState> {
+/** What the Add fees box shows on the receipt slip after a payment is recorded (the receipt numbers are the payment IDs). */
+export type Slip = { receipts: number[]; amount: string; method: string; on: string };
+
+export async function recordPaymentAction(_p: FormState, fd: FormData): Promise<FormState & { slip?: Slip }> {
   const a = await requireFees();
   const target = String(fd.get('invoiceId') ?? '');
   const sid = Number(fd.get('studentId'));
@@ -66,7 +69,8 @@ export async function recordPaymentAction(_p: FormState, fd: FormData): Promise<
   const r = await recordPayment(db, actorOf(a), { ...formObject(fd), invoiceId: studentIds.length ? '' : target, studentIds });
   if (!r.ok) return { errors: r.errors, message: 'Check the highlighted fields.' };
   done();
-  return { ok: true, message: r.ids.length > 1 ? `Payment recorded across ${r.ids.length} invoices.` : 'Payment recorded.' };
+  return { ok: true, message: r.ids.length > 1 ? `Payment recorded across ${r.ids.length} invoices.` : 'Payment recorded.',
+    slip: { receipts: r.ids, amount: String(fd.get('amount') ?? ''), method: String(fd.get('method') ?? ''), on: String(fd.get('receivedOn') ?? '') } };
 }
 
 /* ───────── Invoices and payments ───────── */

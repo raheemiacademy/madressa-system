@@ -35,7 +35,7 @@ export default async function Fees({ searchParams }: { searchParams: Promise<{ s
   const t = d?.totals;
   const share = t && t.due ? `${((t.received / t.due) * 100).toFixed(1)}%` : '—';
   return (
-    <div className="ra-page">
+    <div className="ra-page ra-in">
       <FeesHead title="Fees" desc={`Invoices, payments and reminders${year ? ` for ${year.title}` : ''}`} back={false}>
         <Link className="ra-btn" href="/admin/fees/generate">Generate invoices</Link>
         <Link className="ra-btn" href="/admin/fees/monthly">Monthly invoices</Link>

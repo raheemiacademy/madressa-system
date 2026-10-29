@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { logoutAction } from '@/app/_auth/actions';
+import { useSideGlide } from '@/components/Glide';
 import { Icon, type IconName } from '@/components/Icon';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
@@ -16,10 +17,12 @@ export function PortalSide({ school, sub, portal, groups, links }: {
   school: string; sub: string; portal: 'parent' | 'teacher'; groups: { label: string; items: Item[] }[]; links: { label: string; url: string }[];
 }) {
   const path = usePathname();
+  const side = useSideGlide(path);
   const home = groups[0]?.items[0]?.href;
   const current = (href: string) => (href === home ? path === href : path === href || path.startsWith(`${href}/`));
   return (
-    <aside className="ra-side rp-side" aria-label="Main menu">
+    <aside ref={side.box} className="ra-side rp-side" aria-label="Main menu">
+      <span ref={side.hl} className="ra-side-hl" aria-hidden="true" />
       <Link className="ra-brand" href={home ?? `/${portal}`}>
         <span className="ra-brand-mark"><Icon name="school" size={20} /></span>
         <span className="ra-brand-text"><span className="ra-brand-name">{school}</span><span className="ra-brand-sub">{sub}</span></span>
