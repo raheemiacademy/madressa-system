@@ -1,7 +1,8 @@
 'use client';
 
-import { useActionState, useEffect, useRef, useTransition } from 'react';
+import { useActionState, useEffect, useRef } from 'react';
 import { Check, Checks, FormErrors, FormMessage, TextArea, TextField } from '@/components/Fields';
+import { ActionButton } from '@/components/Form';
 import { Icon } from '@/components/Icon';
 import { SaveBar } from '@/components/SaveBar';
 import type { FormState } from '@/lib/validate';
@@ -50,9 +51,8 @@ export function HolidayForm({ yearId, yearTitle, holiday: h, classes, chosen }: 
 }
 
 export function DeleteHoliday({ id, title }: { id: number; title: string }) {
-  const [pending, start] = useTransition();
   return (
-    <button aria-label={`Delete ${title}`} disabled={pending}
-      onClick={() => { if (confirm(`Delete ${title}?`)) start(() => deleteHolidayAction(id)); }}><Icon name="trash" /></button>
+    <ActionButton className="" ariaLabel={`Delete ${title}`} action={deleteHolidayAction.bind(null, id)} confirm={`Delete ${title}?`}
+      lose="Families and teachers will no longer see it, and registers on those days will be due again. This can’t be undone."><Icon name="trash" /></ActionButton>
   );
 }

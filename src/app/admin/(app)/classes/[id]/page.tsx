@@ -64,7 +64,7 @@ export default async function ClassPage({ params }: { params: Promise<{ id: stri
                       <input type="hidden" name="teacherId" value={ct.teacherId} />
                       <div className="ra-checks">{PRIVILEGES.map(([k, l]) => <Check key={k} name={k} label={l} defaultChecked={ct[k]} />)}</div>
                     </Form>
-                    <ActionButton className="ra-link" action={removeClassTeacherAction.bind(null, id, ct.teacherId)} label="Remove from class" confirm={`Remove ${name} from ${c.name}?`} danger />
+                    <ActionButton className="ra-link" action={removeClassTeacherAction.bind(null, id, ct.teacherId)} label="Remove from class" undo={`${name} removed from ${c.name}.`} danger />
                   </>
                 )}
               </details>

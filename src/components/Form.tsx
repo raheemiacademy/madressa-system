@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState, useEffect, useRef, useState, useTransition } from 'react';
+import { useActionState, useEffect, useId, useRef, useState, useTransition } from 'react';
+import { createPortal } from 'react-dom';
 import type { FormState } from '@/lib/validate';
 import { FormErrors, FormMessage } from './Fields';
 import { SaveBar } from './SaveBar';
@@ -40,21 +41,67 @@ export function Form({ action, children, submit = 'Save changes', card = true, r
   );
 }
 
-/** A button that runs a bound server action, optionally after a confirm prompt, and shows any error or message. */
-export function ActionButton({ action, label, confirm: ask, danger, className = 'ra-btn', ariaLabel, children }: {
-  action: () => Promise<{ error?: string; message?: string } | void>; label?: string; confirm?: string; danger?: boolean; className?: string; ariaLabel?: string; children?: React.ReactNode;
+/**
+ * A button that runs a bound server action and shows any error or message.
+ * - confirm: an in-app dialog asks first (with lose: what will be lost), for things that can't be got back.
+ * - undo: no question; it happens at once with an Undo toast, and the server is called after 5 seconds (or when the page
+ *   is left), for things that can be got back. The button's row is hidden meanwhile.
+ */
+export function ActionButton({ action, label, confirm: ask, lose, undo, danger, className = 'ra-btn', ariaLabel, children }: {
+  action: () => Promise<{ error?: string; message?: string } | void>; label?: string; confirm?: string; lose?: string; undo?: string; danger?: boolean; className?: string; ariaLabel?: string; children?: React.ReactNode;
 }) {
   const [pending, start] = useTransition();
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [waiting, setWaiting] = useState(false);
+  const btn = useRef<HTMLButtonElement>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
+  const row = () => btn.current?.closest<HTMLElement>('tr, li, article') ?? null;
+  const run = () => start(async () => { const r = await action(); if (r?.error) row()?.removeAttribute('hidden'); setError(r?.error ?? ''); setMessage(r?.message ?? ''); });
+  const verb = label ?? ariaLabel ?? 'Confirm';
   return (
     <>
-      <button type="button" className={`${className}${danger ? ' danger' : ''}`} aria-label={ariaLabel} disabled={pending}
-        onClick={() => { if (ask && !window.confirm(ask)) return; start(async () => { const r = await action(); setError(r?.error ?? ''); setMessage(r?.message ?? ''); }); }}>
+      <button ref={btn} type="button" className={`${className}${danger ? ' danger' : ''}`} aria-label={ariaLabel} disabled={pending || waiting}
+        onClick={() => {
+          if (undo) { row()?.setAttribute('hidden', ''); setWaiting(true); return; }
+          if (ask) { dialog.current?.showModal(); return; }
+          run();
+        }}>
         {children ?? (pending ? 'Working…' : label)}
       </button>
+      {ask && (
+        <dialog ref={dialog} className="ra-dialog" aria-labelledby={titleId}>
+          <h2 id={titleId}>{ask}</h2>
+          {lose && <p>{lose}</p>}
+          <div className="ra-toolbar">
+            <button type="button" className="ra-btn" autoFocus onClick={() => dialog.current?.close()}>Cancel</button>
+            <button type="button" className={danger || /^(delete|remove)/i.test(verb) ? 'ra-btn danger' : 'ra-btn primary'} onClick={() => { dialog.current?.close(); run(); }}>{verb}</button>
+          </div>
+        </dialog>
+      )}
+      {waiting && undo && <UndoToast text={undo} onUndo={() => { setWaiting(false); row()?.removeAttribute('hidden'); btn.current?.focus(); }} onCommit={() => { setWaiting(false); run(); }} />}
       {error && <span role="alert" style={{ color: 'var(--color-bad)', fontSize: 12, whiteSpace: 'normal' }}>{error}</span>}
       {message && <span role="status" style={{ fontSize: 12, whiteSpace: 'normal' }}>{message}</span>}
     </>
+  );
+}
+
+/** "Done. Undo" for 5 seconds, then onCommit. Rendered into <body> so the shell's containers can't trap position: fixed. */
+function UndoToast({ text, onUndo, onCommit }: { text: string; onUndo: () => void; onCommit: () => void }) {
+  const done = useRef(false);
+  const alive = useRef(false);
+  const commit = useRef(onCommit);
+  useEffect(() => { commit.current = onCommit; });
+  useEffect(() => {
+    alive.current = true;
+    const fire = () => { if (!done.current) { done.current = true; commit.current(); } };
+    const t = setTimeout(fire, 5000);
+    // Leaving the page early still carries it out. (Checked a tick later, so React's dev double-mount doesn't fire it.)
+    return () => { clearTimeout(t); alive.current = false; setTimeout(() => { if (!alive.current) fire(); }, 0); };
+  }, []);
+  return createPortal(
+    <div className="ra-toast" role="status">{text}<button type="button" className="ra-link" onClick={() => { done.current = true; onUndo(); }}>Undo</button></div>,
+    document.body
   );
 }

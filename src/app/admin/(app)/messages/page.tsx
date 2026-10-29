@@ -102,12 +102,12 @@ export default async function Messages({ searchParams }: { searchParams: Promise
             <>
               <div className="ra-card-h"><div><h2 id="th-h">{open.thread.subject}</h2>
                 <div className="ra-note">{open.people.map((p) => `${p.name} (${ROLE[p.kind]})`).join(', ')}{open.thread.faoRank ? ` · for ${open.thread.faoRank}` : ''}{open.thread.locked ? ' · locked: parents and teachers can’t reply' : ''}</div></div>
-                {canDelete && <ActionButton action={deleteThreadAction.bind(null, open.thread.id)} label="Delete conversation" className="ra-btn" danger confirm={`Delete “${open.thread.subject}” for everyone? This can’t be undone.`} />}</div>
+                {canDelete && <ActionButton action={deleteThreadAction.bind(null, open.thread.id)} label="Delete conversation" className="ra-btn" danger confirm={`Delete “${open.thread.subject}” for everyone?`} lose="Every message in it, and any attachments, will be gone for the parent or teacher and for every admin. This can’t be undone." />}</div>
               <div className="ra-thread">
                 {open.messages.map((m) => (
                   <article key={m.id} aria-label={`From ${m.senderName} at ${m.at}`}>
                     <div className="ra-note ra-msg-meta"><span><b>{m.senderName}</b> · {ROLE[m.senderKind]} · {m.at}{m.senderKind === 'admin' && m.readBy.length + m.notReadBy.length > 0 && <> <Ticks read={m.notReadBy.length === 0} /></>}</span>
-                      {canDelete && <span className="ra-acts"><ActionButton action={deleteMessageAction.bind(null, m.id)} ariaLabel={`Delete this message from ${m.senderName}`} confirm="Delete this message for everyone? This can’t be undone." className="ra-del"><Icon name="trash" /></ActionButton></span>}</div>
+                      {canDelete && <span className="ra-acts"><ActionButton action={deleteMessageAction.bind(null, m.id)} ariaLabel={`Delete this message from ${m.senderName}`} confirm="Delete this message for everyone?" lose="It goes for the parent or teacher and for every admin. This can’t be undone." className="ra-del"><Icon name="trash" /></ActionButton></span>}</div>
                     <div className="ra-bubble" style={{ whiteSpace: 'pre-wrap' }}>{m.body}</div>
                     {m.attachmentFileId && <a className="ra-link" href={`/admin/files/${m.attachmentFileId}`}><Icon name="paperclip" /> Attachment</a>}
                     <div className="ra-note">{m.notReadBy.length ? `Not yet read${m.readBy.length ? `; read by ${m.readBy.join(', ')}` : ''}` : m.readBy.length ? `Read by ${m.readBy.join(', ')}` : ''}</div>

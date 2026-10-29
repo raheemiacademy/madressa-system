@@ -14,7 +14,7 @@ export function SlotList({ slots, canEdit }: { slots: Slot[]; canEdit: boolean }
       <tbody>{slots.map(({ s, teacher, room, subject }) => (
         <tr key={s.id}><td>{WEEKDAYS[s.weekday]}</td><td>{s.startTime.slice(0, 5)}–{end(s.startTime, s.durationMinutes)}</td><td className="opt wrap">{teacher ?? ''}</td><td className="opt">{room ?? ''}</td><td className="wrap">{subject ?? ''}</td>
           <td className="opt">{s.takesRegister ? 'Yes' : 'No'}</td>
-          <td>{canEdit && <span className="ra-acts"><ActionButton className="" ariaLabel={`Remove the ${WEEKDAYS[s.weekday]} ${s.startTime.slice(0, 5)} session`} action={deleteSlotAction.bind(null, s.id)} confirm="Remove this session?"><Icon name="trash" /></ActionButton></span>}</td></tr>
+          <td>{canEdit && <span className="ra-acts"><ActionButton className="" ariaLabel={`Remove the ${WEEKDAYS[s.weekday]} ${s.startTime.slice(0, 5)} session`} action={deleteSlotAction.bind(null, s.id)} undo="Session removed."><Icon name="trash" /></ActionButton></span>}</td></tr>
       ))}</tbody></table>
   );
 }

@@ -209,6 +209,14 @@ fieldset.ra-fieldset legend { font-size: 13px; font-weight: 500; padding: 0 4px;
 .ra-dialog { border: 1px solid var(--color-border-line); border-radius: var(--ra-r-lg); background: var(--color-panel); color: var(--color-fg); padding: 20px; width: min(520px, calc(100vw - 32px)); box-shadow: var(--ra-shadow-pop); }
 .ra-dialog::backdrop { background: color-mix(in srgb, var(--ra-ink) 55%, transparent); }
 .ra-dialog h2 { margin: 0 0 6px; font-size: 1.125rem; font-weight: 600; }
+.ra-dialog > p { margin: 0; line-height: 1.5; }
+.ra-dialog > .ra-toolbar { justify-content: flex-end; margin-top: 18px; }
+/* Undo toast: something reversible just happened; the server is told after 5 seconds unless Undo is pressed */
+.ra-toast { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); translate: -50% 0; z-index: 30; display: flex; align-items: center; gap: 12px; max-width: calc(100% - 32px); padding: 6px 6px 6px 14px; border-radius: 12px; background: var(--ra-ink); color: var(--ra-on-ink); border: 1px solid color-mix(in srgb, var(--ra-on-ink) 14%, transparent); box-shadow: var(--ra-shadow-pop); font-size: 14px; transition: opacity 220ms var(--ra-ease-out), transform 220ms var(--ra-ease-out); }
+@starting-style { .ra-toast { opacity: 0; transform: translateY(8px); } }
+.ra-toast .ra-link { color: var(--ra-sky); min-height: 36px; }
+@media (max-width: 640px) { .ra-toast { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); } } /* above the phone tab bar */
+@media (prefers-reduced-motion: reduce) { @starting-style { .ra-toast { transform: none; } } }
 
 /* Calendar */
 .ra-cal { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 16px; }

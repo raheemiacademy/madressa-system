@@ -1,19 +1,12 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { ActionButton } from '@/components/Form';
 import { Icon } from '@/components/Icon';
 import { deleteStaffAction } from './actions';
 
 export function DeleteStaff({ id, name }: { id: number; name: string }) {
-  const [pending, start] = useTransition();
-  const [error, setError] = useState('');
   return (
-    <>
-      <button aria-label={`Delete ${name}`} disabled={pending} onClick={() => {
-        if (!confirm(`Delete ${name}? They will be signed out and can no longer log in.`)) return;
-        start(async () => setError((await deleteStaffAction(id)).error ?? ''));
-      }}><Icon name="trash" /></button>
-      {error && <span role="alert" style={{ color: 'var(--color-bad)', fontSize: 12, whiteSpace: 'normal' }}>{error}</span>}
-    </>
+    <ActionButton className="" ariaLabel={`Delete ${name}`} action={deleteStaffAction.bind(null, id)} confirm={`Delete ${name}?`}
+      lose="They’ll be signed out everywhere and can no longer sign in. What they did stays in the audit log. This can’t be undone."><Icon name="trash" /></ActionButton>
   );
 }

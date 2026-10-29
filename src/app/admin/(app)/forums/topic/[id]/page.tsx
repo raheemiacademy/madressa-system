@@ -31,7 +31,7 @@ export default async function Topic({ params }: { params: Promise<{ id: string }
           <article key={p.id} aria-label={`Post by ${p.authorName}`}>
             <div className="ra-note" style={{ marginBottom: 4 }}><b>{p.authorName}</b> · {ROLE[p.authorKind]} · {formatInstant(p.createdAt, 'dd/MM/yyyy HH:mm')}</div>
             {p.deletedAt ? <p className="ra-muted" style={{ margin: 0 }}>Removed by {p.deletedBy}.</p> : <div className="ra-bubble" style={{ whiteSpace: 'pre-wrap' }}>{p.body}</div>}
-            {canEdit && !p.deletedAt && <ActionButton action={removePostAction.bind(null, p.id)} label="Remove post" danger confirm="Remove this post? It stays in the record but is hidden." />}
+            {canEdit && !p.deletedAt && <ActionButton action={removePostAction.bind(null, p.id)} label="Remove post" danger undo="Post removed (it stays in the record)." />}
           </article>
         ))}
       </section>

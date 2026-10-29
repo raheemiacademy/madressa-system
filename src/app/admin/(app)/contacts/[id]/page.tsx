@@ -74,7 +74,7 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
                     {!link.isPrimary && <ActionButton className="ra-link" action={setLinkFlagsAction.bind(null, s.id, id, { isPrimary: true })} label="Make primary" />}
                     <ActionButton className="ra-link" action={setLinkFlagsAction.bind(null, s.id, id, { portalAccess: !link.portalAccess })} label={link.portalAccess ? 'Block portal' : 'Allow portal'} />
                     <ActionButton className="ra-link" action={copyAddressAction.bind(null, id, s.id)} label="Set student address to this" />
-                    <ActionButton className="ra-link" action={unlinkContactAction.bind(null, s.id, id)} label="Unlink" confirm="Unlink this student?" />
+                    <ActionButton className="ra-link" action={unlinkContactAction.bind(null, s.id, id)} label="Unlink" undo="Student unlinked." />
                   </span>}</td>
                 </tr>
               ))}</tbody>
@@ -96,7 +96,7 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
       )}
       {adminCan(admin.staff, 'delete') && (
         <section className="ra-card"><div className="ra-card-h"><div><h2>Delete contact</h2><div className="ra-note">Removes the contact and their portal login. Students are not deleted.</div></div>
-          <ActionButton action={deleteContactAction.bind(null, id)} label="Delete contact" confirm={`Delete ${c.name}? This can’t be undone.`} danger /></div></section>
+          <ActionButton action={deleteContactAction.bind(null, id)} label="Delete contact" confirm={`Delete ${c.name}?`} lose="Their details, links to students and portal login go. This can’t be undone." danger /></div></section>
       )}
     </div>
   );
