@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Chip } from '@/components/Chip';
 import { Check, SelectField, TextField } from '@/components/Fields';
 import { Form } from '@/components/Form';
-import { Icon } from '@/components/Icon';
+import { RowActions, type RowAction } from '@/components/RowMenu';
 import { bulkAction, deleteStudentsAction } from './actions';
 
 type Row = { id: number; name: string; gender: string; classes: string | null; age: number | null; yearGroup: string | null; status: string; hasMedical: boolean };
@@ -39,15 +39,15 @@ export function StudentsTable({ rows, classes, statuses, canEdit, canDelete, can
                   <td className="wrap">{r.classes ?? <span className="ra-muted">No class</span>}</td>
                   <td className="num opt" title={r.yearGroup ?? undefined}>{r.age ?? ''}</td>
                   <td><Chip>{r.status}</Chip></td>
-                  <td><span className="ra-acts">
-                    {canEdit && <Link href={`/admin/students/${r.id}/edit`} aria-label={`Edit ${r.name}`} data-tip="Edit"><Icon name="edit" /></Link>}
-                    <Link href={`/admin/students/${r.id}`} aria-label={`Profile of ${r.name}`} data-tip="Profile"><Icon name="eye" /></Link>
-                    <Link href={`/admin/students/${r.id}/history`} aria-label={`Class history of ${r.name}`} data-tip="Class history"><Icon name="clock" /></Link>
-                    <Link href={`/admin/register/student/${r.id}`} aria-label={`Register of ${r.name}`} data-tip="Register"><Icon name="check" /></Link>
-                    <Link href={`/admin/incidents?student=${r.id}`} aria-label={`Incidents of ${r.name}`} data-tip="Incidents"><Icon name="alert" /></Link>
-                    {canFees && <Link href={`/admin/fees/student/${r.id}`} aria-label={`Fees of ${r.name}`} data-tip="Fees"><Icon name="pound" /></Link>}
-                    {canFees && <Link href={`/admin/fees/student/${r.id}?view=history`} aria-label={`Fees history of ${r.name}`} data-tip="Fees history"><Icon name="receipt" /></Link>}
-                  </span></td>
+                  <td><RowActions name={r.name} actions={([
+                    canEdit && { href: `/admin/students/${r.id}/edit`, label: 'Edit', aria: `Edit ${r.name}`, icon: 'edit' },
+                    { href: `/admin/students/${r.id}`, label: 'Profile', aria: `Profile of ${r.name}`, icon: 'eye' },
+                    { href: `/admin/students/${r.id}/history`, label: 'Class history', aria: `Class history of ${r.name}`, icon: 'clock' },
+                    { href: `/admin/register/student/${r.id}`, label: 'Register', aria: `Register of ${r.name}`, icon: 'check' },
+                    { href: `/admin/incidents?student=${r.id}`, label: 'Incidents', aria: `Incidents of ${r.name}`, icon: 'alert' },
+                    canFees && { href: `/admin/fees/student/${r.id}`, label: 'Fees', aria: `Fees of ${r.name}`, icon: 'pound' },
+                    canFees && { href: `/admin/fees/student/${r.id}?view=history`, label: 'Fees history', aria: `Fees history of ${r.name}`, icon: 'receipt' }
+                  ] as (RowAction | false)[]).filter((a): a is RowAction => !!a)} /></td>
                 </tr>
               ))}
             </tbody>

@@ -122,6 +122,23 @@ button, select, input, textarea { touch-action: manipulation; font: inherit; col
 .ra-table td.wrap { white-space: normal; min-width: 11ch; max-width: 26ch; overflow-wrap: anywhere; line-height: 1.35; }
 .ra-table td:empty::before { content: "—"; color: var(--color-fg-muted); }
 @container (max-width: 480px) { .ra-table .opt { display: none; } }
+/* Tables marked data-cards turn each row into a small card in a narrow card: lead (name) and amount, then date · method and status */
+@container (max-width: 480px) {
+  .ra-table-wrap:has(> [data-cards]) { max-height: none; overflow: visible; margin: 0; }
+  .ra-table[data-cards] thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .ra-table[data-cards], .ra-table[data-cards] tbody { display: block; }
+  .ra-table[data-cards] tr { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 12px 2px; border-bottom: 1px solid var(--ra-hairline); }
+  .ra-table[data-cards] tr:last-child { border-bottom: 0; }
+  .ra-table[data-cards] td { display: block; padding: 0; border: 0; white-space: normal; background: none; }
+  .ra-table[data-cards] .lead { order: 1; flex: 1 1 calc(100% - 7rem); max-width: none; font-weight: 500; }
+  .ra-table[data-cards] .num { order: 2; font-weight: 600; }
+  .ra-table[data-cards] .meta { order: 3; font-size: 13px; color: var(--color-fg-muted); }
+  .ra-table[data-cards] .meta + .meta { order: 4; }
+  .ra-table[data-cards] .meta + .meta::before { content: "· "; }
+  .ra-table[data-cards] .st { order: 5; margin-left: auto; }
+  .ra-table[data-cards] .opt { display: block; }
+  .ra-table[data-cards] .id { display: none; }
+}
 
 /* Chips, buttons, filters */
 .ra-chip { color: var(--color-fg); max-width: 100%; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; line-height: 1.3; background: color-mix(in srgb, var(--c, var(--ra-lav)) 15%, transparent); white-space: nowrap; }
@@ -132,6 +149,14 @@ button, select, input, textarea { touch-action: manipulation; font: inherit; col
 @media (hover: hover) and (pointer: fine) { .ra-acts :is(button, a):hover { background: color-mix(in srgb, var(--ra-indigo) 12%, transparent); color: var(--ra-accent-text); } }
 .ra-acts svg { width: 16px; height: 16px; }
 @media (pointer: coarse) { .ra-acts :is(button, a) { width: 44px; height: 44px; } }
+/* Row actions (RowActions): icons on hover or focus with a mouse; one ⋯ menu on touch screens */
+.ra-rowmenu { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .ra-table .ra-acts.icons { opacity: 0; transition: opacity 120ms ease; }
+  .ra-table tr:is(:hover, :focus-within) .ra-acts.icons { opacity: 1; }
+}
+@media (hover: none), (pointer: coarse) { .ra-acts.icons { display: none; } .ra-rowmenu { display: inline-flex; } }
+.ra-menu a svg { width: 16px; height: 16px; margin-right: 10px; color: var(--color-fg-muted); flex: none; }
 
 .ra-btn { cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--ra-ctl); padding: 0 14px; border-radius: var(--ra-r); font-size: 13px; font-weight: 500; border: 1px solid var(--color-border-line); background: var(--color-panel); color: var(--color-fg); white-space: nowrap; text-decoration: none; }
 @media (hover: hover) and (pointer: fine) { .ra-btn:hover { border-color: color-mix(in srgb, var(--ra-indigo) 50%, var(--color-border-line)); color: var(--ra-accent-text); } }

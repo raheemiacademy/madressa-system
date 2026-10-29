@@ -258,17 +258,18 @@ async function Payments() {
   if (!rows.length) return <p className="ra-empty">No payments yet.</p>;
   return (
     <div className="ra-table-wrap">
-      <table className="ra-table">
-        <thead><tr><th>Payment</th><th className="opt">Date</th><th>Student</th><th className="num">Amount</th><th className="opt">Method</th><th>Status</th></tr></thead>
+      {/* Named by the student, not the payment number; a card per payment on a phone (data-cards) */}
+      <table className="ra-table" data-cards>
+        <thead><tr><th>Student</th><th className="opt">Date</th><th className="num">Amount</th><th className="opt">Method</th><th>Status</th><th className="opt">Receipt</th></tr></thead>
         <tbody>
           {rows.map((p) => (
             <tr key={p.id}>
-              <td className="ra-muted">#{p.id}</td>
-              <td className="opt">{formatCalendarDate(p.receivedOn)}</td>
-              <td className="wrap"><Link href={`/admin/fees/student/${p.studentId}`}>{p.studentName}</Link></td>
+              <td className="wrap lead"><Link href={`/admin/fees/student/${p.studentId}`}>{p.studentName}</Link></td>
+              <td className="opt meta">{formatCalendarDate(p.receivedOn)}</td>
               <td className="num">{formatPence(p.amountPence)}</td>
-              <td className="opt">{p.method}</td>
-              <td><Chip>{p.status}</Chip></td>
+              <td className="opt meta">{p.method}</td>
+              <td className="st"><Chip>{p.status}</Chip></td>
+              <td className="opt id ra-muted">#{p.id}</td>
             </tr>
           ))}
         </tbody>
