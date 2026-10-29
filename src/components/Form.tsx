@@ -16,12 +16,16 @@ export function Form({ action, children, submit = 'Save changes', card = true, r
   onSuccess?: (state: NonNullable<FormState>) => void;
 }) {
   const [state, act, pending] = useActionState<FormState, FormData>(action, undefined);
+  const [, startTransition] = useTransition();
   const ref = useRef<HTMLFormElement>(null);
   useEffect(() => { if (state?.ok && resetOnSuccess) ref.current?.reset(); }, [state, resetOnSuccess]);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per result, not when the callback's identity changes
   useEffect(() => { if (state?.ok) onSuccess?.(state); }, [state]);
   return (
-    <form ref={ref} id={id} action={act} noValidate className={card ? 'ra-card ra-form' : 'ra-form'} encType={encType}>
+    // Submitted through onSubmit, not the action prop: React 19 resets a form after every action-prop submit, which wiped
+    // everything typed when one field was wrong. resetOnSuccess still clears the forms that ask for it.
+    <form ref={ref} id={id} noValidate className={card ? 'ra-card ra-form' : 'ra-form'} encType={encType}
+      onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget, (e.nativeEvent as SubmitEvent).submitter); startTransition(() => act(fd)); }}>
       <FormErrors.Provider value={state?.errors}>
         <FormMessage state={state} />
         {children}
