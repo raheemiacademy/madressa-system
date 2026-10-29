@@ -1,9 +1,10 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { sql } from '@/db';
-import { academicYear, holiday } from '@/db/schema';
+import { academicYear, holiday, mailQueue } from '@/db/schema';
 import { figureAt } from '@/lib/count-up';
 import { holidaysBetween } from '@/server/holidays';
-import { db, resetDb } from './helpers';
+import { redeemPasswordLink, requestPasswordLink } from '@/server/password-links';
+import { db, makeStaff, resetDb } from './helpers';
 
 afterAll(() => sql.end());
 
@@ -29,5 +30,20 @@ describe('holidays on the attendance chart', () => {
       { academicYearId: y!.id, title: 'Winter break', startsOn: '2026-12-21', endsOn: '2027-01-01' }
     ]);
     expect(await holidaysBetween(db, '2026-09-01', '2026-10-29')).toEqual([{ title: 'Half term', from: '2026-10-26', to: '2026-10-30' }]);
+  });
+});
+
+describe('admin "Forgotten your password?"', () => {
+  beforeEach(resetDb);
+  it('emails an admin a one-time link to the admin area, and says nothing for unknown emails', async () => {
+    const { staff } = await makeStaff({ name: 'Head Teacher', email: 'head@example.org' });
+    await requestPasswordLink(db, 'admin', 'nobody@example.org');
+    await requestPasswordLink(db, 'admin', 'HEAD@example.org');
+    const mails = await db.select().from(mailQueue);
+    expect(mails.map((m) => m.toEmail)).toEqual([staff.email]);
+    expect(mails[0]!.subject).toContain('admin area');
+    const token = /\/admin\/set-password\/([A-Za-z0-9_-]+)/.exec(mails[0]!.html)![1]!;
+    expect(await redeemPasswordLink(db, 'teacher', token, 'a long new password')).toMatchObject({ ok: false });
+    expect(await redeemPasswordLink(db, 'admin', token, 'a long new password')).toMatchObject({ ok: true });
   });
 });

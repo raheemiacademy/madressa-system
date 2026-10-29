@@ -6,13 +6,14 @@ import { db } from '@/db';
 import { cookieName, cookiePath, invalidateSession, login, PORTALS, type Portal } from '@/server/auth';
 import { setSessionCookie } from '@/server/next/session-cookie';
 import { requestMeta, sessionFor } from '@/server/next/actor';
-import { changeOwnPassword, isLinkPortal, requestPasswordLink, sendPasswordLink, redeemPasswordLink } from '@/server/password-links';
+import { canRequestLink, changeOwnPassword, isLinkPortal, requestPasswordLink, sendPasswordLink, redeemPasswordLink } from '@/server/password-links';
 import { loginIdentity } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { safeNext } from '@/lib/safe-next';
 import { setUpSchool } from '@/server/onboarding';
 
-export type LoginState = { error?: string; notice?: string; email?: string } | undefined;
+// next: signed in; the form shows "✓ Signed in" for a moment, then opens it.
+export type LoginState = { error?: string; notice?: string; email?: string; next?: string } | undefined;
 const LINK_SENT = 'Check your email: we’ve sent you a link to set your password. It expires in 48 hours.';
 
 export async function loginAction(portal: Portal, _prev: LoginState, fd: FormData): Promise<LoginState> {
@@ -29,7 +30,7 @@ export async function loginAction(portal: Portal, _prev: LoginState, fd: FormDat
     return { error: res.error, email };
   }
   await setSessionCookie(portal, res.token);
-  redirect(res.mustChangePassword && isLinkPortal(portal) ? `/${portal}/change-password` : safeNext(portal, fd.get('next')));
+  return { next: res.mustChangePassword && isLinkPortal(portal) ? `/${portal}/change-password` : safeNext(portal, fd.get('next')) };
 }
 
 export async function logoutAction(portal: Portal) {
@@ -40,9 +41,9 @@ export async function logoutAction(portal: Portal) {
   redirect(`/${portal}/login`);
 }
 
-/** "First time here, or forgotten your password?" The answer is the same whether or not the email has an account. */
+/** "First time here, or forgotten your password?" (teachers, parents) and "Forgotten your password?" (admins). The answer is the same whether or not the email has an account. */
 export async function requestLinkAction(portal: Portal, _prev: LoginState, fd: FormData): Promise<LoginState> {
-  if (!isLinkPortal(portal)) return { error: 'Unknown portal' };
+  if (!canRequestLink(portal)) return { error: 'Unknown portal' };
   const email = String(fd.get('email') ?? '').trim();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: 'Enter your email address.', email };
   await requestPasswordLink(db, portal, email);
@@ -50,8 +51,7 @@ export async function requestLinkAction(portal: Portal, _prev: LoginState, fd: F
 }
 
 export async function setPasswordAction(portal: Portal, token: string, _prev: LoginState, fd: FormData): Promise<LoginState> {
-  // Admins can use a link (made from the owner dashboard) but can't ask for one.
-  if (!isLinkPortal(portal) && portal !== 'admin') return { error: 'Unknown portal' };
+  if (!canRequestLink(portal)) return { error: 'Unknown portal' };
   const password = String(fd.get('password') ?? ''), confirm = String(fd.get('confirm') ?? '');
   if (password !== confirm) return { error: 'The two passwords don’t match.' };
   const r = await redeemPasswordLink(db, portal, token, password, await requestMeta());

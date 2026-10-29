@@ -146,7 +146,7 @@ test('an invited teacher gets a set-password link on first sign-in and uses it o
   const t = await ctx.newPage();
   await t.goto('/teacher/login');
   await t.getByLabel('Email').fill('invited.teacher@example.org');
-  await t.getByLabel('Password').fill('anything');
+  await t.getByLabel('Password', { exact: true }).fill('anything');
   await t.getByRole('button', { name: 'Sign in' }).click();
   await expect(t.getByRole('status')).toContainText('we’ve sent you a link to set your password');
   const [mail] = await sql<{ html: string }[]>`select html from mail_queue where to_email = 'invited.teacher@example.org' order by id desc limit 1`;

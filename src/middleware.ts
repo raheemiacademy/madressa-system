@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-const PUBLIC = /^\/((admin|teacher|parent|student)\/login|admin\/setup|admin\/set-password\/[A-Za-z0-9_-]+|(teacher|parent)\/set-password(\/[A-Za-z0-9_-]+)?)\/?$/;
+const PUBLIC = /^\/((admin|teacher|parent|student)\/login|admin\/setup|admin\/set-password(\/[A-Za-z0-9_-]+)?|(teacher|parent)\/set-password(\/[A-Za-z0-9_-]+)?)\/?$/;
 
 // Cheap gate only: no cookie → login page. Every page and action still validates the session itself.
 export function middleware(req: NextRequest) {

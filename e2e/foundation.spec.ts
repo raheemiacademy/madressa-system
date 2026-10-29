@@ -31,10 +31,10 @@ test('wrong password shows one generic message; right password reaches the dashb
   await page.goto('/admin/settings');
   await expect(page).toHaveURL(/\/admin\/login\?next=%2Fadmin%2Fsettings/);
   await page.getByLabel('Email').fill('admin@example.org');
-  await page.getByLabel('Password').fill('not the password');
+  await page.getByLabel('Password', { exact: true }).fill('not the password');
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page.locator('.ra-alert')).toHaveText('Email or password is incorrect.');
-  await page.getByLabel('Password').fill(PW);
+  await page.getByLabel('Password', { exact: true }).fill(PW);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page).toHaveURL(/\/admin\/settings\/profile$/);
 });
@@ -114,7 +114,7 @@ test('a new staff member can sign in with only the access they were given', asyn
   const p2 = await ctx.newPage();
   await p2.goto('/admin/login');
   await p2.getByLabel('Email').fill('staff3@example.org');
-  await p2.getByLabel('Password').fill('another long password');
+  await p2.getByLabel('Password', { exact: true }).fill('another long password');
   await p2.getByRole('button', { name: 'Sign in' }).click();
   await expect(p2).toHaveURL(/\/admin$/);
   await p2.goto('/admin/settings/staff');

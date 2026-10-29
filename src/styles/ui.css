@@ -225,6 +225,31 @@ fieldset.ra-fieldset legend { font-size: 13px; font-weight: 500; padding: 0 4px;
 .ra-auth-card { width: min(420px, 100%); background: var(--color-panel); border-radius: var(--ra-r-lg); padding: 28px 24px; display: flex; flex-direction: column; gap: 18px; box-shadow: var(--ra-shadow-pop); }
 .ra-auth-card h1 { font-family: var(--font-serif), Georgia, serif; font-weight: 400; font-size: 1.75rem; margin: 0; }
 .ra-auth-card .ra-btn { min-height: 48px; font-size: 15px; }
+.ra-auth .ra-input { min-height: 48px; font-size: 16px; }
+/* Dark: the card (#1A1E40) nearly vanished on the ink page (#1C2147). The page steps down and the card gets a border. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ra-auth { background: var(--color-bg); }
+  :root:not([data-theme="light"]) .ra-auth-card { border: 1px solid var(--color-border-line); }
+}
+:root[data-theme="dark"] .ra-auth { background: var(--color-bg); }
+:root[data-theme="dark"] .ra-auth-card { border: 1px solid var(--color-border-line); }
+/* Password with an eye button */
+.ra-pw { position: relative; }
+.ra-pw .ra-input { padding-right: 48px; }
+.ra-pw-eye { position: absolute; right: 2px; top: 50%; translate: 0 -50%; width: 44px; height: 44px; border: 0; border-radius: var(--ra-r-sm); background: none; color: var(--color-fg-muted); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.ra-pw-eye svg { width: 18px; height: 18px; }
+@media (hover: hover) and (pointer: fine) { .ra-pw-eye:hover { color: var(--ra-accent-text); } }
+/* Browser autofill keeps the field's own colours (no light-blue boxes in dark mode) */
+.ra-input:autofill, .ra-input:-webkit-autofill { box-shadow: 0 0 0 40px var(--color-bg) inset; -webkit-text-fill-color: var(--color-fg); caret-color: var(--color-fg); }
+/* A working button: a spinner in place of its label, then (sign-in) "✓ Signed in" */
+.ra-btn[aria-busy="true"] { position: relative; color: transparent !important; pointer-events: none; }
+.ra-btn[aria-busy="true"]:disabled, .ra-btn.is-done:disabled { opacity: 1; }
+.ra-btn[aria-busy="true"]::after { content: ""; position: absolute; width: 18px; height: 18px; border-radius: 50%; border: 2px solid currentColor; border-color: var(--ra-on-primary) transparent var(--ra-on-primary) var(--ra-on-primary); animation: ra-spin 700ms linear infinite; }
+@keyframes ra-spin { to { rotate: 1turn; } }
+/* A wrong password shakes the card once */
+.ra-auth-card.shake { animation: ra-shake 300ms var(--ra-ease-out); }
+@keyframes ra-shake { 20% { translate: -6px 0; } 40% { translate: 6px 0; } 60% { translate: -4px 0; } 80% { translate: 2px 0; } }
+@media (prefers-reduced-motion: reduce) { .ra-auth-card.shake { animation: none; } .ra-btn[aria-busy="true"]::after { animation-duration: 1.6s; } }
 
 /* Responsive: below ~860px the sidebar becomes a horizontal scrolling nav and cards stack */
 @container (max-width: 1100px) {

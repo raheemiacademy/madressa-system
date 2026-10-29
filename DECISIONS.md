@@ -864,4 +864,4 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
 
 Twelve changes from the review of your saved UI reels, previewed first (`_ui-preview/index.html`, not committed) and approved together.
 - **The dashboard comes alive on open (this changes the DESIGN.md Motion rule, which said no chart-draw animation).** On the first view of a session (the existing `ra_dash_seen` cookie), the KPI figures count up from 0, the Weekly attendance line draws in and the Fees by type bars grow from 0, all within a second. Digits sit in equal-width slots, as on the website. Nothing counts, draws or grows with reduced motion, and no other chart animates.
-
+- **Admins can reset their own password by email (part of the sign-in change).** "Forgotten your password?" on the admin sign-in sends the same one-time, 48-hour, rate-limited link teachers and parents get (§11). Before, only the owner dashboard could make an admin a link (§17). It works for the support account too; its email is yours.
