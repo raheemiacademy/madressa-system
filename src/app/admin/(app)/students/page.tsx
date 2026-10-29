@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { db } from '@/db';
 import { loginIdentity, STUDENT_STATUSES } from '@/db/schema';
 import { HBarChart } from '@/components/charts';
+import { MoreTools } from '@/components/MoreTools';
 import { Icon } from '@/components/Icon';
 import { plural } from '@/lib/text';
 import { resolveYear } from '@/server/academic-years';
@@ -60,10 +61,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
         <Link className="ra-kpi ra-kpi-link" href="/admin/tools/portals" style={{ ['--c' as string]: 'var(--ra-sky)' }}><div className="ra-kpi-top">Parents on portal</div><div className="ra-kpi-val">{(portal?.n ?? 0).toLocaleString('en-GB')}</div><div className="ra-kpi-sub">Logged in this year</div></Link>
       </div>
 
-      <div className="ra-more">
-        <span className="ra-more-l">More tools</span>
-        {TOOLS.map(([href, label]) => <Link key={href} className="ra-btn" href={href}>{label}</Link>)}
-      </div>
+      <MoreTools tools={TOOLS} top={['/admin/contacts', '/admin/students/siblings', '/admin/students/registration']} />
 
       <div className="ra-grid">
         <section className="ra-card ra-c4" aria-labelledby="age-h">

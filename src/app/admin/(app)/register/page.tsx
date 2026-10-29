@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { db } from '@/db';
 import { TrendChart } from '@/components/charts';
+import { MoreTools } from '@/components/MoreTools';
 import { Chip } from '@/components/Chip';
 import { Icon } from '@/components/Icon';
 import { pct1, summarise } from '@/lib/attendance';
@@ -59,12 +60,9 @@ export default async function Register({ searchParams }: { searchParams: Promise
         <Link className="ra-view tap" href="/admin/register/monthly"><Icon name="calendar" /><span><b>Monthly register</b><small>The whole month at a glance</small></span></Link>
       </nav>
 
-      <div className="ra-more">
-        <span className="ra-more-l">More tools</span>
-        {[['/admin/register/stats', 'Attendance stats'], ['/admin/register/summary', 'Daily summary'],
-          ['/admin/register/requests', 'Holiday requests'], ['/admin/register/notices', 'Parent notices'], ['/admin/register/alerts', 'Attendance alerts'], ['/admin/register/doubles', 'Double entries'],
-          ['/admin/register/delete', 'Delete register entries'], ['/admin/settings/attendance-codes', 'Attendance codes']].map(([h, l]) => <Link key={h} className="ra-btn" href={h!}>{l}</Link>)}
-      </div>
+      <MoreTools top={['/admin/register/requests', '/admin/register/notices', '/admin/register/stats']} tools={[['/admin/register/stats', 'Attendance stats'], ['/admin/register/summary', 'Daily summary'],
+        ['/admin/register/requests', 'Holiday requests'], ['/admin/register/notices', 'Parent notices'], ['/admin/register/alerts', 'Attendance alerts'], ['/admin/register/doubles', 'Double entries'],
+        ['/admin/register/delete', 'Delete register entries'], ['/admin/settings/attendance-codes', 'Attendance codes']]} />
 
       <div className="ra-grid">
         <section className="ra-card ra-c5" aria-labelledby="rt-h">

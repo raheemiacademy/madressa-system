@@ -14,6 +14,7 @@ import { dashboard, paymentList } from '@/server/fees/reports';
 import { annualTotal, periodsOf, structureByClass } from '@/server/fees/structures';
 import { yearAndClasses } from '../students/year-classes';
 import { FeesHead } from './FeesHead';
+import { MoreTools } from '@/components/MoreTools';
 import { MORE_TOOLS } from './tools';
 
 export const metadata = { title: 'Fees' };
@@ -54,9 +55,7 @@ export default async function Fees({ searchParams }: { searchParams: Promise<{ s
         </div>
       )}
 
-      <div className="ra-more"><span className="ra-more-l">More tools</span>
-        {MORE_TOOLS.map(([h, l]) => <Link key={h} className="ra-btn" href={h}>{l}</Link>)}
-      </div>
+      <MoreTools tools={MORE_TOOLS} top={['/admin/fees/overview', '/admin/fees/received', '/admin/fees/receipts']} />
 
       <form className="ra-card ra-toolbar" role="search" action="/admin/fees/search">
         <div className="ra-field grow"><label htmlFor="fees-q">Fees search</label>

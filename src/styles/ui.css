@@ -319,6 +319,10 @@ fieldset.ra-fieldset legend { font-size: 13px; font-weight: 500; padding: 0 4px;
 .ra-more { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .ra-more .ra-btn { min-height: 34px; padding: 0 12px; background: transparent; }
 .ra-more-l { font-size: 12px; color: var(--color-fg-muted); margin-right: 4px; }
+.ra-tools-menu { width: min(300px, calc(100vw - 32px)); }
+.ra-tools-menu .ra-input { margin-bottom: 6px; }
+.ra-tools-menu ul { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow-y: auto; overscroll-behavior: contain; }
+.ra-tools-menu .ra-empty { padding: 12px 4px; }
 .ra-class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); gap: 12px; }
 .ra-class { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .ra-class-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
