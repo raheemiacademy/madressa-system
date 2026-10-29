@@ -40,8 +40,8 @@ test('step 6 invites parents and teachers, and the step ticks itself off', async
   await page.goto('/admin/tools/portals?setup=6');
   await expect(page.getByRole('link', { name: 'Open parent portal (opens in a new tab)' })).toHaveAttribute('href', '/parent');
   await expect(page.getByText('Setup step 6 of 6: Invite parents and teachers.')).toBeVisible();
-  page.once('dialog', (d) => d.accept());
   await page.getByRole('button', { name: 'Invite parents and teachers' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Invite parents and teachers' }).click(); // the in-app confirm
   await expect(page.getByRole('status').filter({ hasText: /^Done: / })).toBeVisible();
   await page.goto('/admin');
   const invite = page.getByRole('region', { name: /Set up your madrasah|Your madrasah is set up/ }).getByRole('listitem').filter({ hasText: 'Invite parents and teachers' });

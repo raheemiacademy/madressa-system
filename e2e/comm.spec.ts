@@ -42,8 +42,8 @@ test('messages: search bar with a filter, delete one message, and live counts', 
   const threads = page.getByRole('link', { name: /Sample delete check/ });
   const before = await threads.count();
   await threads.first().click();
-  page.once('dialog', (d) => d.accept());
   await page.getByRole('button', { name: /^Delete this message from/ }).first().click();
+  await page.getByRole('dialog').getByRole('button', { name: /^Delete this message from/ }).click(); // the in-app confirm
   await expect(page.getByText('Pick a conversation to read it.')).toBeVisible(); // its only message went, so the conversation did too
   await expect(threads).toHaveCount(before - 1);
   await expect(page.getByRole('combobox', { name: 'Filter by teacher or contact' })).toBeVisible();

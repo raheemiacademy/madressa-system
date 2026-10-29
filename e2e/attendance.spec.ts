@@ -126,8 +126,8 @@ test('fire drill: hold to start, mark a class safe, end and see the report', asy
   await expect(page.getByRole('status').filter({ hasText: 'Drill running' })).toBeVisible();
   await page.getByRole('button', { name: 'Mark all safe' }).first().click();
   await expect(page.getByRole('button', { name: 'All safe ✓' }).first()).toBeVisible();
-  page.once('dialog', (d) => d.accept());
   await page.getByRole('button', { name: 'End drill and save report' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'End drill and save report' }).click(); // the in-app confirm
   await expect(page.getByRole('heading', { name: 'Start a fire drill' })).toBeVisible();
   await page.getByRole('link', { name: 'View report' }).first().click();
   await expect(page.getByRole('heading', { name: /^Report:/ })).toBeVisible();
