@@ -1,10 +1,10 @@
 import { db } from '@/db';
-import { CopyButton } from '@/app/_portal/Copy';
+import { CopyButton, HowToPay } from '@/app/_portal/Copy';
 import { PortalHead } from '@/app/_portal/Head';
 import { Chip } from '@/components/Chip';
 import { ActionButton } from '@/components/Form';
 import { Icon } from '@/components/Icon';
-import { formatCalendarDate } from '@/lib/dates';
+import { friendlyDate } from '@/lib/dates';
 import { formatPence } from '@/lib/money';
 import { requireParent } from '@/server/next/portal';
 import { bankTransfer, familyFees, MANDATE_LIVE, payOptions } from '@/server/portal/fees';
@@ -35,8 +35,10 @@ export default async function Fees({ searchParams }: { searchParams: Promise<{ p
             <div>
               <small>{f.outstanding ? (f.overdue ? 'To pay, including overdue' : 'To pay') : 'All paid'}</small>
               <strong style={{ display: 'block', fontFamily: 'var(--font-serif), Georgia, serif', fontWeight: 400, fontSize: 34, lineHeight: 1.2 }}>{formatPence(f.outstanding)}</strong>
-              <small>{f.nextDue ? `Next due ${formatCalendarDate(f.nextDue.dueDate)}` : f.overdue ? `${formatPence(f.overdue)} is overdue` : 'Nothing due'}{pending ? ` · ${formatPence(pending)} being confirmed` : ''}</small>
+              <small>{f.nextDue ? `Next due ${friendlyDate(f.nextDue.dueDate)}` : f.overdue ? `${formatPence(f.overdue)} is overdue` : 'Nothing due'}{pending ? ` · ${formatPence(pending)} being confirmed` : ''}</small>
             </div>
+            {/* While card payments are off, the button beside the amount opens the bank details below */}
+            {f.outstanding - pending > 0 && !opts.card && bank && <HowToPay target="bank" />}
           </div>
           {f.outstanding - pending > 0 && opts.card && <ActionButton action={payByCardAction} label={`Pay ${formatPence(f.outstanding - pending)} by card`} className="ra-btn tap" />}
         </section>
@@ -51,7 +53,7 @@ export default async function Fees({ searchParams }: { searchParams: Promise<{ p
         )}
 
         {bank && (
-          <details className="ra-card">
+          <details className="ra-card" id="bank">
             <summary className="tap" style={{ fontWeight: 600, minHeight: 32, cursor: 'pointer' }}>Pay by bank transfer instead</summary>
             <dl className="rp-dl" style={{ margin: '12px 0' }}>
               <dt>Account name</dt><dd>{bank.name || '—'}</dd>
@@ -71,7 +73,7 @@ export default async function Fees({ searchParams }: { searchParams: Promise<{ p
               <li key={r.id}>
                 <span className="t">{r.description || r.type}</span>
                 <span className="v">{formatPence(r.amountPence)}</span>
-                <span className="m">{r.studentName} · #{r.id} · due {formatCalendarDate(r.dueDate)}{r.received && r.balance > 0 ? ` · ${formatPence(r.received)} paid` : ''}</span>
+                <span className="m">{r.studentName} · #{r.id} · due {friendlyDate(r.dueDate)}{r.received && r.balance > 0 ? ` · ${formatPence(r.received)} paid` : ''}</span>
                 <span><Chip>{r.status}</Chip></span>
               </li>
             ))}

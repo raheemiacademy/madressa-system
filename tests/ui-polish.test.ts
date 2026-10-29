@@ -2,6 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { sql } from '@/db';
 import { academicYear, holiday, mailQueue } from '@/db/schema';
 import { figureAt } from '@/lib/count-up';
+import { friendlyDate } from '@/lib/dates';
 import { holidaysBetween } from '@/server/holidays';
 import { redeemPasswordLink, requestPasswordLink } from '@/server/password-links';
 import { db, makeStaff, resetDb } from './helpers';
@@ -45,5 +46,13 @@ describe('admin "Forgotten your password?"', () => {
     const token = /\/admin\/set-password\/([A-Za-z0-9_-]+)/.exec(mails[0]!.html)![1]!;
     expect(await redeemPasswordLink(db, 'teacher', token, 'a long new password')).toMatchObject({ ok: false });
     expect(await redeemPasswordLink(db, 'admin', token, 'a long new password')).toMatchObject({ ok: true });
+  });
+});
+
+describe('parent fee dates', () => {
+  it('read like "Sat 31 Oct", with the year only when it isn’t this year', () => {
+    const now = new Date('2026-10-29T12:00:00Z');
+    expect(friendlyDate('2026-10-31', now)).toBe('Sat 31 Oct');
+    expect(friendlyDate('2027-01-08', now)).toBe('Fri 8 Jan 2027');
   });
 });

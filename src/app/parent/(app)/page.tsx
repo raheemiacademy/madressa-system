@@ -6,7 +6,7 @@ import { db } from '@/db';
 import { PortalHead } from '@/app/_portal/Head';
 import { Icon } from '@/components/Icon';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { formatCalendarDate, formatInstant } from '@/lib/dates';
+import { formatCalendarDate, formatInstant, friendlyDate } from '@/lib/dates';
 import { formatPence } from '@/lib/money';
 import { plural } from '@/lib/text';
 import { requireParent } from '@/server/next/portal';
@@ -64,7 +64,7 @@ export default async function ParentHome({ searchParams }: { searchParams: Promi
         {money && (money.outstanding > 0 ? (
           <Link className="rp-row tap" href="/parent/fees">
             <span className="rp-ic" style={{ ['--c' as string]: 'var(--ra-violet)' }}><Icon name="pound" /></span>
-            <span><b>{money.nextDue ? `${formatPence(money.outstanding)} to pay · next due ${formatCalendarDate(money.nextDue.dueDate)}` : `${formatPence(money.outstanding)} overdue`}</b>
+            <span><b>{money.nextDue ? `${formatPence(money.outstanding)} to pay · next due ${friendlyDate(money.nextDue.dueDate)}` : `${formatPence(money.outstanding)} overdue`}</b>
               <small>{plural(money.unpaid.length, 'unpaid invoice')}{p.ctx.kids.length > 1 ? ' across your children' : ''}</small></span>
             <span className="go">Pay</span>
           </Link>

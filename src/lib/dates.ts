@@ -4,6 +4,8 @@ import { TZDate } from '@date-fns/tz';
 /** Calendar dates are 'YYYY-MM-DD' strings; instants are Date. Both are shown in the school's timezone. */
 export const formatInstant = (d: Date, pattern: string, tz = 'Europe/London') => format(new TZDate(d, tz), pattern);
 export const formatCalendarDate = (iso: string, pattern = 'dd/MM/yyyy') => format(new Date(`${iso}T12:00:00Z`), pattern);
+/** "Sat 31 Oct" for parents, with the year when it isn't this year (UK time). Tables keep DD/MM/YYYY. */
+export const friendlyDate = (iso: string, now = new Date()) => formatCalendarDate(iso, iso.slice(0, 4) === formatInstant(now, 'yyyy') ? 'EEE d MMM' : 'EEE d MMM yyyy');
 export function greeting(now: Date, tz = 'Europe/London') {
   const h = new TZDate(now, tz).getHours();
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';

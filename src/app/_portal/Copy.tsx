@@ -11,3 +11,16 @@ export function CopyButton({ text, label = 'Copy details' }: { text: string; lab
     </button>
   );
 }
+
+/** "How to pay" beside the amount: opens the bank transfer details (a <details> with this id) and brings them into view. */
+export function HowToPay({ target }: { target: string }) {
+  return (
+    <button type="button" className="ra-btn tap" style={{ flex: 'none' }} aria-controls={target} onClick={() => {
+      const d = document.getElementById(target) as HTMLDetailsElement | null;
+      if (!d) return;
+      d.open = true;
+      d.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      d.querySelector('summary')?.focus();
+    }}>How to pay</button>
+  );
+}
