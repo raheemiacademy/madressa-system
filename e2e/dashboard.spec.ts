@@ -7,7 +7,8 @@ test('dashboard shows today’s figures and panels, and its shortcuts work', asy
   await page.goto('/admin');
   await expect(page.getByRole('heading', { level: 1, name: /^Good (morning|afternoon|evening), Sample$/ })).toBeVisible();
   const kpis = page.locator('.ra-kpi-top');
-  await expect(kpis).toHaveText(['Current students', 'Attendance today', 'Fees outstanding', 'Parents on portal', 'Teachers signed in']);
+  await expect(kpis).toHaveText(['Attendance today', 'Current students', 'Parents on portal', 'Fees outstanding']);
+  await expect(page.locator('.ra-kpi-goal')).toContainText(/^£[\d,.]+ of £[\d,.]+ collected$/);
   for (const h of ['Weekly attendance', 'Unread messages', 'Teacher sign-in', 'Recent payments', 'Fees by type']) await expect(page.getByRole('heading', { level: 2, name: h })).toBeVisible();
   await expect(page.getByRole('heading', { level: 2, name: 'Students by age group' })).toHaveCount(0);
   await expect(page.getByRole('img', { name: /^Fees by type: / })).toBeVisible();
@@ -28,7 +29,7 @@ test('staff without fees access see no fees figures on the dashboard', async ({ 
   const ctx = await browser.newContext();
   const v = await ctx.newPage();
   await signIn(v, 'dash.viewer@example.org', 'dash viewer password');
-  await expect(v.locator('.ra-kpi-top')).toHaveText(['Current students', 'Attendance today', 'Parents on portal', 'Teachers signed in']);
+  await expect(v.locator('.ra-kpi-top')).toHaveText(['Attendance today', 'Current students', 'Parents on portal']);
   await expect(v.getByRole('heading', { level: 2, name: 'Teacher sign-in' })).toBeVisible();
   for (const gone of ['Recent payments', 'Fees by type', 'Record payment', 'Add student']) await expect(v.getByText(gone, { exact: true })).toHaveCount(0);
   await expect(v.locator('main')).not.toContainText('overdue');
@@ -72,7 +73,7 @@ test('on a phone the admin is an app: bottom tabs, and More holds the menu, year
 
 test('the figure tiles open the page behind each figure', async ({ page }) => {
   await signIn(page);
-  for (const [label, url] of [['Current students', /\/admin\/students$/], ['Attendance today', /\/admin\/register$/], ['Teachers signed in', /\/admin\/teacher-logs$/]] as const) {
+  for (const [label, url] of [['Current students', /\/admin\/students$/], ['Attendance today', /\/admin\/register$/], ['Fees outstanding', /\/admin\/fees$/]] as const) {
     await page.goto('/admin');
     await page.getByRole('link', { name: new RegExp(`^${label}`) }).click();
     await expect(page).toHaveURL(url);

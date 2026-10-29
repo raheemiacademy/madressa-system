@@ -39,7 +39,7 @@ const headline = cache(async (today: string, yearId: number | null, fees: boolea
     studentFigures(db, today), attendanceFigures(db, today), signInsFor(today), countNotices(db, today), countPendingRequests(db),
     fees && yearId ? Promise.all([feesFor(yearId), outstandingWeekAgo(db, yearId)]) : null
   ]);
-  return { students, attendance, signIns, notices, requests, fees: money && { outstanding: money[0].totals.outstanding, overdue: money[0].overdueCount, change: money[0].totals.outstanding - money[1] } };
+  return { students, attendance, signIns, notices, requests, fees: money && { outstanding: money[0].totals.outstanding, received: money[0].totals.received, invoiced: money[0].totals.due, overdue: money[0].overdueCount, change: money[0].totals.outstanding - money[1] } };
 });
 
 const pct1 = (v: number) => `${v.toFixed(1)}%`;
@@ -110,7 +110,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       </div>
 
       <PanelBoundary>
-        <Suspense fallback={<div className="ra-kpis" role="status" aria-label="Loading today’s figures">{Array.from({ length: money ? 5 : 4 }, (_, i) => <div key={i} className="ra-kpi ra-skel" style={{ height: 112 }} />)}</div>}>
+        <Suspense fallback={<div className="ra-kpis" role="status" aria-label="Loading today’s figures">{Array.from({ length: money ? 4 : 3 }, (_, i) => <div key={i} className="ra-kpi ra-skel" style={{ height: 112 }} />)}</div>}>
           <Headline today={today} yearId={year?.id ?? null} yearStart={year?.startsOn ?? today} fees={money} anim={anim} />
         </Suspense>
       </PanelBoundary>
@@ -153,15 +153,21 @@ async function HeroLine({ today, yearId, fees }: { today: string; yearId: number
 
 async function Headline({ today, yearId, yearStart, fees, anim }: { today: string; yearId: number | null; yearStart: string; fees: boolean; anim: string }) {
   const [h, parents] = await Promise.all([headline(today, yearId, fees), parentFigures(db, yearStart)]);
-  const due = h.signIns.rows.length;
-  // Each tile opens the page with the detail behind its figure.
-  const tiles: [string, string, IconName, ReactNode, ReactNode, string][] = [
-    ['--ra-indigo', 'Current students', 'users', h.students.current.toLocaleString('en-GB'), <><Delta v={h.students.change} unit="count" good="up" /> since last week · {h.students.waiting.toLocaleString('en-GB')} waiting</>, '/admin/students'],
-    ['--ra-blue', 'Attendance today', 'check', h.attendance.pct === null ? '—' : pct1(h.attendance.pct),
-      h.attendance.pct === null ? 'No registers taken yet today' : h.attendance.change === null ? 'No register on this day last week' : <><Delta v={h.attendance.change} unit="pts" good="up" /> vs same day last week</>, '/admin/register'],
-    ...(h.fees ? [['--ra-violet', 'Fees outstanding', 'pound', formatPence(h.fees.outstanding), <><Delta v={h.fees.change} unit="pence" good="down" /> since last week</>, '/admin/fees'] as [string, string, IconName, ReactNode, ReactNode, string]] : []),
-    ['--ra-sky', 'Parents on portal', 'phone', parents.active.toLocaleString('en-GB'), `of ${plural(parents.total, 'parent contact')}`, '/admin/tools/portals'],
-    ['--ra-lav', 'Teachers signed in', 'clock', h.signIns.signedIn.toLocaleString('en-GB'), due ? `of ${due.toLocaleString('en-GB')} teaching today` : 'No one is due in today', '/admin/teacher-logs']
+  // Four tiles, Attendance the hero (Teachers signed in is the Teacher sign-in panel below). Each opens the page behind its figure.
+  type Tile = { c: string; label: string; icon: IconName; val: ReactNode; sub: ReactNode; href: string; cls?: string; extra?: ReactNode };
+  const f = h.fees;
+  const tiles: Tile[] = [
+    { c: '--ra-blue', label: 'Attendance today', icon: 'check', val: h.attendance.pct === null ? '—' : pct1(h.attendance.pct), cls: ' hero',
+      sub: h.attendance.pct === null ? 'No registers taken yet today' : h.attendance.change === null ? 'No register on this day last week' : <><Delta v={h.attendance.change} unit="pts" good="up" /> vs same day last week</>, href: '/admin/register' },
+    { c: '--ra-indigo', label: 'Current students', icon: 'users', val: h.students.current.toLocaleString('en-GB'), sub: <><Delta v={h.students.change} unit="count" good="up" /> since last week · {h.students.waiting.toLocaleString('en-GB')} waiting</>, href: '/admin/students' },
+    { c: '--ra-sky', label: 'Parents on portal', icon: 'phone', val: parents.active.toLocaleString('en-GB'), sub: `of ${plural(parents.total, 'parent contact')}`, href: '/admin/tools/portals' },
+    ...(f ? [{ c: '--ra-violet', label: 'Fees outstanding', icon: 'pound' as IconName, val: formatPence(f.outstanding), sub: <><Delta v={f.change} unit="pence" good="down" /> since last week</>, href: '/admin/fees', cls: ' goal',
+      extra: f.invoiced > 0 && (
+        <div className="ra-kpi-goal">
+          <div className="ra-bar" role="img" aria-label={`${pct1((f.received / f.invoiced) * 100)} of this year’s fees collected`}><i style={{ width: `${Math.min(100, (f.received / f.invoiced) * 100)}%` }} /></div>
+          <span>{formatPence(f.received)} of {formatPence(f.invoiced)} collected</span>
+        </div>
+      ) }] : [])
   ];
   return (
     <>
@@ -179,12 +185,13 @@ async function Headline({ today, yearId, yearStart, fees, anim }: { today: strin
           )}
         </div>
       )}
-      <div className="ra-kpis">
-        {tiles.map(([c, label, icon, val, sub, href], i) => (
-          <Link key={label} href={href} className={`ra-kpi ra-kpi-link${anim}`} style={{ ...tint(c), ['--i' as string]: i + 1 }}>
+      <div className="ra-kpis ra-kpis-hero">
+        {tiles.map(({ c, label, icon, val, sub, href, cls = '', extra }, i) => (
+          <Link key={label} href={href} className={`ra-kpi ra-kpi-link${cls}${anim}`} style={{ ...tint(c), ['--i' as string]: i + 1 }}>
             <div className="ra-kpi-top">{label}<span className="ra-kpi-ic"><Icon name={icon} /></span></div>
             <div className="ra-kpi-val">{typeof val === 'string' ? <KpiValue value={val} animate={!!anim} /> : val}</div>
             <div className="ra-kpi-sub">{sub}</div>
+            {extra}
           </Link>
         ))}
       </div>
