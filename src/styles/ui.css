@@ -239,6 +239,13 @@ fieldset.ra-fieldset legend { font-size: 13px; font-weight: 500; padding: 0 4px;
 .ra-auth-card h1 { font-family: var(--font-serif), Georgia, serif; font-weight: 400; font-size: 1.75rem; margin: 0; }
 .ra-auth-card .ra-btn { min-height: 48px; font-size: 15px; }
 .ra-auth .ra-input { min-height: 48px; font-size: 16px; }
+/* Sign in ↔ "email me a link": both sides sit in one card and the track slides one card across */
+.ra-auth-card.ra-slide { display: block; overflow: hidden; }
+.ra-slide-track { display: grid; grid-template-columns: 100% 100%; align-items: start; transition: transform 300ms var(--ra-ease-out); }
+.ra-slide-track > * { min-width: 0; display: flex; flex-direction: column; gap: 18px; transition: opacity 300ms var(--ra-ease-out); }
+.ra-slide-track > [inert] { opacity: 0; }
+.ra-slide[data-panel="link"] .ra-slide-track { transform: translateX(-100%); }
+@media (prefers-reduced-motion: reduce) { .ra-slide-track { transition: none; } .ra-slide-track > * { transition: opacity 200ms ease; } }
 /* Dark: the card (panel) nearly vanished on the ink page. The page steps down to the background and the card gets a border. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .ra-auth { background: var(--color-bg); }
@@ -268,6 +275,11 @@ fieldset.ra-fieldset legend { font-size: 13px; font-weight: 500; padding: 0 4px;
 .ra-auth-card.shake { animation: ra-shake 300ms var(--ra-ease-out); }
 @keyframes ra-shake { 20% { translate: -6px 0; } 40% { translate: 6px 0; } 60% { translate: -4px 0; } 80% { translate: 2px 0; } }
 @media (prefers-reduced-motion: reduce) { .ra-auth-card.shake { animation: none; } .ra-btn[aria-busy="true"]::after { animation-duration: 1.6s; } }
+.ra-btn:not(.primary)[aria-busy="true"]::after { border-color: var(--color-fg); border-right-color: transparent; }
+/* "Saved ✓" / "Done ✓" pops in where the spinner was */
+.ra-btn.is-done .ok { display: inline-block; animation: ra-tick 240ms var(--ra-ease-out) both; }
+@keyframes ra-tick { from { opacity: 0; transform: scale(.6); } }
+@media (prefers-reduced-motion: reduce) { .ra-btn.is-done .ok { animation: ra-fade 200ms ease both; } }
 
 /* Responsive: below ~860px the sidebar becomes a horizontal scrolling nav and cards stack */
 @container (max-width: 1100px) {
@@ -484,6 +496,9 @@ button.ra-mk { cursor: pointer; }
 .ra-msg[data-unread="false"] .ra-msg-from { font-weight: 400; }
 @container (max-width: 480px) { .ra-msg-top .ra-chip { display: none; } }
 .ra-thread { display: flex; flex-direction: column; gap: 14px; }
+/* A reply you send rises into the conversation */
+.ra-thread > article.sending { animation: ra-rise 200ms var(--ra-ease-out) both; }
+@media (prefers-reduced-motion: reduce) { .ra-thread > article.sending { animation: ra-fade 200ms ease both; } }
 .ra-bubble { background: var(--ra-tint); border-radius: 4px 14px 14px 14px; padding: 14px 16px; line-height: 1.6; overflow-wrap: anywhere; }
 .ra-rich { border: 1px solid var(--color-border-line); border-radius: var(--ra-r); background: var(--color-bg); padding: 8px; display: grid; gap: 8px; }
 .ra-rich-body { min-height: 220px; padding: 8px 10px; outline: none; line-height: 1.6; overflow-wrap: anywhere; }
@@ -532,6 +547,13 @@ html:has(.rp) { overscroll-behavior: none; }
 .rp-tab[aria-current="page"]::before { content: ""; position: absolute; top: -6px; left: 50%; width: 28px; margin-left: -14px; height: 3px; border-radius: 0 0 3px 3px; background: var(--ra-accent); }
 .rp-tab svg { box-sizing: content-box; padding: 3px 11px; border-radius: 14px; }
 .rp-tab[aria-current="page"] svg { background: color-mix(in srgb, var(--ra-accent) 24%, transparent); }
+/* Once TabBar's script runs, one highlight (the same pill and bar) slides between tabs instead */
+.rp-tabs ul { position: relative; isolation: isolate; }
+.rp-tab-hl { position: absolute; left: 0; top: 0; z-index: -1; width: 44px; height: 28px; border-radius: 14px; background: color-mix(in srgb, var(--ra-accent) 24%, transparent); pointer-events: none; opacity: 0; }
+.rp-tab-hl::before { content: ""; position: absolute; left: 8px; right: 8px; top: -9px; height: 3px; border-radius: 0 0 3px 3px; background: var(--ra-accent); }
+.rp-tabs.has-hl .rp-tab-hl { opacity: 1; }
+.rp-tabs.has-hl .rp-tab[aria-current="page"]::before { content: none; }
+.rp-tabs.has-hl .rp-tab[aria-current="page"] svg { background: none; }
 .rp-tab:focus-visible, .tap:focus-visible { outline: 2px solid var(--ra-indigo); outline-offset: 2px; }
 .tap { touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; transition: transform 120ms var(--ra-ease-out), background-color 120ms ease, color 120ms ease; }
 .tap:active { transform: scale(0.97); }

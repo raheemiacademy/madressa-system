@@ -5,6 +5,7 @@ import { contact, teacher } from '@/db/schema';
 import { Chip } from '@/components/Chip';
 import { ActionButton } from '@/components/Form';
 import { Empty } from '@/components/Empty';
+import { NewRows } from '@/components/NewRows';
 import { Reply } from '@/components/Reply';
 import { RefreshOnce } from '@/components/RefreshOnce';
 import { Ticks } from '@/components/Ticks';
@@ -78,9 +79,10 @@ export default async function Messages({ searchParams }: { searchParams: Promise
           {box !== 'other' && <nav className="ra-filters" aria-label="Who">{Object.entries(WHO).map(([k, l]) => <Link key={k} className="ra-filter" aria-current={(who ?? 'all') === k ? 'page' : undefined} href={q({ who: k === 'all' ? undefined : k, t: undefined })}>{l}</Link>)}</nav>}
           {threads.length === 0 ? <p className="ra-empty">{box === 'locked' ? 'No locked conversations.' : box === 'other' ? 'No teacher ↔ parent conversations yet.' : 'Nothing here yet.'}</p> : (
             <BulkForm action={bulkAction} canDelete={canDelete}>
-              <ul className="ra-msg-list" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              <NewRows list="msg-list" ids={threads.map((t) => t.id).join()} />
+              <ul id="msg-list" className="ra-msg-list" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
                 {threads.map((t) => (
-                  <li key={t.id} className="ra-msg-row">
+                  <li key={t.id} data-id={t.id} className="ra-msg-row">
                     {canEdit && <input type="checkbox" name="ids" value={t.id} aria-label={`Select “${t.subject}”`} />}
                     <Link className="ra-msg" href={q({ t: String(t.id) })} aria-current={t.id === tid ? 'true' : undefined} data-unread={String(t.unread)}>
                       <span className="ra-avatar" aria-hidden="true">{initials(t.last?.name ?? t.others)}</span>

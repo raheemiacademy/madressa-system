@@ -4,6 +4,7 @@ import { Empty } from '@/components/Empty';
 import Link from 'next/link';
 import { SelectField, TextArea, TextField } from '@/components/Fields';
 import { Form } from '@/components/Form';
+import { NewRows } from '@/components/NewRows';
 import { Reply } from '@/components/Reply';
 import { formatInstant } from '@/lib/dates';
 import { initials } from '@/lib/text';
@@ -19,10 +20,11 @@ export function Inbox({ threads, base }: { threads: Awaited<ReturnType<typeof pa
       {base.startsWith('/parent') ? 'No messages yet. Questions about fees, absences or anything else go straight to the office.' : 'No messages yet.'}
     </Empty>
   );
-  return (
-    <ul className="ra-msg-list ra-card" style={{ listStyle: 'none', margin: 0, padding: 6 }}>
+  return (<>
+    <NewRows list="msg-list" ids={threads.map((t) => t.id).join()} />
+    <ul id="msg-list" className="ra-msg-list ra-card" style={{ listStyle: 'none', margin: 0, padding: 6 }}>
       {threads.map((t) => (
-        <li key={t.id} className="ra-msg-row" style={{ gridTemplateColumns: 'minmax(0, 1fr)' }}>
+        <li key={t.id} data-id={t.id} className="ra-msg-row" style={{ gridTemplateColumns: 'minmax(0, 1fr)' }}>
           <Link className="ra-msg" href={`${base}/${t.id}`} data-unread={String(t.unread)}>
             <span className="ra-avatar" aria-hidden="true">{initials(t.last?.name ?? t.subject)}</span>
             <span style={{ minWidth: 0 }}>
@@ -35,7 +37,7 @@ export function Inbox({ threads, base }: { threads: Awaited<ReturnType<typeof pa
         </li>
       ))}
     </ul>
-  );
+  </>);
 }
 
 /** One conversation, oldest first, with a reply box unless it's locked. */

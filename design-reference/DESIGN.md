@@ -46,7 +46,11 @@ Ease-out `cubic-bezier(0.23, 1, 0.32, 1)`.
 - Banners: fade in via `@starting-style`, 220ms.
 - Fire drill: hold-to-confirm, 2s linear fill, 200ms snap back on release, keyboard (Space/Enter) supported.
 - Dashboard, first view of the session only: KPI figures count up (900ms, ease-out cubic, equal-width digit slots), the weekly attendance line draws in (700ms), fee bars grow from 0 (600ms, 40ms stagger).
-- No page-transition or keyboard-shortcut animation, and no chart animation anywhere else. Reduced motion: opacity only, and nothing on the dashboard counts, draws or grows.
+- Working buttons: a spinner in place of the label, then "Saved ✓" / "Done ✓" pops in (240ms) for 1.2s; the button keeps its width.
+- Sign in ↔ "email me a link": one card, the track slides one card-width (300ms) and the address changes without a page load.
+- Portal tab bar: the current-tab highlight slides to the pressed tab (250ms), stretching up to 1.6× on the way. The one allowed motion on nav; the tabs themselves still don't scale.
+- Messages: a sent reply rises in (200ms); a conversation that arrives while the inbox is open drops in at the top (260ms) with one 300ms pop of its count, and the rows below slide down.
+- No keyboard-shortcut animation, and no chart animation anywhere else. Reduced motion: opacity only, and nothing on the dashboard counts, draws or grows.
 
 ## Mobile-native baseline (all portals)
 `viewport-fit=cover`, `env(safe-area-inset-*)` on header/tab bar/pinned buttons, `-webkit-tap-highlight-color: transparent`, `overscroll-behavior: none` on root and `contain` on scroll areas, `touch-action: manipulation` + `user-select: none` on controls only, hover styles inside `@media (hover: hover) and (pointer: fine)`, `100dvh` for app shells, inputs ≥16px with the right `inputmode`/`enterkeyhint`, `theme-color` per colour scheme. Never disable zoom.

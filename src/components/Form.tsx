@@ -4,7 +4,7 @@ import { useActionState, useEffect, useId, useRef, useState, useTransition } fro
 import { createPortal } from 'react-dom';
 import type { FormState } from '@/lib/validate';
 import { FormErrors, FormMessage } from './Fields';
-import { SaveBar } from './SaveBar';
+import { SaveBar, SubmitButton, useKeepWidth } from './SaveBar';
 
 type Action = (prev: FormState, fd: FormData) => Promise<FormState>;
 
@@ -32,7 +32,7 @@ export function Form({ action, children, submit = 'Save changes', card = true, r
         {children}
         {savebar ? <SaveBar pending={pending} state={state} label={submit} /> : (
           <div className="ra-toolbar">
-            <button className="ra-btn primary" disabled={pending}>{pending ? 'Working…' : submit}</button>
+            <SubmitButton pending={pending} state={state} label={submit} doneText="Done ✓" />
             <span role="status" aria-live="polite" style={state?.ok ? undefined : { color: 'var(--color-bad)' }}>{pending ? '' : state?.message}</span>
           </div>
         )}
@@ -54,21 +54,24 @@ export function ActionButton({ action, label, confirm: ask, lose, undo, danger, 
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [waiting, setWaiting] = useState(false);
+  const [done, setDone] = useState(false); // "Done ✓" for a moment, on a labelled button that's still there afterwards
   const btn = useRef<HTMLButtonElement>(null);
+  useKeepWidth(btn, pending, done);
+  useEffect(() => { if (!done) return; const t = setTimeout(() => setDone(false), 1200); return () => clearTimeout(t); }, [done]);
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const row = () => btn.current?.closest<HTMLElement>('tr, li, article') ?? null;
-  const run = () => start(async () => { const r = await action(); if (r?.error) row()?.removeAttribute('hidden'); setError(r?.error ?? ''); setMessage(r?.message ?? ''); });
+  const run = () => start(async () => { const r = await action(); if (r?.error) row()?.removeAttribute('hidden'); setError(r?.error ?? ''); setMessage(r?.message ?? ''); setDone(!r?.error && !children); });
   const verb = label ?? ariaLabel ?? 'Confirm';
   return (
     <>
-      <button ref={btn} type="button" className={`${className}${danger ? ' danger' : ''}`} aria-label={ariaLabel} disabled={pending || waiting}
+      <button ref={btn} type="button" className={`${className}${danger ? ' danger' : ''}${done ? ' is-done' : ''}`} aria-label={ariaLabel} disabled={pending || waiting || done} aria-busy={pending || undefined}
         onClick={() => {
           if (undo) { row()?.setAttribute('hidden', ''); setWaiting(true); return; }
           if (ask) { dialog.current?.showModal(); return; }
           run();
         }}>
-        {children ?? (pending ? 'Working…' : label)}
+        {children ?? (done ? <span className="ok">Done ✓</span> : label)}
       </button>
       {ask && (
         <dialog ref={dialog} className="ra-dialog" aria-labelledby={titleId}>

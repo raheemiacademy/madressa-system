@@ -39,6 +39,27 @@ test('wrong password shows one generic message; right password reaches the dashb
   await expect(page).toHaveURL(/\/admin\/settings\/profile$/);
 });
 
+test('"Forgotten your password?" slides the sign-in card to the email-a-link side and back, keeping the email', async ({ page }) => {
+  await page.goto('/admin/login');
+  await page.getByLabel('Email').fill('admin@example.org');
+  await page.getByRole('link', { name: 'Forgotten your password?' }).click();
+  await expect(page).toHaveURL(/\/admin\/set-password$/);
+  await expect(page.getByRole('heading', { name: 'Set your password' })).toBeVisible();
+  await expect(page.locator('#link-email')).toHaveValue('admin@example.org');
+  await expect(page.locator('#link-email')).toBeFocused();
+  await expect(page.locator('#email')).toHaveCount(0); // the sign-in side is gone once it has slid away
+  await page.goBack();
+  await expect(page).toHaveURL(/\/admin\/login$/);
+  await expect(page.locator('#email')).toHaveValue('admin@example.org');
+  await page.getByRole('link', { name: 'Forgotten your password?' }).click();
+  await page.getByRole('link', { name: 'Back to sign in' }).click();
+  await expect(page).toHaveURL(/\/admin\/login$/);
+  // The address alone opens the right side.
+  await page.goto('/admin/set-password');
+  await expect(page.getByRole('heading', { name: 'Set your password' })).toBeVisible();
+  await expect(page.locator('#email')).toHaveCount(0);
+});
+
 test('admin session does not open other portals, and sign out ends it', async ({ page }) => {
   await signIn(page);
   await page.goto('/teacher');

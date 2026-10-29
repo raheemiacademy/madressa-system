@@ -35,18 +35,23 @@ function NewPassword({ state }: { state: LoginState }) {
   );
 }
 
-/** Ask for a set-password link (first sign-in or forgotten password). */
-export function RequestLinkForm({ portal, school }: { portal: Portal; school: string }) {
+/** Ask for a set-password link (first sign-in or forgotten password): the other side of the sign-in card (LoginForm). */
+export function RequestLinkPanel({ portal, school, email, back, onBack }: {
+  portal: Portal; school: string; email?: string; back: string; onBack: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+}) {
   const [state, action, pending] = useActionState<LoginState, FormData>(requestLinkAction.bind(null, portal), undefined);
   return (
-    <Card school={school} title="Set your password" intro="We’ll email you a link to confirm your address and choose a password." state={state}>
+    <>
+      <div><div className="ra-muted" style={{ fontSize: 13 }}>{school}</div><h1>Set your password</h1><p className="ra-note" style={{ margin: '4px 0 0' }}>We’ll email you a link to confirm your address and choose a password.</p></div>
+      {state?.error && <div className="ra-banner ra-alert" role="alert"><div>{state.error}</div></div>}
+      {state?.notice && <div className="ra-banner ra-success" role="status"><div>{state.notice}</div></div>}
       <form action={action} className="ra-form" noValidate>
-        <div className="ra-field"><label htmlFor="email">Email</label>
-          <input className="ra-input" id="email" name="email" type="email" inputMode="email" autoComplete="username" required defaultValue={state?.email} /></div>
-        <button className="ra-btn primary" disabled={pending}>{pending ? 'Sending…' : 'Email me a link'}</button>
+        <div className="ra-field"><label htmlFor="link-email">Email</label>
+          <input className="ra-input" id="link-email" name="email" type="email" inputMode="email" autoComplete="username" required defaultValue={state?.email ?? email} /></div>
+        <button className="ra-btn primary" disabled={pending} aria-busy={pending || undefined}>Email me a link</button>
       </form>
-      <Link className="ra-link" href={`/${portal}/login`}>Back to sign in</Link>
-    </Card>
+      <Link className="ra-link" href={back} onClick={onBack}>Back to sign in</Link>
+    </>
   );
 }
 
