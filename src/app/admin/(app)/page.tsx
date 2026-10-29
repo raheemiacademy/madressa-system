@@ -5,6 +5,7 @@ import { db } from '@/db';
 import { PAYMENT_METHODS, PAYMENT_STATUSES } from '@/db/schema';
 import { Chip } from '@/components/Chip';
 import { HBarChart, TrendChart } from '@/components/charts';
+import { KpiValue } from '@/components/KpiValue';
 import { HideFeesToggle } from '@/components/HideFeesToggle';
 import { HIDE_FEES_COOKIE } from '@/lib/hide-fees';
 import { Icon, type IconName } from '@/components/Icon';
@@ -124,14 +125,14 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <SignIns today={today} />
         </Panel>
         <Panel id="d-att" cls="ra-c12" title="Weekly attendance" note="Share of register sessions marked present or late, this year" height={230} anim={anim}>
-          <Trend from={year?.startsOn ?? null} to={year ? (today < year.endsOn ? today : year.endsOn) : null} />
+          <Trend from={year?.startsOn ?? null} to={year ? (today < year.endsOn ? today : year.endsOn) : null} animate={!!anim} />
         </Panel>
         {money && (
           <>
             <Panel id="d-pay" cls="ra-c7" title="Recent payments" note="Latest ten, all invoice types" height={260} anim="" action={<Link className="ra-link" href="/admin/fees">Fees dashboard</Link>}>
               <Payments />
             </Panel>
-            <Panel id="d-ft" cls="ra-c5" title="Fees by type" note={`Received and still outstanding, ${year ? year.title : 'this year'}`} height={200} anim=""><FeesByType yearId={year?.id ?? null} /></Panel>
+            <Panel id="d-ft" cls="ra-c5" title="Fees by type" note={`Received and still outstanding, ${year ? year.title : 'this year'}`} height={200} anim=""><FeesByType yearId={year?.id ?? null} animate={!!anim} /></Panel>
           </>
         )}
       </div>
@@ -182,7 +183,7 @@ async function Headline({ today, yearId, yearStart, fees, anim }: { today: strin
         {tiles.map(([c, label, icon, val, sub, href], i) => (
           <Link key={label} href={href} className={`ra-kpi ra-kpi-link${anim}`} style={{ ...tint(c), ['--i' as string]: i + 1 }}>
             <div className="ra-kpi-top">{label}<span className="ra-kpi-ic"><Icon name={icon} /></span></div>
-            <div className="ra-kpi-val">{val}</div>
+            <div className="ra-kpi-val">{typeof val === 'string' ? <KpiValue value={val} animate={!!anim} /> : val}</div>
             <div className="ra-kpi-sub">{sub}</div>
           </Link>
         ))}
@@ -191,9 +192,9 @@ async function Headline({ today, yearId, yearStart, fees, anim }: { today: strin
   );
 }
 
-async function Trend({ from, to }: { from: string | null; to: string | null }) {
+async function Trend({ from, to, animate }: { from: string | null; to: string | null; animate: boolean }) {
   if (!from || !to || to < from) return <p className="ra-empty">No registers taken yet this year.</p>;
-  return <TrendChart data={await weeklyTrend(db, from, to)} empty="No registers taken yet this year." />;
+  return <TrendChart data={await weeklyTrend(db, from, to)} empty="No registers taken yet this year." animate={animate} />;
 }
 
 async function Messages({ me }: { me: { id: number; rank: string | null; isSuper: boolean } }) {
@@ -267,13 +268,13 @@ async function Payments() {
   );
 }
 
-async function FeesByType({ yearId }: { yearId: number | null }) {
+async function FeesByType({ yearId, animate }: { yearId: number | null; animate: boolean }) {
   if (!yearId) return <p className="ra-empty">Add an academic year first.</p>;
   const { byType } = await feesFor(yearId);
   return (
     <>
       {byType.length > 0 && <div className="ra-legend"><span><i style={{ background: 'var(--ra-blue)' }} />Received</span><span><i style={{ background: 'var(--ra-violet)' }} />Outstanding</span></div>}
-      <HBarChart empty="No invoices this year yet." track
+      <HBarChart empty="No invoices this year yet." track animate={animate}
         label={`Fees by type: ${byType.map((t) => `${t.type} ${formatPence(t.received)} received, ${formatPence(t.outstanding)} outstanding`).join('; ')}`}
         rows={byType.map((t) => ({
           label: t.type, end: t.outstanding ? `${formatPence(t.outstanding)} due` : t.received ? 'Paid' : 'No invoices', strong: t.outstanding > 0,

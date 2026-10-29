@@ -33,7 +33,7 @@ function Tip({ tip }: { tip: { x: number; y: number; title: string; lines: strin
 }
 
 /** Weekly attendance line (Register "Attendance trend" and the dashboard). */
-export function TrendChart({ data, empty = 'No registers taken yet this term.' }: { data: { week: string; rate: number }[]; empty?: string }) {
+export function TrendChart({ data, empty = 'No registers taken yet this term.', animate = false }: { data: { week: string; rate: number }[]; empty?: string; animate?: boolean }) {
   const box = useRef<HTMLDivElement>(null);
   const svg = useRef<SVGSVGElement>(null);
   const W = useWidth(box);
@@ -59,10 +59,12 @@ export function TrendChart({ data, empty = 'No registers taken yet this term.' }
     s.append('g').selectAll('text').data(rows.filter((_, i) => i % step === 0)).join('text').attr('x', (d) => x(d.d)).attr('y', H - 6).attr('text-anchor', 'middle').text((d) => dayFmt(d.d));
     const grad = s.append('defs').append('linearGradient').attr('id', 'ra-trend-grad').attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 1);
     [[0, 0.32], [0.5, 0.1], [1, 0]].forEach(([o, a]) => grad.append('stop').attr('offset', o!).attr('style', `stop-color:${blue};stop-opacity:${a}`));
-    s.append('path').datum(rows).attr('fill', 'url(#ra-trend-grad)').attr('d', d3.area<{ d: Date; v: number }>().x((d) => x(d.d)).y0(y(lo)).y1((d) => y(d.v)));
-    s.append('path').datum(rows).attr('fill', 'none').attr('stroke', indigo).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('d', d3.line<{ d: Date; v: number }>().x((d) => x(d.d)).y((d) => y(d.v)));
-    s.append('circle').attr('cx', x(last.d)).attr('cy', y(last.v)).attr('r', 4).attr('fill', indigo);
-    s.append('text').attr('class', 'ra-strong').attr('x', x(last.d) + 8).attr('y', y(last.v) + 4).text(pct1(last.v));
+    s.append('path').datum(rows).attr('class', animate ? 'ra-draw-after' : null).attr('fill', 'url(#ra-trend-grad)').attr('d', d3.area<{ d: Date; v: number }>().x((d) => x(d.d)).y0(y(lo)).y1((d) => y(d.v)));
+    // First view of the dashboard: the line draws in, then its end dot and label fade in (DESIGN.md Motion).
+    const line = s.append('path').datum(rows).attr('class', animate ? 'ra-draw' : null).attr('fill', 'none').attr('stroke', indigo).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('d', d3.line<{ d: Date; v: number }>().x((d) => x(d.d)).y((d) => y(d.v)));
+    if (animate) line.style('--len', String((line.node() as SVGPathElement).getTotalLength()));
+    s.append('circle').attr('class', animate ? 'ra-draw-after' : null).attr('cx', x(last.d)).attr('cy', y(last.v)).attr('r', 4).attr('fill', indigo);
+    s.append('text').attr('class', animate ? 'ra-strong ra-draw-after' : 'ra-strong').attr('x', x(last.d) + 8).attr('y', y(last.v) + 4).text(pct1(last.v));
     const hov = s.append('circle').attr('r', 5).attr('fill', violet).attr('stroke', 'var(--color-panel)').attr('stroke-width', 2).style('opacity', 0);
     s.append('rect').attr('x', ml).attr('y', 0).attr('width', Math.max(0, W - ml - mr)).attr('height', H).attr('fill', 'transparent')
       .on('mousemove', (ev: MouseEvent) => {
@@ -72,7 +74,7 @@ export function TrendChart({ data, empty = 'No registers taken yet this term.' }
         setTip({ x: Math.min(W - 150, x(r.d) + 12), y: Math.max(0, y(r.v) - 50), title: `Week of ${dayFmt(r.d)}`, lines: [`${pct1(r.v)} attendance`] });
       })
       .on('mouseleave', () => { hov.style('opacity', 0); setTip(null); });
-  }, [data, W]);
+  }, [data, W, animate]);
   if (!data.length) return <div className="ra-chart"><p className="ra-empty">{empty}</p></div>;
   return (
     <div ref={box} className="ra-chart" style={{ minHeight: H }}>
@@ -189,7 +191,7 @@ export function FeesChart({ data }: { data: { month: string; invoiced: number; r
 type HBar = { label: string; segs: { name: string; value: number; colour: string }[]; end: string; strong?: boolean; tip: string[] };
 
 /** Horizontal stacked bars, one per row (dashboard "Students by age group" and "Fees by type"). Ported from the design's ageChart/feesTypeChart. */
-export function HBarChart({ rows, label, empty, track = false }: { rows: HBar[]; label: string; empty: string; track?: boolean }) {
+export function HBarChart({ rows, label, empty, track = false, animate = false }: { rows: HBar[]; label: string; empty: string; track?: boolean; animate?: boolean }) {
   const box = useRef<HTMLDivElement>(null);
   const svg = useRef<SVGSVGElement>(null);
   const W = useWidth(box);
@@ -205,22 +207,23 @@ export function HBarChart({ rows, label, empty, track = false }: { rows: HBar[];
     const ml = (d3.max(rows, (r) => textW(r.label)) ?? 0) + 10;
     const mr = (d3.max(rows, (r) => textW(r.end, 'ra-strong')) ?? 0) + 10;
     const yb = d3.scaleBand(rows.map((r) => r.label), [6, H - 6]).padding(0.35);
+    let k = 0; // bar order, for the 40ms grow stagger
     const x = d3.scaleLinear([0, Math.max(1, d3.max(rows, total) ?? 1)], [ml, Math.max(ml + 20, W - mr)]);
     rows.forEach((r) => {
       const yy = yb(r.label)!, bh = Math.min(22, yb.bandwidth()), off = (yb.bandwidth() - bh) / 2, mid = yy + yb.bandwidth() / 2 + 4;
       const show = (ev: MouseEvent) => { const [mx, my] = d3.pointer(ev, el); setTip({ x: Math.min(W - 170, mx + 12), y: Math.max(0, my - 50), title: r.label, lines: r.tip }); };
       s.append('text').attr('x', ml - 8).attr('y', mid).attr('text-anchor', 'end').text(r.label);
-      if (track && total(r)) s.append('rect').attr('x', ml).attr('y', yy + off).attr('height', bh).attr('width', Math.max(2, x(total(r)) - ml)).attr('rx', 4).attr('fill', `color-mix(in srgb, ${css(el, '--ra-lav')} 30%, transparent)`);
+      if (track && total(r)) s.append('rect').attr('class', animate ? 'ra-grow' : null).style('--i', String(k++)).attr('x', ml).attr('y', yy + off).attr('height', bh).attr('width', Math.max(2, x(total(r)) - ml)).attr('rx', 4).attr('fill', `color-mix(in srgb, ${css(el, '--ra-lav')} 30%, transparent)`);
       let acc = 0;
       for (const g of r.segs) {
         if (!g.value) continue;
-        s.append('rect').attr('x', x(acc) + (acc ? 1 : 0)).attr('y', yy + off).attr('height', bh).attr('width', Math.max(2, x(acc + g.value) - x(acc) - (acc ? 1 : 0))).attr('rx', 4)
+        s.append('rect').attr('class', animate ? 'ra-grow' : null).style('--i', String(k++)).attr('x', x(acc) + (acc ? 1 : 0)).attr('y', yy + off).attr('height', bh).attr('width', Math.max(2, x(acc + g.value) - x(acc) - (acc ? 1 : 0))).attr('rx', 4)
           .attr('fill', css(el, g.colour)).on('mousemove', show).on('mouseleave', () => setTip(null));
         acc += g.value;
       }
-      s.append('text').attr('class', r.strong === false ? null : 'ra-strong').attr('x', x(total(r)) + 6).attr('y', mid).text(r.end);
+      s.append('text').attr('class', [r.strong === false ? '' : 'ra-strong', animate ? 'ra-draw-after' : ''].join(' ').trim() || null).attr('x', x(total(r)) + 6).attr('y', mid).text(r.end);
     });
-  }, [rows, W, H, track]);
+  }, [rows, W, H, track, animate]);
   if (!rows.length) return <div className="ra-chart"><p className="ra-empty">{empty}</p></div>;
   return (
     <div ref={box} className="ra-chart" style={{ minHeight: H }}>

@@ -859,3 +859,9 @@ SMTP and SMS credentials can also be set in Settings (§4). DB-stored secrets ar
   - **Motion:** the hero's words rise in one after another and the dashboard settles up into place on load; changing numbers roll up, the greeting crossfades, the dashboard fades between loops. Strong ease-out, transform and opacity only, none of it with reduced motion.
   - **The comparison asks instead of assuming:** heading "Paper, spreadsheets and twelve group chats?" (the "Are you using…" versions run to three lines on a laptop), a new intro line, and the middle column is "The question" with a question in each row. The answers are unchanged.
   - **Less space between sections:** `--gap-section` is 4–8rem (was 6–13rem), and headings sit closer to what follows.
+
+## 18. UI polish (approved 29/10/2026)
+
+Twelve changes from the review of your saved UI reels, previewed first (`_ui-preview/index.html`, not committed) and approved together.
+- **The dashboard comes alive on open (this changes the DESIGN.md Motion rule, which said no chart-draw animation).** On the first view of a session (the existing `ra_dash_seen` cookie), the KPI figures count up from 0, the Weekly attendance line draws in and the Fees by type bars grow from 0, all within a second. Digits sit in equal-width slots, as on the website. Nothing counts, draws or grows with reduced motion, and no other chart animates.
+

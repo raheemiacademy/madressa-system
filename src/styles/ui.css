@@ -236,7 +236,16 @@ fieldset.ra-fieldset legend { font-size: 13px; font-weight: 500; padding: 0 4px;
 @keyframes ra-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes ra-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ra-pulse { 50% { opacity: .55; } }
+/* Dashboard first view only: figures count up in equal-width digit slots (Fraunces has no tabular figures),
+   the attendance line draws in, fee bars grow from 0. */
+.ra-kpi-val .dg { display: inline-block; width: 0.6em; text-align: center; }
+.ra-draw { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: ra-draw 700ms var(--ra-ease-out) 120ms forwards; }
+.ra-draw-after { animation: ra-fade 240ms ease 760ms backwards; }
+.ra-grow { transform-box: fill-box; transform-origin: left center; animation: ra-grow 600ms cubic-bezier(.2, .7, .2, 1) backwards; animation-delay: calc(150ms + var(--i, 0) * 40ms); }
+@keyframes ra-draw { to { stroke-dashoffset: 0; } }
+@keyframes ra-grow { from { transform: scaleX(0); } }
 @media (prefers-reduced-motion: reduce) {
+  :is(.ra-draw, .ra-draw-after, .ra-grow) { animation: none; stroke-dasharray: none; }
   :is(.ra-btn, .ra-filter, .ra-link, .ra-icon-btn, .ra-acts button, .ra-acts a):active { transform: none; }
   .ra-anim { animation: ra-fade 200ms ease both; animation-delay: 0ms; }
   .ra-skel { animation: none; }

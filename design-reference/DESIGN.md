@@ -45,7 +45,8 @@ Ease-out `cubic-bezier(0.23, 1, 0.32, 1)`.
 - Dashboard tiles: 280ms rise + fade, 40ms stagger, first view only.
 - Banners: fade in via `@starting-style`, 220ms.
 - Fire drill: hold-to-confirm, 2s linear fill, 200ms snap back on release, keyboard (Space/Enter) supported.
-- No page-transition, chart-draw or keyboard-shortcut animation. Reduced motion: opacity only.
+- Dashboard, first view of the session only: KPI figures count up (900ms, ease-out cubic, equal-width digit slots), the weekly attendance line draws in (700ms), fee bars grow from 0 (600ms, 40ms stagger).
+- No page-transition or keyboard-shortcut animation, and no chart animation anywhere else. Reduced motion: opacity only, and nothing on the dashboard counts, draws or grows.
 
 ## Mobile-native baseline (all portals)
 `viewport-fit=cover`, `env(safe-area-inset-*)` on header/tab bar/pinned buttons, `-webkit-tap-highlight-color: transparent`, `overscroll-behavior: none` on root and `contain` on scroll areas, `touch-action: manipulation` + `user-select: none` on controls only, hover styles inside `@media (hover: hover) and (pointer: fine)`, `100dvh` for app shells, inputs ≥16px with the right `inputmode`/`enterkeyhint`, `theme-color` per colour scheme. Never disable zoom.
