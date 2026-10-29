@@ -239,7 +239,7 @@ fieldset.ra-fieldset legend { font-size: 13px; font-weight: 500; padding: 0 4px;
 .ra-auth-card h1 { font-family: var(--font-serif), Georgia, serif; font-weight: 400; font-size: 1.75rem; margin: 0; }
 .ra-auth-card .ra-btn { min-height: 48px; font-size: 15px; }
 .ra-auth .ra-input { min-height: 48px; font-size: 16px; }
-/* Dark: the card (#1A1E40) nearly vanished on the ink page (#1C2147). The page steps down and the card gets a border. */
+/* Dark: the card (panel) nearly vanished on the ink page. The page steps down to the background and the card gets a border. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .ra-auth { background: var(--color-bg); }
   :root:not([data-theme="light"]) .ra-auth-card { border: 1px solid var(--color-border-line); }
