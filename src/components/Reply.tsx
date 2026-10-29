@@ -22,24 +22,33 @@ export function Reply({ action, submit = 'Reply', me, portal = false, lockable =
   const [sending, setSending] = useState<{ body: string; left: number } | null>(null);
   const [failed, setFailed] = useState('');
   const form = useRef<HTMLFormElement>(null);
-  const held = useRef<FormData | null>(null);
+  const held = useRef<FormData | null>(null); // waiting out the 5 seconds
+  const sentBody = useRef<string | null>(null); // sent, waiting for the server's answer
+  const latest = useRef(action);
+  useEffect(() => { latest.current = action; });
   const timer = useRef<ReturnType<typeof setInterval>>(undefined);
   const box = () => form.current?.elements.namedItem('body') as HTMLTextAreaElement | null;
 
-  const send = (fd: FormData) => { clearInterval(timer.current); setSending((s) => s && { ...s, left: 0 }); startTransition(() => act(fd)); };
+  const send = (fd: FormData) => {
+    clearInterval(timer.current);
+    held.current = null;
+    sentBody.current = String(fd.get('body') ?? '');
+    setSending((s) => s && { ...s, left: 0 });
+    startTransition(() => act(fd));
+  };
   // The server answered: drop the "sending" copy (the page now shows the real one), or put a failed reply back in the box.
   useEffect(() => {
-    if (!state || !held.current) return;
-    const body = String(held.current.get('body') ?? '');
-    held.current = null;
+    if (!state || sentBody.current === null) return;
+    const body = sentBody.current;
+    sentBody.current = null;
     setSending(null);
     if (state.ok) { const f = form.current?.elements.namedItem('attachment') as HTMLInputElement | null; if (f) f.value = ''; return; }
     const b = box();
     if (b && !b.value) b.value = body;
     setFailed(state.message ?? 'Not sent. Please try again.');
   }, [state]);
-  // Leaving the page during the 5 seconds still sends it.
-  useEffect(() => () => { clearInterval(timer.current); if (held.current) void action(undefined, held.current); }, [action]);
+  // Leaving the page during the 5 seconds still sends it (only a reply not yet sent; the page's action may be re-created).
+  useEffect(() => () => { clearInterval(timer.current); if (held.current) void latest.current(undefined, held.current); }, []);
 
   const undo = () => {
     clearInterval(timer.current);
