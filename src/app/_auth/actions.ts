@@ -52,8 +52,7 @@ export async function requestLinkAction(portal: Portal, _prev: LoginState, fd: F
 
 export async function setPasswordAction(portal: Portal, token: string, _prev: LoginState, fd: FormData): Promise<LoginState> {
   if (!canRequestLink(portal)) return { error: 'Unknown portal' };
-  const password = String(fd.get('password') ?? ''), confirm = String(fd.get('confirm') ?? '');
-  if (password !== confirm) return { error: 'The two passwords don’t match.' };
+  const password = String(fd.get('password') ?? '');
   const r = await redeemPasswordLink(db, portal, token, password, await requestMeta());
   if (!r.ok) return { error: r.error };
   await setSessionCookie(portal, r.token);
@@ -64,7 +63,7 @@ export async function changePasswordAction(portal: Portal, _prev: LoginState, fd
   if (!isLinkPortal(portal)) return { error: 'Unknown portal' };
   const s = await sessionFor(portal);
   if (!s) redirect(`/${portal}/login`);
-  const r = await changeOwnPassword(db, s.identity.id, String(fd.get('password') ?? ''), String(fd.get('confirm') ?? ''));
+  const r = await changeOwnPassword(db, s.identity.id, String(fd.get('password') ?? ''));
   if (!r.ok) return { error: r.error };
   redirect(`/${portal}`);
 }

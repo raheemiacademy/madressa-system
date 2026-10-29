@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
+import { Icon } from '@/components/Icon';
+import { PasswordInput } from '@/components/PasswordInput';
 import type { Portal } from '@/server/auth';
 import { changePasswordAction, requestLinkAction, setPasswordAction, type LoginState } from './actions';
 
@@ -18,15 +20,17 @@ function Card({ school, title, intro, state, children }: { school: string; title
   );
 }
 
+/** One password field (the eye button replaces "Type it again"), with the length rule shown up front and ticked as you type. */
 function NewPassword() {
+  const [len, setLen] = useState(0);
+  const ok = len >= 10;
   return (
-    <>
-      <div className="ra-field"><label htmlFor="password">New password</label>
-        <input className="ra-input" id="password" name="password" type="password" autoComplete="new-password" minLength={10} required aria-describedby="pw-help" />
-        <span className="help" id="pw-help">At least 10 characters.</span></div>
-      <div className="ra-field"><label htmlFor="confirm">Type it again</label>
-        <input className="ra-input" id="confirm" name="confirm" type="password" autoComplete="new-password" required /></div>
-    </>
+    <div className="ra-field"><label htmlFor="password">New password</label>
+      <PasswordInput id="password" name="password" autoComplete="new-password" minLength={10} required aria-describedby="pw-rules" onInput={(e) => setLen(e.currentTarget.value.length)} />
+      <ul className="ra-rules" id="pw-rules" aria-live="polite">
+        <li className={ok ? 'ok' : undefined}><Icon name="check" />{ok ? 'At least 10 characters ✓' : `At least 10 characters${len ? ` (${10 - len} more)` : ''}`}</li>
+      </ul>
+    </div>
   );
 }
 

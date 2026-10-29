@@ -128,7 +128,6 @@ test('an admin can copy a set-password link (no email needed) and the parent use
   const p = await ctx.newPage();
   await p.goto(path);
   await p.getByLabel('New password').fill('linked parent pw 1');
-  await p.getByLabel('Type it again').fill('linked parent pw 1');
   await p.getByRole('button', { name: 'Save and sign in' }).click();
   await expect(p).toHaveURL(/\/parent$/);
   await ctx.close();
@@ -153,7 +152,6 @@ test('an invited teacher gets a set-password link on first sign-in and uses it o
   const path = /\/teacher\/set-password\/[A-Za-z0-9_-]+/.exec(mail!.html)![0];
   await t.goto(path);
   await t.getByLabel('New password').fill('invited teacher pw 1');
-  await t.getByLabel('Type it again').fill('invited teacher pw 1');
   await t.getByRole('button', { name: 'Save and sign in' }).click();
   await expect(t).toHaveURL(/\/teacher$/);
   await t.goto(path);

@@ -89,8 +89,7 @@ export async function redeemPasswordLink(db: Db, portal: Portal, raw: string, pa
 }
 
 /** The forced change after signing in with a password an admin chose. */
-export async function changeOwnPassword(db: Db, identityId: number, password: string, confirm: string) {
-  if (password !== confirm) return { ok: false as const, error: 'The two passwords don’t match.' };
+export async function changeOwnPassword(db: Db, identityId: number, password: string) {
   const problem = passwordProblem(password);
   if (problem) return { ok: false as const, error: problem };
   await db.update(loginIdentity).set({ passwordHash: await hashPassword(password), mustChangePassword: false }).where(eq(loginIdentity.id, identityId));

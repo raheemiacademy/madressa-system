@@ -187,7 +187,6 @@ test('teachers and parents given a password by the school must choose their own,
     await t.getByRole('button', { name: 'Sign in' }).click();
     await expect(t).toHaveURL(new RegExp(`/${portal}/change-password$`));
     await t.getByLabel('New password').fill(next);
-    await t.getByLabel('Type it again').fill(next);
     await t.getByRole('button', { name: 'Save password' }).click();
     await expect(t).toHaveURL(new RegExp(`/${portal}$`));
   }
